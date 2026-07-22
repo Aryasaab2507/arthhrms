@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>QA Validation Center - ARTHHRMS</title>
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+    <script src="services/importStagingService.js"></script>
+    <script src="services/importService.js"></script>
+    <script src="services/enterpriseTestLabService.js"></script>
+    <script src="services/pilotOnboardingService.js"></script>
+    <script src="services/operationsMonitoringService.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#1a56db;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#e2e8f0;--r:#dc2626;--g:#059669;--o:#d97706}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:24px}
+.top{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:16px}
+h1{font-size:1.45rem}p{color:var(--muted);font-size:.86rem;margin-top:4px}
+.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--p);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:#e2e8f0;color:#0f172a}.btn.warn{background:var(--o)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kpi{border-left:4px solid var(--p)}.kpi.red{border-left-color:var(--r)}.kpi.green{border-left-color:var(--g)}.kpi.warn{border-left-color:var(--o)}
+.kpi small{display:block;color:var(--muted);font-size:.68rem;font-weight:900;text-transform:uppercase}.kpi b{display:block;font-size:1.55rem;margin-top:6px}.kpi span{font-size:.75rem;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:.78rem;text-align:left;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}
+.badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.pass{background:#dcfce7;color:#166534}.fail{background:#fee2e2;color:#991b1b}.warn{background:#fef3c7;color:#92400e}
+.section-title{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem}
+.toast{position:fixed;right:18px;bottom:18px;background:#0f172a;color:#fff;padding:10px 12px;border-radius:10px;font-size:.8rem;font-weight:800;opacity:0;transform:translateY(12px);transition:.2s}.toast.on{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.grid,.row{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+@media(max-width:620px){.wrap{padding:14px}.grid,.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>QA Validation Center</h1>
+      <p>Pilot readiness, workflow checks, migration health, RLS status, and deployment safety validation.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="runQaValidation()">Run QA Validation</button>
+      <button class="btn warn" onclick="createCheckpoint()">Create Checkpoint</button>
+      <a class="btn alt" href="operations-monitoring.html">Operations</a>
+      <a class="btn alt" href="enterprise-test-lab.html">Test Lab</a>
+      <a class="btn alt" href="platform-control.html">Platform Control</a>
+    </div>
+  </div>
+  <div class="grid" id="qaCards"></div>
+  <div class="row">
+    <div class="card">
+      <h3 class="section-title">Module Health</h3>
+      <div class="table-wrap"><table id="moduleTable"></table></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">Workflow Test Automation</h3>
+      <div class="table-wrap"><table id="workflowTable"></table></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3 class="section-title">Validation History</h3>
+    <div class="table-wrap"><table id="historyTable"></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const currentUser = window.authService?.getCurrentUser?.() || {};
+if(!currentUser.role || !['platform_owner','super_admin','hr','admin'].includes(currentUser.role)){
+  location.replace('ArthHRMS.html');
+}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200);}
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function badge(status){const s=String(status||'').toUpperCase();const cls=s==='PASS'?'pass':s==='FAIL'?'fail':'warn';return `<span class="badge ${cls}">${esc(s||'INFO')}</span>`;}
+function card(tone,value,label,note){return `<div class="card kpi ${tone}"><small>${esc(label)}</small><b>${esc(value)}</b><span>${esc(note)}</span></div>`;}
+function actor(){return {role:currentUser.role||'platform_owner',id:currentUser.id||currentUser.empId||'',name:currentUser.name||currentUser.email||'QA User'};}
+function render(run){
+  const latest=run || qaValidationService.getLatestRun?.() || null;
+  const env=deploymentSafetyService.getEnvironmentState?.() || DB.getEnvironmentState();
+  const checks=latest?[...latest.moduleResults,...latest.workflowResults]:[];
+  const failed=checks.filter(x=>x.status==='FAIL').length;
+  const warnings=checks.filter(x=>x.status==='WARNING').length;
+  document.getElementById('qaCards').innerHTML=[
+    card(env.mode==='PRODUCTION'?'red':env.mode==='PILOT'?'warn':'green',env.mode,'Environment',env.mode==='PILOT'?'Pilot limits active':'Deployment state'),
+    card(latest?.score>=85?'green':latest?'warn':'red',latest?latest.score+'%':'Not Run','QA Score',latest?latest.status:'Run validation'),
+    card(failed?'red':'green',failed,'Failed Validations',failed?'Fix before rollout':'No failed checks'),
+    card(warnings?'warn':'green',warnings,'Warnings',warnings?'Review before production':'No warnings'),
+    card(enterpriseTestLabService.getLatestRun?.()?.score>=85?'green':enterpriseTestLabService.getLatestRun?.()?'warn':'red',enterpriseTestLabService.getLatestRun?.()?.score?enterpriseTestLabService.getLatestRun().score+'%':'Not Run','Test Lab',enterpriseTestLabService.getLatestRun?.()?.status||'Run simulations'),
+    card(window.operationsMonitoringService?.getOperationalDashboard?.().health?.score>=85?'green':window.operationsMonitoringService?.getOperationalDashboard?.()?'warn':'red',window.operationsMonitoringService?.getOperationalDashboard?.().health?.score?window.operationsMonitoringService.getOperationalDashboard().health.score+'%':'Not Run','Operations Health',window.operationsMonitoringService?.getOperationalDashboard?.().health?.status||'Open Operations')
+  ].join('');
+  const modules=latest?.moduleResults||[];
+  document.getElementById('moduleTable').innerHTML=`<thead><tr><th>Status</th><th>Check</th><th>Message</th></tr></thead><tbody>${
+    modules.length?modules.map(r=>`<tr><td>${badge(r.status)}</td><td><b>${esc(r.label)}</b><div class="muted">${esc(r.key)}</div></td><td>${esc(r.message)}</td></tr>`).join(''):'<tr><td colspan="3" class="muted">Run validation to populate module health.</td></tr>'
+  }</tbody>`;
+  const flows=latest?.workflowResults||[];
+  document.getElementById('workflowTable').innerHTML=`<thead><tr><th>Status</th><th>Workflow</th><th>Message</th></tr></thead><tbody>${
+    flows.length?flows.map(r=>`<tr><td>${badge(r.status)}</td><td><b>${esc(r.label)}</b><div class="muted">${esc(r.key)}</div></td><td>${esc(r.message)}</td></tr>`).join(''):'<tr><td colspan="3" class="muted">Workflow simulations have not run yet.</td></tr>'
+  }</tbody>`;
+  const history=qaValidationService.getRuns?.()||[];
+  document.getElementById('historyTable').innerHTML=`<thead><tr><th>Time</th><th>Environment</th><th>Status</th><th>Score</th><th>Failures</th><th>Warnings</th></tr></thead><tbody>${
+    history.length?history.slice(0,12).map(r=>`<tr><td>${esc(new Date(r.runAt).toLocaleString())}</td><td>${esc(r.environmentMode)}</td><td>${badge(r.status==='Failed'?'FAIL':r.status==='Passed'?'PASS':'WARNING')}</td><td>${esc(r.score)}%</td><td>${esc(r.failedCount)}</td><td>${esc(r.warningCount)}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">No QA runs recorded.</td></tr>'
+  }</tbody>`;
+}
+function runQaValidation(){const run=qaValidationService.runValidation({actor:actor()});toast('QA validation complete');render(run);}
+function createCheckpoint(){const cp=deploymentSafetyService.createCheckpoint?.('QA Validation Center checkpoint');toast(cp?.checkpointId?'Checkpoint created':'Checkpoint unavailable');render();}
+render();
+</script>
+</body>
+</html>

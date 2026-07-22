@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Operations Monitoring Center - ARTHHRMS</title>
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+    <script src="services/importStagingService.js"></script>
+    <script src="services/importService.js"></script>
+    <script src="services/enterpriseTestLabService.js"></script>
+    <script src="services/pilotOnboardingService.js"></script>
+    <script src="services/operationsMonitoringService.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#1a56db;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#e2e8f0;--r:#dc2626;--g:#059669;--o:#d97706}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:24px}
+.top{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:16px}
+h1{font-size:1.45rem}p{color:var(--muted);font-size:.86rem;margin-top:4px}
+.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--p);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:#e2e8f0;color:#0f172a}.btn.warn{background:var(--o)}.btn.red{background:var(--r)}.btn.green{background:var(--g)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kpi{border-left:4px solid var(--p)}.kpi.red{border-left-color:var(--r)}.kpi.green{border-left-color:var(--g)}.kpi.warn{border-left-color:var(--o)}
+.kpi small{display:block;color:var(--muted);font-size:.68rem;font-weight:900;text-transform:uppercase}.kpi b{display:block;font-size:1.55rem;margin-top:6px}.kpi span{font-size:.75rem;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;min-width:820px}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:.78rem;text-align:left;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+.badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.pass{background:#dcfce7;color:#166534}.fail{background:#fee2e2;color:#991b1b}.warn{background:#fef3c7;color:#92400e}.info{background:#dbeafe;color:#1d4ed8}
+.section-title{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.toast{position:fixed;right:18px;bottom:18px;background:#0f172a;color:#fff;padding:10px 12px;border-radius:10px;font-size:.8rem;font-weight:800;opacity:0;transform:translateY(12px);transition:.2s}.toast.on{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.grid,.row{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+@media(max-width:620px){.wrap{padding:14px}.grid,.row{grid-template-columns:1fr}.toolbar>*{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Operations Monitoring Center</h1>
+      <p>System health, incidents, service errors, workflow failures, slow operations, and recovery actions.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn alt" href="platform-control.html">Platform Control</a>
+      <a class="btn alt" href="qa-validation.html">QA Center</a>
+      <a class="btn alt" href="enterprise-test-lab.html">Test Lab</a>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" onclick="runHealth()">Run Health Check</button>
+    <button class="btn warn" onclick="createCheckpoint()">Create Recovery Checkpoint</button>
+    <button class="btn alt" onclick="cleanupLogs()">Apply Retention Cleanup</button>
+    <button class="btn red" onclick="simulateIncident()">Log Test Incident</button>
+  </div>
+
+  <div class="grid" id="opsCards"></div>
+
+  <div class="row">
+    <div class="card">
+      <h3 class="section-title">Module Health</h3>
+      <div class="table-wrap"><table id="healthTable"></table></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">Pending Recovery Actions</h3>
+      <div class="table-wrap"><table id="recoveryTable"></table></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h3 class="section-title">Active Incidents</h3>
+    <div class="table-wrap"><table id="incidentTable"></table></div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <div class="card">
+      <h3 class="section-title">Recent Service Errors</h3>
+      <div class="table-wrap"><table id="errorTable"></table></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">Performance Metrics</h3>
+      <div class="table-wrap"><table id="metricTable"></table></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <div class="card">
+      <h3 class="section-title">Import And Payroll Signals</h3>
+      <div class="table-wrap"><table id="signalTable"></table></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">Audit And Deployment Links</h3>
+      <div class="table-wrap"><table id="auditTable"></table></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const currentUser = window.authService?.getCurrentUser?.() || {};
+if(!currentUser.role || !['platform_owner','super_admin','hr','admin'].includes(currentUser.role)){
+  location.replace('ArthHRMS.html');
+}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200);}
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function badge(status){const s=String(status||'').toUpperCase();const cls=s.includes('CRITICAL')||s.includes('FAILED')||s.includes('HIGH')?'fail':s.includes('WARN')||s.includes('MEDIUM')||s.includes('SLOW')?'warn':s.includes('HEALTHY')||s.includes('RESOLVED')||s.includes('OK')?'pass':'info';return `<span class="badge ${cls}">${esc(s||'INFO')}</span>`;}
+function card(tone,value,label,note){return `<div class="card kpi ${tone}"><small>${esc(label)}</small><b>${esc(value)}</b><span>${esc(note)}</span></div>`;}
+function actor(){return {role:currentUser.role||'platform_owner',id:currentUser.id||currentUser.empId||'',name:currentUser.name||currentUser.email||'Operations User'};}
+function render(){
+  const d=operationsMonitoringService.getOperationalDashboard();
+  const health=d.health||{};
+  document.getElementById('opsCards').innerHTML=[
+    card(health.score>=85?'green':health.score>=65?'warn':'red',`${health.score||0}%`,'System Health',health.status||'Unknown'),
+    card(d.widgets.criticalIncidents?'red':d.widgets.activeIncidents?'warn':'green',d.widgets.activeIncidents,'Active Incidents',`${d.widgets.criticalIncidents} critical`),
+    card(d.widgets.failedWorkflows?'red':'green',d.widgets.failedWorkflows,'Failed Workflows','Blocked or rejected workflow events'),
+    card(d.widgets.importFailures?'red':'green',d.widgets.importFailures,'Import Health','Failed or blocked batches'),
+    card(d.widgets.payrollIssues?'red':'green',d.widgets.payrollIssues,'Payroll Issues','Open payroll processing signals'),
+    card(d.widgets.slowOperations?'warn':'green',d.widgets.slowOperations,'Slow Operations','Performance threshold breaches'),
+    card(d.widgets.authFailures?'red':'green',d.widgets.authFailures,'Auth Failures','Recent auth service errors'),
+    card('green',d.widgets.systemUptime,'Local Uptime','Since monitoring loaded')
+  ].join('');
+  document.getElementById('healthTable').innerHTML=`<thead><tr><th>Status</th><th>Service</th><th>Message</th><th>Details</th></tr></thead><tbody>${
+    (health.modules||[]).map(r=>`<tr><td>${badge(r.status)}</td><td><b>${esc(r.label)}</b><div class="muted">${esc(r.key)}</div></td><td>${esc(r.message)}</td><td class="muted">${esc(JSON.stringify(r.details||{}))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Run a health check to populate module health.</td></tr>'
+  }</tbody>`;
+  document.getElementById('recoveryTable').innerHTML=`<thead><tr><th>Severity</th><th>Module</th><th>Recovery Action</th></tr></thead><tbody>${
+    (d.pendingRecoveryActions||[]).slice(0,10).map(r=>`<tr><td>${badge(r.severity)}</td><td>${esc(r.module)}</td><td>${esc(r.action)}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No pending recovery actions.</td></tr>'
+  }</tbody>`;
+  document.getElementById('incidentTable').innerHTML=`<thead><tr><th>Severity</th><th>Module</th><th>Incident</th><th>Status</th><th>Opened</th><th>Action</th></tr></thead><tbody>${
+    (d.activeIncidents||[]).slice(0,12).map(r=>`<tr><td>${badge(r.severity)}</td><td>${esc(r.module)}</td><td><b>${esc(r.title)}</b><div class="muted">${esc(r.description)}</div></td><td>${badge(r.status)}</td><td>${esc(new Date(r.createdAt||r.timestamp||Date.now()).toLocaleString())}</td><td><button class="btn alt" onclick="resolveIncident('${esc(r.incidentId)}')">Resolve</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">No active incidents.</td></tr>'
+  }</tbody>`;
+  document.getElementById('errorTable').innerHTML=`<thead><tr><th>Severity</th><th>Module</th><th>Action</th><th>Error</th><th>Time</th></tr></thead><tbody>${
+    (d.recentErrors||[]).map(r=>`<tr><td>${badge(r.severity)}</td><td>${esc(r.module)}</td><td>${esc(r.action)}</td><td>${esc(r.message)}</td><td>${esc(new Date(r.occurredAt||r.createdAt||Date.now()).toLocaleString())}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No service errors logged.</td></tr>'
+  }</tbody>`;
+  document.getElementById('metricTable').innerHTML=`<thead><tr><th>Status</th><th>Module</th><th>Operation</th><th>Duration</th><th>Time</th></tr></thead><tbody>${
+    (d.recentMetrics||[]).map(r=>`<tr><td>${badge(r.status)}</td><td>${esc(r.module)}</td><td>${esc(r.operation)}</td><td>${esc(r.durationMs)}ms</td><td>${esc(new Date(r.recordedAt||r.createdAt||Date.now()).toLocaleString())}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No performance metrics logged.</td></tr>'
+  }</tbody>`;
+  const signals=[...(d.importFailures||[]).map(r=>({module:'Import',label:r.importType||r.type,status:r.status,detail:r.fileName||r.importBatchId})),...(d.payrollIssues||[]).map(r=>({module:'Payroll',label:r.title||r.payrollId||r.id,status:r.status||r.payrollStatus,detail:r.empId||''}))];
+  document.getElementById('signalTable').innerHTML=`<thead><tr><th>Module</th><th>Signal</th><th>Status</th><th>Detail</th></tr></thead><tbody>${
+    signals.slice(0,10).map(r=>`<tr><td>${esc(r.module)}</td><td>${esc(r.label)}</td><td>${badge(r.status)}</td><td>${esc(r.detail)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No import or payroll signals.</td></tr>'
+  }</tbody>`;
+  const links=[...(d.deploymentLogs||[]).map(r=>({type:'Deployment',action:r.action||r.type,detail:r.message||r.description,time:r.createdAt||r.timestamp})),...(d.auditLogs||[]).map(r=>({type:'Audit',action:r.action||r.actionType,detail:r.description,time:r.date||r.createdAt}))];
+  document.getElementById('auditTable').innerHTML=`<thead><tr><th>Type</th><th>Action</th><th>Detail</th><th>Time</th></tr></thead><tbody>${
+    links.slice(0,10).map(r=>`<tr><td>${esc(r.type)}</td><td>${esc(r.action)}</td><td>${esc(r.detail)}</td><td>${esc(r.time?new Date(r.time).toLocaleString():'')}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No audit or deployment records yet.</td></tr>'
+  }</tbody>`;
+}
+function runHealth(){operationsMonitoringService.runHealthCheck();toast('Health check complete');render();}
+function resolveIncident(id){operationsMonitoringService.resolveIncident(id,'Resolved from Operations Monitoring Center',actor());toast('Incident resolved');render();}
+function cleanupLogs(){operationsMonitoringService.cleanupRetention();toast('Retention cleanup complete');render();}
+function createCheckpoint(){deploymentSafetyService.createRecoveryCheckpoint?.({actor:actor(),reason:'Operations monitoring recovery checkpoint'});toast('Recovery checkpoint created');render();}
+function simulateIncident(){operationsMonitoringService.createIncident({severity:'MEDIUM',module:'Operations',title:'Manual test incident',description:'Created from Operations Monitoring Center for verification.',source:'manual'},actor());toast('Test incident logged');render();}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Policy Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/tenantIsolationService.js"></script>
+    <script src="services/leaveAttendanceGovernanceService.js"></script>
+    <script src="services/workingCalendarConfigurationService.js"></script>
+    <script src="services/attendancePolicyConfigurationService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--ink:#111827;--muted:#64748b;--bg:#f6f8fb;--line:#dbe4ef;--blue:#2563eb;--green:#047857;--amber:#b45309;--red:#b91c1c;--nav:#0f172a}
+        body{font-family:"Inter","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:292px 1fr;min-height:100vh}
+        .side{background:var(--nav);color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:8px;background:var(--blue);display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#102033}.btn.good{background:var(--green)}
+        .mini-input{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;color:#102033;font-weight:800;min-width:138px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px;border-left:4px solid var(--blue)}.metric.good{border-left-color:var(--green)}.metric.warn{border-left-color:var(--amber)}.metric.bad{border-left-color:var(--red)}.metric b{display:block;font-size:1.35rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}table{width:100%;border-collapse:collapse;min-width:920px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.warnb{background:#fef3c7;color:#92400e}.info{background:#dbeafe;color:#1d4ed8}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">AP</div>
+            <div><h1>Attendance Policy Center</h1><p>Enterprise time governance</p></div>
+        </div>
+        <nav class="nav" aria-label="Attendance policy sections">
+            <button class="on" onclick="showSection('library',this)">Policy Library</button>
+            <button onclick="showSection('assignments',this)">Assignments</button>
+            <button onclick="showSection('hours',this)">Working Hours</button>
+            <button onclick="showSection('late',this)">Late Rules</button>
+            <button onclick="showSection('early',this)">Early Exit Rules</button>
+            <button onclick="showSection('overtime',this)">Overtime Rules</button>
+            <button onclick="showSection('simulation',this)">Simulation</button>
+            <button onclick="showSection('analytics',this)">Analytics</button>
+            <a href="working-calendar-center.html">Working Calendar</a>
+            <a href="leave-policy-center.html">Leave Policy Center</a>
+            <a href="platform-control.html">Platform Control</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Enterprise Attendance Policy Configuration</h2>
+                <p>Configure multi-country, multi-company, multi-location, and multi-shift attendance rules with versioned governance, read-only simulation, and tenant-scoped analytics.</p>
+            </div>
+            <div class="toolbar">
+                <span class="pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn good" onclick="runSampleSimulation()">Simulate Late Arrival</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="metricBox"></div>
+
+        <section class="section on" id="section-library"><div class="panel"><h3>Policy Library</h3><div class="table-wrap"><table id="libraryTable"></table></div></div></section>
+        <section class="section" id="section-assignments"><div class="panel"><h3>Assignments</h3><div class="table-wrap"><table id="assignmentTable"></table></div></div></section>
+        <section class="section" id="section-hours"><div class="panel"><h3>Working Hours</h3><div class="table-wrap"><table id="hoursTable"></table></div></div></section>
+        <section class="section" id="section-late"><div class="panel"><h3>Late Rules</h3><div class="table-wrap"><table id="lateTable"></table></div></div></section>
+        <section class="section" id="section-early"><div class="panel"><h3>Early Exit Rules</h3><div class="table-wrap"><table id="earlyTable"></table></div></div></section>
+        <section class="section" id="section-overtime"><div class="panel"><h3>Overtime Rules</h3><div class="table-wrap"><table id="overtimeTable"></table></div></div></section>
+        <section class="section" id="section-simulation"><div class="panel"><h3>Simulation</h3><p class="muted" style="margin-bottom:10px">Simulations are read-only and do not update historical attendance or payroll calculations.</p><div class="table-wrap"><table id="simulationTable"></table></div></div></section>
+        <section class="section" id="section-analytics"><div class="panel"><h3>Analytics</h3><div class="table-wrap"><table id="analyticsTable"></table></div></div></section>
+    </main>
+</div>
+
+<script>
+let latestDashboard = null;
+
+function currentTenant() {
+    try { return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim() || undefined); }
+    catch (error) { return ''; }
+}
+
+function actorContext() {
+    const user = authService.getCurrentUser() || {};
+    return { tenantSlug: currentTenant(), actor: user };
+}
+
+function showError(message) {
+    const node = document.getElementById('errorBox');
+    node.textContent = message || '';
+    node.classList.toggle('on', !!message);
+}
+
+function showSection(name, button) {
+    document.querySelectorAll('.section').forEach(node => node.classList.remove('on'));
+    document.getElementById('section-' + name).classList.add('on');
+    document.querySelectorAll('.nav button').forEach(node => node.classList.remove('on'));
+    if (button) button.classList.add('on');
+}
+
+function renderTable(id, columns, rows) {
+    const table = document.getElementById(id);
+    const safeRows = rows || [];
+    table.innerHTML = '<thead><tr>' + columns.map(c => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+        safeRows.map(row => '<tr>' + columns.map(c => '<td>' + (c.render ? c.render(row) : (row[c.key] ?? '')) + '</td>').join('') + '</tr>').join('') +
+        (safeRows.length ? '' : '<tr><td colspan="' + columns.length + '">No records yet.</td></tr>') +
+        '</tbody>';
+}
+
+function renderMetrics(dashboard) {
+    const analytics = dashboard.analytics || {};
+    document.getElementById('metricBox').innerHTML = [
+        ['Policies', dashboard.policyLibrary?.length || 0, 'good'],
+        ['Published', analytics.publishedPolicies || 0, 'good'],
+        ['Late', analytics.lateArrivals || 0, (analytics.lateArrivals || 0) ? 'warn' : 'good'],
+        ['Compliance', dashboard.policyComplianceScore || 0, 'good'],
+        ['Discipline', dashboard.workforceDisciplineScore || 0, 'good']
+    ].map(item => '<div class="metric ' + item[2] + '"><b>' + item[1] + '</b><span>' + item[0] + '</span></div>').join('');
+}
+
+function renderDashboard(dashboard) {
+    latestDashboard = dashboard;
+    renderMetrics(dashboard);
+    renderTable('libraryTable', [
+        { label: 'Policy', key: 'policyName' },
+        { label: 'Code', key: 'policyCode' },
+        { label: 'Mode', key: 'mode' },
+        { label: 'Status', key: 'status', render: row => '<span class="badge ' + (row.status === 'PUBLISHED' ? 'ok' : 'info') + '">' + row.status + '</span>' },
+        { label: 'Version', key: 'version' },
+        { label: 'Priority', key: 'priority' }
+    ], dashboard.policyLibrary || []);
+    renderTable('assignmentTable', [
+        { label: 'Policy', key: 'policyId' },
+        { label: 'Departments', render: row => (row.assignments?.departments || []).join(', ') },
+        { label: 'Locations', render: row => (row.assignments?.locations || []).join(', ') },
+        { label: 'Grades', render: row => (row.assignments?.grades || []).join(', ') },
+        { label: 'Shifts', render: row => (row.assignments?.shifts || []).join(', ') }
+    ], dashboard.assignments || []);
+    renderTable('hoursTable', [
+        { label: 'Policy', key: 'policyId' },
+        { label: 'Start', render: row => row.workingHours?.officeStartTime || '' },
+        { label: 'End', render: row => row.workingHours?.officeEndTime || '' },
+        { label: 'Minimum', render: row => row.workingHours?.minimumHours || 0 },
+        { label: 'Maximum', render: row => row.workingHours?.maximumHours || 0 },
+        { label: 'Timezone', render: row => row.workingHours?.timezone || '' }
+    ], dashboard.workingHours || []);
+    renderTable('lateTable', [
+        { label: 'Policy', key: 'policyId' },
+        { label: 'Grace Minutes', render: row => row.lateRules?.graceMinutes || 0 },
+        { label: 'Late Mark', render: row => row.lateRules?.lateMark !== false },
+        { label: 'Repeated Limit', render: row => row.lateRules?.repeatedLateLimit || 0 },
+        { label: 'Escalation', render: row => row.lateRules?.escalation?.enabled === true }
+    ], dashboard.lateRules || []);
+    renderTable('earlyTable', [
+        { label: 'Policy', key: 'policyId' },
+        { label: 'Threshold Minutes', render: row => row.earlyExitRules?.thresholdMinutes || 0 },
+        { label: 'Grace Minutes', render: row => row.earlyExitRules?.graceMinutes || 0 },
+        { label: 'Approval Required', render: row => row.earlyExitRules?.approvalRequired !== false },
+        { label: 'Auto Deduction', render: row => row.earlyExitRules?.autoDeduction === true }
+    ], dashboard.earlyExitRules || []);
+    renderTable('overtimeTable', [
+        { label: 'Policy', key: 'policyId' },
+        { label: 'Daily OT', render: row => row.overtimeRules?.dailyOT === true },
+        { label: 'Holiday OT', render: row => row.overtimeRules?.holidayOT === true },
+        { label: 'Maximum Minutes', render: row => row.overtimeRules?.maximumOTMinutes || 0 },
+        { label: 'Payroll Prepared', render: row => row.overtimeRules?.payrollIntegration === true }
+    ], dashboard.overtimeRules || []);
+    renderTable('simulationTable', [
+        { label: 'Supported Scenario', key: 'scenario' }
+    ], (dashboard.simulation?.latestSupportedScenarios || []).map(scenario => ({ scenario })));
+    renderTable('analyticsTable', [
+        { label: 'Metric', key: 'metric' },
+        { label: 'Value', key: 'value' }
+    ], Object.entries(dashboard.analytics || {}).filter(([, value]) => typeof value !== 'object').map(([metric, value]) => ({ metric, value })));
+}
+
+function runSampleSimulation() {
+    const firstPolicy = latestDashboard?.policyLibrary?.[0];
+    if (!firstPolicy) return showError('Create an attendance policy before running simulations.');
+    const result = AttendancePolicyConfigurationService.simulateAttendancePolicy({ tenantSlug: currentTenant(), policyId: firstPolicy.policyId, scenario: 'LATE_ARRIVAL' }, actorContext());
+    if (!result.success) return showError((result.issues || []).map(i => i.message).join('\n'));
+    showError('Simulation completed without modifying historical attendance or payroll calculations.');
+}
+
+function refreshCenter() {
+    document.getElementById('tenantBadge').textContent = currentTenant();
+    const dashboard = AttendancePolicyConfigurationService.generatePolicyDashboard({ tenantSlug: currentTenant() }, actorContext());
+    if (!dashboard.success) return showError((dashboard.issues || []).map(i => i.message).join('\n'));
+    showError('');
+    renderDashboard(dashboard);
+}
+
+document.addEventListener('DOMContentLoaded', function init() {
+    try { DB.init(); DB.migrate(); } catch (error) {}
+    document.getElementById('tenantScope').value = currentTenant();
+    refreshCenter();
+});
+</script>
+</body>
+</html>

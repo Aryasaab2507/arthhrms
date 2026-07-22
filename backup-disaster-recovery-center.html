@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Disaster Recovery Center | ArthHRMS</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #17212e;
+            --muted: #667085;
+            --line: #d7dee8;
+            --surface: #fff;
+            --canvas: #f2f5f8;
+            --nav: #111923;
+            --nav-soft: #202b38;
+            --blue: #1769e0;
+            --blue-soft: #eaf2ff;
+            --green: #138a59;
+            --green-soft: #e7f6ef;
+            --amber: #b75d00;
+            --amber-soft: #fff3df;
+            --red: #c43232;
+            --red-soft: #fdecec;
+            --violet: #6b4cc7;
+            --cyan: #087f8c;
+            --radius: 6px;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--canvas); color: var(--ink); font-size: 14px; }
+        button, input, select, textarea { font: inherit; letter-spacing: 0; }
+        button { cursor: pointer; }
+        .app { min-height: 100vh; display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+        .sidebar { background: var(--nav); color: #e7edf6; padding: 18px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; border-bottom: 1px solid #2e3947; }
+        .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; background: #eaf2ff; color: #135bc1; border-radius: 6px; font-weight: 800; }
+        .brand strong { display: block; font-size: 14px; }
+        .brand small { display: block; color: #9eabba; margin-top: 2px; }
+        .nav-label { color: #8795a7; font-size: 11px; font-weight: 700; text-transform: uppercase; margin: 18px 9px 7px; }
+        .nav-link { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: #c6d0dc; background: transparent; border: 0; border-radius: 5px; text-align: left; }
+        .nav-link:hover, .nav-link.active { color: white; background: var(--nav-soft); }
+        .nav-icon { width: 20px; height: 20px; border: 1px solid #637184; border-radius: 4px; display: grid; place-items: center; font-size: 10px; flex: 0 0 20px; }
+        .guard { margin: 20px 4px 0; padding: 12px; border: 1px solid #354253; border-radius: 6px; }
+        .guard strong { display: block; margin-bottom: 8px; }
+        .guard-line { display: flex; justify-content: space-between; gap: 8px; color: #aeb9c6; font-size: 12px; margin-top: 7px; }
+        .guard-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+        .workspace { min-width: 0; }
+        .topbar { min-height: 64px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 24px; position: sticky; top: 0; z-index: 10; }
+        .topbar h1 { font-size: 18px; margin: 0; }
+        .topbar p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+        .top-actions { display: flex; gap: 10px; align-items: center; }
+        .tenant-badge { border-left: 3px solid var(--blue); padding: 5px 10px; background: #f7f9fc; min-width: 130px; }
+        .tenant-badge small { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+        .tenant-badge strong { display: block; margin-top: 2px; }
+        .content { padding: 20px 24px 36px; max-width: 1700px; margin: 0 auto; }
+        .toolbar { display: flex; justify-content: space-between; align-items: end; gap: 14px; padding-bottom: 18px; }
+        .toolbar-fields, .button-row { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+        .field { display: grid; gap: 5px; min-width: 145px; }
+        .field label { font-size: 11px; color: var(--muted); font-weight: 700; }
+        .field input, .field select, .field textarea { width: 100%; min-height: 36px; border: 1px solid #bcc6d3; border-radius: 5px; background: #fff; color: var(--ink); padding: 8px 10px; }
+        .field textarea { min-height: 72px; resize: vertical; }
+        .btn { min-height: 36px; border: 1px solid #b8c2cf; border-radius: 5px; background: #fff; color: #263445; padding: 7px 12px; font-weight: 650; }
+        .btn:hover { background: #f6f8fb; }
+        .btn.primary { color: white; background: var(--blue); border-color: var(--blue); }
+        .btn.danger { color: var(--red); border-color: #dfaaaa; }
+        .btn:disabled { opacity: .48; cursor: not-allowed; }
+        .notice { display: flex; align-items: flex-start; gap: 10px; border: 1px solid #c8d8ef; border-left: 4px solid var(--blue); border-radius: 5px; background: #f7faff; padding: 10px 12px; margin-bottom: 16px; color: #30425a; }
+        .notice-symbol { width: 20px; height: 20px; border: 1px solid var(--blue); color: var(--blue); border-radius: 50%; display: grid; place-items: center; font-weight: 800; flex: 0 0 20px; }
+        .notice strong { color: #173c6b; }
+        .notice p { margin: 2px 0 0; font-size: 12px; }
+        .score-grid { display: grid; grid-template-columns: repeat(5, minmax(145px, 1fr)); border: 1px solid var(--line); background: #fff; border-radius: var(--radius); overflow: hidden; }
+        .score { min-height: 108px; padding: 15px; border-right: 1px solid var(--line); position: relative; }
+        .score:last-child { border-right: 0; }
+        .score-label { color: var(--muted); font-size: 10px; font-weight: 750; text-transform: uppercase; }
+        .score-value { font-size: 27px; line-height: 1; font-weight: 780; margin-top: 9px; }
+        .score-meta { color: var(--muted); font-size: 11px; margin-top: 9px; }
+        .score-bar { height: 4px; background: #e6eaf0; position: absolute; left: 15px; right: 15px; bottom: 12px; border-radius: 3px; overflow: hidden; }
+        .score-bar span { display: block; width: 0; height: 100%; background: var(--blue); transition: width .2s ease; }
+        .grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .85fr); gap: 16px; align-items: start; margin-top: 16px; }
+        .grid > * { min-width: 0; }
+        .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+        .panel + .panel { margin-top: 16px; }
+        .panel-head { min-height: 49px; padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+        .panel-head h2 { font-size: 14px; margin: 0; }
+        .panel-head p { color: var(--muted); font-size: 11px; margin: 3px 0 0; }
+        .panel-body { padding: 14px; }
+        .chart-wrap { height: 230px; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .legend { display: flex; gap: 12px; color: var(--muted); font-size: 11px; }
+        .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+        .objective-grid { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); gap: 8px; }
+        .objective { border-left: 3px solid var(--blue); background: #f7f9fc; padding: 9px 10px; min-width: 0; }
+        .objective small { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+        .objective strong { display: block; font-size: 18px; margin-top: 4px; }
+        .run-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+        .summary-item { min-width: 0; padding-bottom: 8px; border-bottom: 1px solid #edf0f4; }
+        .summary-item small { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+        .summary-item strong { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+        .summary-wide { grid-column: 1 / -1; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; }
+        .observation-form { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); gap: 10px; }
+        .observation-form .span-2 { grid-column: span 2; }
+        .observation-form .wide { grid-column: 1 / -1; }
+        .form-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 4px; }
+        .form-foot small { color: var(--muted); max-width: 570px; }
+        .tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--line); background: #fafbfc; }
+        .tab { border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--muted); padding: 10px 13px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+        .tab.active { color: var(--blue); background: #fff; box-shadow: inset 0 -2px var(--blue); }
+        .table-wrap { overflow: auto; max-height: 410px; }
+        table { width: 100%; min-width: 830px; border-collapse: collapse; }
+        th { position: sticky; top: 0; z-index: 1; background: #f7f8fa; color: #586678; text-align: left; font-size: 10px; text-transform: uppercase; padding: 9px 11px; border-bottom: 1px solid var(--line); }
+        td { padding: 10px 11px; border-bottom: 1px solid #edf0f4; vertical-align: top; }
+        tr:hover td { background: #fbfcfe; }
+        .pill { display: inline-flex; align-items: center; min-height: 23px; padding: 3px 7px; border-radius: 999px; font-size: 10px; font-weight: 750; white-space: nowrap; }
+        .pill.passed, .pill.completed, .pill.ready { color: #126b45; background: var(--green-soft); }
+        .pill.failed, .pill.critical, .pill.go_live_blocked { color: #9c2828; background: var(--red-soft); }
+        .pill.blocked, .pill.high, .pill.paused, .pill.scheduled { color: #8b4c00; background: var(--amber-soft); }
+        .pill.running, .pill.medium { color: #175aab; background: var(--blue-soft); }
+        .pill.not_executed, .pill.not_applicable, .pill.rolled_back, .pill.low, .pill.info { color: #596779; background: #edf1f5; }
+        .timeline { margin: 0; padding: 0; list-style: none; max-height: 310px; overflow-y: auto; }
+        .timeline li { position: relative; padding: 0 0 14px 20px; border-left: 1px solid #d9e0e9; margin-left: 6px; }
+        .timeline li::before { content: ""; width: 8px; height: 8px; background: var(--blue); border-radius: 50%; position: absolute; left: -5px; top: 4px; }
+        .timeline strong { display: block; font-size: 12px; }
+        .timeline small { color: var(--muted); font-size: 10px; }
+        .recommendations { list-style: none; margin: 0; padding: 0; }
+        .recommendations li { padding: 10px 0 10px 18px; border-bottom: 1px solid #edf0f4; position: relative; line-height: 1.4; }
+        .recommendations li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); position: absolute; left: 2px; top: 16px; }
+        .report-tools { display: grid; grid-template-columns: minmax(150px, 1fr) auto auto; gap: 8px; }
+        .drill-form { display: grid; gap: 9px; }
+        .drill-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .empty { min-height: 110px; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 22px; }
+        .toast { position: fixed; right: 20px; bottom: 20px; max-width: 380px; background: #182230; color: #fff; padding: 11px 14px; border-radius: 5px; box-shadow: 0 8px 28px rgba(10,20,35,.22); z-index: 30; display: none; }
+        .toast.error { background: #8d2424; }
+        @media (max-width: 1320px) {
+            .objective-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 1180px) {
+            .score-grid { grid-template-columns: repeat(3, minmax(145px, 1fr)); }
+            .score { border-bottom: 1px solid var(--line); }
+            .grid { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 780px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; padding: 10px 12px; }
+            .brand { padding-bottom: 10px; }
+            .nav-label, .guard { display: none; }
+            .nav-scroll { display: flex; overflow-x: auto; padding-top: 8px; }
+            .nav-link { min-width: max-content; width: auto; }
+            .topbar { position: static; padding: 12px 15px; align-items: flex-start; }
+            .top-actions { display: none; }
+            .content { padding: 14px 12px 28px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-fields { display: grid; grid-template-columns: 1fr 1fr; }
+            .field { min-width: 0; }
+            .score-grid { grid-template-columns: 1fr 1fr; }
+            .score:nth-child(even) { border-right: 0; }
+            .observation-form { grid-template-columns: 1fr 1fr; }
+            .observation-form .span-2 { grid-column: span 2; }
+            .objective-grid { grid-template-columns: 1fr 1fr; }
+            .report-tools { grid-template-columns: 1fr 1fr; }
+            .report-tools select { grid-column: 1 / -1; }
+        }
+        @media (max-width: 450px) {
+            .toolbar-fields, .score-grid, .run-summary, .observation-form, .objective-grid, .drill-row { grid-template-columns: 1fr; }
+            .score { border-right: 0; }
+            .observation-form .span-2, .observation-form .wide, .form-foot { grid-column: 1; }
+            .form-foot { flex-direction: column; align-items: stretch; }
+            .button-row .btn { flex: 1 1 135px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand"><div class="brand-mark">AH</div><div><strong>ArthHRMS</strong><small>Recovery Assurance</small></div></div>
+        <div class="nav-label">Continuity Center</div>
+        <div class="nav-scroll">
+            <button class="nav-link active" data-target="overview"><span class="nav-icon">01</span>Overview</button>
+            <button class="nav-link" data-target="backup"><span class="nav-icon">02</span>Backup & Restore</button>
+            <button class="nav-link" data-target="disaster"><span class="nav-icon">03</span>Disaster Recovery</button>
+            <button class="nav-link" data-target="continuity"><span class="nav-icon">04</span>Business Continuity</button>
+            <button class="nav-link" data-target="drills"><span class="nav-icon">05</span>DR Drills</button>
+            <button class="nav-link" data-target="reports"><span class="nav-icon">06</span>Reports</button>
+        </div>
+        <div class="guard"><strong>Recovery guard</strong><div class="guard-line"><span><i class="guard-dot"></i>Observation only</span><span>On</span></div><div class="guard-line"><span>Live restore</span><span>Blocked</span></div><div class="guard-line"><span>Production mutation</span><span>Blocked</span></div><div class="guard-line"><span>Failure injection</span><span>Blocked</span></div></div>
+    </aside>
+    <main class="workspace">
+        <header class="topbar"><div><h1>Backup & Disaster Recovery Center</h1><p>UAT-08 recovery, continuity, integrity, and tenant assurance</p></div><div class="top-actions"><div class="tenant-badge"><small>Tenant scope</small><strong id="tenantTop">-</strong></div><span class="pill not_executed" id="runStateTop">No active run</span></div></header>
+        <div class="content">
+            <section class="toolbar" id="overview">
+                <div class="toolbar-fields"><div class="field"><label for="tenantInput">Tenant</label><input id="tenantInput" value="tabsons"></div><div class="field"><label for="environmentInput">Environment</label><select id="environmentInput"><option>UAT</option><option>DR_TEST</option><option>STAGING</option><option>PRE_PRODUCTION</option><option>SANDBOX</option></select></div></div>
+                <div class="button-row"><button class="btn" id="initButton">Initialize controls</button><button class="btn primary" id="startButton">Start validation</button><button class="btn" id="pauseButton" disabled>Pause</button><button class="btn" id="resumeButton" disabled>Resume</button><button class="btn" id="completeButton" disabled>Complete</button><button class="btn danger" id="rollbackButton" disabled>Rollback test</button></div>
+            </section>
+            <div class="notice"><div class="notice-symbol">i</div><div><strong>Isolated recovery evidence</strong><p>This center records approved sandbox, review, and tabletop outcomes. It never restores production data, injects live failures, changes infrastructure, or performs failover.</p></div></div>
+            <section class="score-grid" aria-label="Recovery readiness scores">
+                <article class="score"><div class="score-label">Backup health</div><div class="score-value" id="backupScore">0</div><div class="score-meta">Integrity and coverage</div><div class="score-bar"><span id="backupBar"></span></div></article>
+                <article class="score"><div class="score-label">Recovery score</div><div class="score-value" id="recoveryScore">0</div><div class="score-meta">Restore accuracy</div><div class="score-bar"><span id="recoveryBar" style="background:var(--green)"></span></div></article>
+                <article class="score"><div class="score-label">Business continuity</div><div class="score-value" id="continuityScore">0</div><div class="score-meta">Operational resilience</div><div class="score-bar"><span id="continuityBar" style="background:var(--violet)"></span></div></article>
+                <article class="score"><div class="score-label">Infrastructure recovery</div><div class="score-value" id="infrastructureScore">0</div><div class="score-meta">Failure readiness</div><div class="score-bar"><span id="infrastructureBar" style="background:var(--cyan)"></span></div></article>
+                <article class="score"><div class="score-label">Disaster readiness</div><div class="score-value" id="readinessScore">0</div><div class="score-meta" id="coverageMeta">0 / 0 controls</div><div class="score-bar"><span id="readinessBar" style="background:var(--amber)"></span></div></article>
+            </section>
+            <div class="grid">
+                <div>
+                    <section class="panel" id="backup"><div class="panel-head"><div><h2>Recovery domain posture</h2><p>Recorded result score and execution coverage by recovery domain</p></div><div class="legend"><span><i style="background:var(--blue)"></i>Score</span><span><i style="background:#cfd7e2"></i>Coverage</span></div></div><div class="panel-body"><div class="chart-wrap"><canvas id="recoveryChart" aria-label="Recovery domain score chart"></canvas></div></div></section>
+                    <section class="panel" id="disaster">
+                        <div class="panel-head"><div><h2>Record recovery observation</h2><p>Objective measurements and fingerprinted evidence</p></div><span class="pill not_executed">No live execution</span></div>
+                        <div class="panel-body"><form class="observation-form" id="observationForm">
+                            <div class="field span-2"><label for="domainInput">Domain</label><select id="domainInput"></select></div><div class="field span-2"><label for="controlInput">Control</label><select id="controlInput"></select></div>
+                            <div class="field"><label for="statusInput">Observed status</label><select id="statusInput"><option>PASSED</option><option>FAILED</option><option>BLOCKED</option><option>NOT_APPLICABLE</option></select></div><div class="field"><label for="rtoInput">RTO target (min)</label><input id="rtoInput" type="number" min="0" value="60"></div><div class="field"><label for="durationInput">Recovery time (min)</label><input id="durationInput" type="number" min="0" value="30"></div><div class="field"><label for="downtimeInput">Downtime (min)</label><input id="downtimeInput" type="number" min="0" value="10"></div>
+                            <div class="field"><label for="rpoInput">RPO target (min)</label><input id="rpoInput" type="number" min="0" value="15"></div><div class="field"><label for="pointInput">Recovery point age</label><input id="pointInput" type="number" min="0" value="5"></div><div class="field"><label for="lossInput">Data loss records</label><input id="lossInput" type="number" min="0" value="0"></div><div class="field"><label for="successInput">Success rate (%)</label><input id="successInput" type="number" min="0" max="100" value="100"></div>
+                            <div class="field"><label for="accuracyInput">Restore accuracy (%)</label><input id="accuracyInput" type="number" min="0" max="100" value="100"></div><div class="field"><label for="integrityInput">Integrity (%)</label><input id="integrityInput" type="number" min="0" max="100" value="100"></div><div class="field span-2"><label for="sourceInput">Evidence source</label><select id="sourceInput"><option>APPROVED_SANDBOX_OBSERVATION</option><option>BACKUP_INTEGRITY_REVIEW</option><option>RESTORE_REHEARSAL</option><option>TABLETOP</option><option>EXTERNAL_AUDIT</option></select></div>
+                            <div class="field wide"><label for="referenceInput">Evidence reference</label><input id="referenceInput" placeholder="Example: DR-REHEARSAL-2026-014" maxlength="180" required></div><div class="field wide"><label for="summaryInput">Observed result</label><textarea id="summaryInput" placeholder="Describe the isolated outcome without personal data, secrets, storage paths, or backup payloads." maxlength="1000" required></textarea></div>
+                            <div class="form-foot"><small>Missed RTO/RPO, corruption, data loss, tenant leakage, or any production mutation is converted into a critical failed observation.</small><button class="btn primary" type="submit" id="recordButton" disabled>Record observation</button></div>
+                        </form></div>
+                    </section>
+                    <section class="panel" id="continuity"><div class="panel-head"><div><h2>Recovery validation matrix</h2><p>Latest evidence for every in-scope control</p></div><span class="pill not_executed" id="matrixCount">0 controls</span></div><div class="tabs" id="domainTabs"></div><div class="table-wrap"><table><thead><tr><th>Control</th><th>Domain</th><th>Status</th><th>RTO</th><th>RPO</th><th>Recovery</th><th>Evidence</th></tr></thead><tbody id="matrixBody"></tbody></table></div></section>
+                </div>
+                <aside>
+                    <section class="panel"><div class="panel-head"><div><h2>Recovery objectives</h2><p>Measured across recorded observations</p></div><span class="pill not_executed" id="runState">Not started</span></div><div class="panel-body"><div class="objective-grid"><div class="objective"><small>RTO success</small><strong id="rtoRate">0%</strong></div><div class="objective"><small>RPO success</small><strong id="rpoRate">0%</strong></div><div class="objective"><small>Avg. recovery</small><strong id="avgRto">0m</strong></div><div class="objective"><small>Avg. point age</small><strong id="avgRpo">0m</strong></div></div><div class="run-summary" id="runSummary" style="margin-top:14px"><div class="empty summary-wide">Initialize controls and start a recovery UAT run.</div></div></div></section>
+                    <section class="panel" id="drills"><div class="panel-head"><div><h2>Disaster recovery drills</h2><p>Prepared schedules with live dispatch disabled</p></div><span class="pill not_executed" id="drillState">No drill</span></div><div class="panel-body"><div class="drill-form"><div class="drill-row"><div class="field"><label for="drillType">Drill type</label><select id="drillType"><option>QUARTERLY_DRILL</option><option>ANNUAL_DRILL</option><option>MANUAL_DRILL</option><option>SCHEDULED_DRILL</option></select></div><div class="field"><label for="drillScenario">Primary scenario</label><select id="drillScenario"></select></div></div><div class="button-row"><button class="btn" id="scheduleDrill" disabled>Prepare drill</button><button class="btn" id="recordDrill" disabled>Record outcome</button></div></div></div></section>
+                    <section class="panel"><div class="panel-head"><div><h2>Recovery timeline</h2><p>Immutable run and checkpoint events</p></div></div><div class="panel-body"><ul class="timeline" id="timeline"><li><strong>No recovery events</strong><small>Start a validation run.</small></li></ul></div></section>
+                    <section class="panel"><div class="panel-head"><div><h2>Recommendations</h2><p>Prioritized recovery gaps</p></div></div><div class="panel-body"><ul class="recommendations" id="recommendations"><li>Start a validation run to calculate recommendations.</li></ul></div></section>
+                    <section class="panel" id="reports"><div class="panel-head"><div><h2>Recovery reports</h2><p>Redacted, tenant-scoped exports</p></div></div><div class="panel-body"><div class="report-tools"><select id="reportType"><option value="EXECUTIVE_SUMMARY">Executive Summary</option><option value="BACKUP">Backup Report</option><option value="RESTORE">Restore Report</option><option value="RECOVERY">Recovery Report</option><option value="DISASTER_DRILL">Disaster Drill Report</option><option value="COMPLIANCE">Compliance Report</option></select><button class="btn" id="jsonExport" disabled>JSON</button><button class="btn" id="csvExport" disabled>CSV</button></div></div></section>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="db.js"></script>
+<script src="services/workflowTelemetryService.js"></script>
+<script src="services/auditService.js"></script>
+<script src="services/orchestrationMetricsService.js"></script>
+<script src="services/backupDisasterRecoveryValidationService.js"></script>
+<script>
+(function () {
+    'use strict';
+    if (window.DB && typeof DB.init === 'function') DB.init();
+    var svc = window.BackupDisasterRecoveryValidationService;
+    var state = { run: null, controls: [], dashboard: null, domain: 'ALL', drill: null };
+    var chartColors = { score: '#1769e0', coverage: '#cfd7e2', track: '#e5e9ef', text: '#667085' };
+    function byId(id) { return document.getElementById(id); }
+    function tenant(value) { return String(value || '').trim().toLowerCase().replace(/^tenant[-_]/, '').replace(/^ten[-_]/, '').replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
+    function activeUser() { return authService.getCurrentUser(); }
+    function context() { var user = activeUser(); var scope = tenant(byId('tenantInput').value || 'default'); return { tenantSlug: scope, actor: { id: user && (user.id || user.empId) || '', role: user && user.role || 'UNAUTHENTICATED', tenantSlug: scope } }; }
+    function scope() { return { tenantSlug: tenant(byId('tenantInput').value), environment: byId('environmentInput').value }; }
+    function escapeHtml(value) { var node = document.createElement('div'); node.textContent = String(value == null ? '' : value); return node.innerHTML; }
+    function pill(value) { return '<span class="pill ' + String(value || 'not_executed').toLowerCase() + '">' + escapeHtml(String(value || 'NOT EXECUTED').replace(/_/g, ' ')) + '</span>'; }
+    function show(message, error) { var toast = byId('toast'); toast.textContent = message; toast.className = 'toast' + (error ? ' error' : ''); toast.style.display = 'block'; clearTimeout(show.timer); show.timer = setTimeout(function () { toast.style.display = 'none'; }, 3300); }
+    function accepted(response, message) { if (!response || !response.success) { show(response && response.message || 'Operation failed safely.', true); return false; } show(message || response.message, false); return true; }
+    function formatDate(value) { if (!value) return '-'; var date = new Date(value); return Number.isFinite(date.getTime()) ? date.toLocaleString() : value; }
+    function number(id) { return Number(byId(id).value || 0); }
+    function setScore(id, bar, value) { var score = Math.round(Number(value || 0)); byId(id).textContent = score; byId(bar).style.width = Math.max(0, Math.min(100, score)) + '%'; }
+
+    function initialize() { var response = svc.initializeValidationLibrary(scope(), context()); if (!accepted(response)) return; loadControls(); refresh(); }
+    function loadControls() { var response = svc.listValidationLibrary(scope(), context()); state.controls = response.success ? response.controls : []; populateDomains(); }
+    function start() { var response = svc.startRecoveryValidationRun(Object.assign(scope(), { name: 'Enterprise Recovery UAT', seed: 'UAT-08-' + new Date().toISOString().slice(0,10), objectives: { rtoMinutes: number('rtoInput'), rpoMinutes: number('rpoInput'), maximumDowntimeMinutes: 60, maximumDataLossRecords: 0, minimumRecoverySuccessRate: 100 } }), context()); if (!accepted(response)) return; state.run = response.run; loadControls(); refresh(); }
+    function pause() { if (!state.run) return; var response = svc.pauseRecoveryValidationRun(Object.assign(scope(), { runId: state.run.runId, expectedVersion: state.run.version, reason: 'Operator pause.' }), context()); if (!accepted(response)) return; state.run = response.run; refresh(); }
+    function resume() { if (!state.run) return; var response = svc.resumeRecoveryValidationRun(Object.assign(scope(), { runId: state.run.runId, expectedVersion: state.run.version }), context()); if (!accepted(response)) return; state.run = response.run; refresh(); }
+    function complete() { if (!state.run) return; var response = svc.completeRecoveryValidationRun(Object.assign(scope(), { runId: state.run.runId, expectedVersion: state.run.version }), context()); if (!accepted(response, response && response.goLiveBlocked ? 'Validation completed with go-live blockers.' : 'Recovery validation completed.')) return; state.run = response.run; refresh(); }
+    function rollback() { if (!state.run) return; if (!window.confirm('Rollback this validation state? Production data will not be touched.')) return; var response = svc.rollbackRecoveryValidationRun(Object.assign(scope(), { runId: state.run.runId, reason: 'Operator requested validation-state rollback.' }), context()); if (!accepted(response)) return; state.run = response.run; refresh(); }
+    function recordObservation(event) { event.preventDefault(); if (!state.run) return; var code = byId('controlInput').value; var response = svc.recordValidationObservation(Object.assign(scope(), { runId: state.run.runId, expectedVersion: state.run.version, sourceTenantSlug: scope().tenantSlug, controlCode: code, status: byId('statusInput').value, rtoTargetMinutes: number('rtoInput'), rpoTargetMinutes: number('rpoInput'), recoveryDurationMinutes: number('durationInput'), recoveredDataPointAgeMinutes: number('pointInput'), downtimeMinutes: number('downtimeInput'), dataLossRecords: number('lossInput'), recoverySuccessRate: number('successInput'), restoreAccuracyPercent: number('accuracyInput'), integrityPercent: number('integrityInput'), actualResult: byId('summaryInput').value, submissionId: 'UI-' + Date.now() + '-' + code, evidence: { sourceType: byId('sourceInput').value, reference: byId('referenceInput').value, summary: byId('summaryInput').value } }), context()); if (!accepted(response)) return; state.run.version = response.runVersion; byId('referenceInput').value = ''; byId('summaryInput').value = ''; refresh(); }
+    function prepareDrill() { var response = svc.scheduleDisasterDrill(Object.assign(scope(), { runId: state.run && state.run.runId, drillType: byId('drillType').value, scenarios: [byId('drillScenario').value], name: 'Enterprise continuity drill', scheduleLabel: byId('drillType').value }), context()); if (!accepted(response)) return; state.drill = response.drill; refresh(); }
+    function recordDrill() { if (!state.drill) return; var response = svc.recordDisasterDrillOutcome(Object.assign(scope(), { drillId: state.drill.drillId, status: byId('statusInput').value, rtoTargetMinutes: number('rtoInput'), rpoTargetMinutes: number('rpoInput'), recoveryDurationMinutes: number('durationInput'), recoveredDataPointAgeMinutes: number('pointInput'), recoverySuccessRate: number('successInput'), restoreAccuracyPercent: number('accuracyInput'), tenantIsolationPreserved: true, evidenceReference: byId('referenceInput').value || 'RECORDED-DRILL-EVIDENCE', lessonsLearned: byId('summaryInput').value ? [byId('summaryInput').value] : [] }), context()); if (!accepted(response)) return; state.drill = response.drill; refresh(); }
+    function exportReport(format) { if (!state.run) return; var response = svc.exportRecoveryReport(Object.assign(scope(), { runId: state.run.runId, reportType: byId('reportType').value, format: format }), context()); if (!accepted(response)) return; var blob = new Blob([response.exportContent], { type: response.export.mimeType }); var link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = response.export.fileName; document.body.appendChild(link); link.click(); link.remove(); setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000); refresh(); }
+
+    function populateDomains() { var names = Object.keys(svc.DOMAINS); var select = byId('domainInput'); var previous = select.value; select.innerHTML = names.map(function (name) { return '<option value="' + name + '">' + name.replace(/_/g, ' ') + '</option>'; }).join(''); if (names.indexOf(previous) !== -1) select.value = previous; populateControls(); byId('domainTabs').innerHTML = ['ALL'].concat(names).map(function (name) { return '<button class="tab' + (state.domain === name ? ' active' : '') + '" data-domain="' + name + '">' + name.replace(/_/g, ' ') + '</button>'; }).join(''); byId('drillScenario').innerHTML = svc.DISASTER_SCENARIOS.map(function (name) { return '<option>' + name + '</option>'; }).join(''); }
+    function populateControls() { var domain = byId('domainInput').value; byId('controlInput').innerHTML = state.controls.filter(function (row) { return row.domain === domain; }).map(function (row) { return '<option value="' + escapeHtml(row.code) + '">' + escapeHtml(row.name) + '</option>'; }).join(''); }
+    function allRows(dashboard) { return [].concat(dashboard.backupStatus || [], dashboard.restoreStatus || [], dashboard.infrastructureHealth || [], dashboard.integrityStatus || [], dashboard.tenantRecovery || [], dashboard.securityStatus || [], dashboard.continuityStatus || []).filter(function (row, index, all) { return all.findIndex(function (candidate) { return candidate.controlCode === row.controlCode; }) === index; }); }
+
+    function refresh() { byId('tenantTop').textContent = scope().tenantSlug || '-'; var response = svc.generateRecoveryDashboard(Object.assign(scope(), { runId: state.run && state.run.runId }), context()); if (!response.success) { renderEmpty(); return; } state.dashboard = response; if (response.activeRun) state.run = Object.assign({}, state.run || {}, response.activeRun); if (response.drills && response.drills.length) state.drill = response.drills[0]; var a = response.analytics || { domainScores: {}, statusCounts: {}, recommendations: [] }; setScore('backupScore','backupBar',a.backupHealthScore); setScore('recoveryScore','recoveryBar',a.recoveryScore); setScore('continuityScore','continuityBar',a.businessContinuityScore); setScore('infrastructureScore','infrastructureBar',a.infrastructureRecoveryScore); setScore('readinessScore','readinessBar',a.disasterReadinessScore); byId('rtoRate').textContent = Math.round(a.rtoSuccessRate || 0) + '%'; byId('rpoRate').textContent = Math.round(a.rpoSuccessRate || 0) + '%'; byId('avgRto').textContent = (a.averageRecoveryTimeMinutes || 0) + 'm'; byId('avgRpo').textContent = (a.averageRecoveryPointAgeMinutes || 0) + 'm'; var counts = a.statusCounts || {}; var executed = (Number(counts.PASSED) || 0) + (Number(counts.FAILED) || 0) + (Number(counts.BLOCKED) || 0) + (Number(counts.NOT_APPLICABLE) || 0); byId('coverageMeta').textContent = executed + ' / ' + (state.run && state.run.controlCount || state.controls.length || 0) + ' controls'; renderRun(response.activeRun); renderChart(a.domainScores || {}); renderMatrix(response); renderTimeline(response.recoveryTimeline || []); renderRecommendations(a.recommendations || []); renderDrill(state.drill); updateButtons(response.activeRun); populateDomains(); }
+    function renderEmpty() { ['backup','recovery','continuity','infrastructure','readiness'].forEach(function (name) { setScore(name + 'Score', name + 'Bar', 0); }); renderRun(null); renderChart({}); renderTimeline([]); renderRecommendations([]); updateButtons(null); }
+    function renderRun(run) { byId('runState').outerHTML = pill(run ? run.status : 'NOT_EXECUTED').replace('<span ','<span id="runState" '); byId('runStateTop').outerHTML = pill(run ? (run.outcome || run.status) : 'NOT_EXECUTED').replace('<span ','<span id="runStateTop" '); var target = byId('runSummary'); if (!run) { target.innerHTML = '<div class="empty summary-wide">Initialize controls and start a recovery UAT run.</div>'; return; } target.innerHTML = '<div class="summary-item"><small>Run ID</small><strong class="mono">' + escapeHtml(run.runId) + '</strong></div><div class="summary-item"><small>Environment</small><strong>' + escapeHtml(run.environment) + '</strong></div><div class="summary-item"><small>Status</small><strong>' + escapeHtml(run.status) + '</strong></div><div class="summary-item"><small>Outcome</small><strong>' + escapeHtml(run.outcome || 'IN PROGRESS') + '</strong></div><div class="summary-item summary-wide"><small>Manifest fingerprint</small><strong class="mono">' + escapeHtml(run.manifestFingerprint) + '</strong></div><div class="summary-item"><small>Repeatable</small><strong>' + (run.repeatable ? 'Yes' : 'No') + '</strong></div><div class="summary-item"><small>Reversible</small><strong>' + (run.reversible ? 'Yes' : 'No') + '</strong></div>'; }
+    function updateButtons(run) { var running = run && run.status === 'RUNNING'; var paused = run && run.status === 'PAUSED'; byId('startButton').disabled = !!(running || paused); byId('pauseButton').disabled = !running; byId('resumeButton').disabled = !paused; byId('completeButton').disabled = !(running || paused); byId('rollbackButton').disabled = !run || run.status === 'ROLLED_BACK'; byId('recordButton').disabled = !running; byId('scheduleDrill').disabled = !run; byId('recordDrill').disabled = !state.drill || ['COMPLETED','FAILED'].indexOf(state.drill.status) !== -1; byId('jsonExport').disabled = !run; byId('csvExport').disabled = !run; }
+    function renderDrill(drill) { byId('drillState').outerHTML = pill(drill ? drill.status : 'NOT_EXECUTED').replace('<span ','<span id="drillState" '); }
+    function renderChart(scores) { var canvas = byId('recoveryChart'); var ratio = window.devicePixelRatio || 1; var rect = canvas.getBoundingClientRect(); canvas.width = Math.max(640, Math.floor(rect.width * ratio)); canvas.height = Math.max(230, Math.floor(rect.height * ratio)); var ctx = canvas.getContext('2d'); ctx.scale(ratio,ratio); var width = canvas.width / ratio; var height = canvas.height / ratio; ctx.clearRect(0,0,width,height); var entries = Object.keys(svc.DOMAINS).map(function (name) { return { name:name, score:scores[name] ? scores[name].score : 0, coverage:scores[name] ? scores[name].coverage : 0 }; }); var left=142,right=30,top=10,rowHeight=(height-top-8)/entries.length; entries.forEach(function (row,index) { var y=top+index*rowHeight; ctx.fillStyle=chartColors.text; ctx.font='10px Segoe UI'; ctx.textAlign='right'; ctx.fillText(row.name.replace(/_/g,' '),left-10,y+12); ctx.fillStyle=chartColors.track; ctx.fillRect(left,y+2,width-left-right,12); ctx.fillStyle=chartColors.coverage; ctx.fillRect(left,y+2,(width-left-right)*row.coverage/100,12); ctx.fillStyle=chartColors.score; ctx.fillRect(left,y+5,(width-left-right)*row.score/100,6); ctx.fillStyle=chartColors.text; ctx.textAlign='left'; ctx.fillText(Math.round(row.score)+'%',width-right+4,y+12); }); }
+    function renderMatrix(dashboard) { var map={}; allRows(dashboard).forEach(function (row) { map[row.controlCode]=row; }); var rows=state.controls.filter(function (row) { return state.domain==='ALL'||row.domain===state.domain; }).map(function (control) { return Object.assign({},control,map[control.code]||{status:'NOT_EXECUTED',metrics:{},evidenceId:''}); }); byId('matrixCount').textContent=rows.length+' controls'; byId('matrixBody').innerHTML=rows.length?rows.map(function (row) { var m=row.metrics||{}; return '<tr><td><strong>'+escapeHtml(row.name||row.controlName)+'</strong><br><span class="mono">'+escapeHtml(row.code||row.controlCode)+'</span></td><td>'+escapeHtml(row.domain.replace(/_/g,' '))+'</td><td>'+pill(row.status)+'</td><td>'+pill(typeof m.rtoMet==='boolean'?(m.rtoMet?'PASSED':'FAILED'):'NOT_EXECUTED')+'</td><td>'+pill(typeof m.rpoMet==='boolean'?(m.rpoMet?'PASSED':'FAILED'):'NOT_EXECUTED')+'</td><td>'+(m.recoveryDurationMinutes||0)+' min</td><td class="mono">'+escapeHtml(row.evidenceId||'-')+'</td></tr>'; }).join(''):'<tr><td colspan="7"><div class="empty">No controls are available for this scope.</div></td></tr>'; }
+    function renderTimeline(rows) { byId('timeline').innerHTML=rows.length?rows.slice().reverse().map(function (row) { return '<li><strong>'+escapeHtml(row.eventType.replace(/_/g,' '))+'</strong><small>'+escapeHtml(formatDate(row.timestamp))+' | v'+escapeHtml(row.runVersion)+'</small></li>'; }).join(''):'<li><strong>No recovery events</strong><small>Start a validation run.</small></li>'; }
+    function renderRecommendations(rows) { byId('recommendations').innerHTML=rows.length?rows.map(function (row) { return '<li>'+escapeHtml(row)+'</li>'; }).join(''):'<li>Start a validation run to calculate recommendations.</li>'; }
+
+    byId('initButton').addEventListener('click',initialize); byId('startButton').addEventListener('click',start); byId('pauseButton').addEventListener('click',pause); byId('resumeButton').addEventListener('click',resume); byId('completeButton').addEventListener('click',complete); byId('rollbackButton').addEventListener('click',rollback); byId('observationForm').addEventListener('submit',recordObservation); byId('domainInput').addEventListener('change',populateControls); byId('scheduleDrill').addEventListener('click',prepareDrill); byId('recordDrill').addEventListener('click',recordDrill); byId('jsonExport').addEventListener('click',function(){exportReport('JSON');}); byId('csvExport').addEventListener('click',function(){exportReport('CSV');});
+    byId('domainTabs').addEventListener('click',function(event){var button=event.target.closest('[data-domain]');if(!button)return;state.domain=button.dataset.domain;populateDomains();if(state.dashboard)renderMatrix(state.dashboard);}); document.querySelectorAll('.nav-link').forEach(function(button){button.addEventListener('click',function(){document.querySelectorAll('.nav-link').forEach(function(row){row.classList.remove('active');});button.classList.add('active');var target=byId(button.dataset.target);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});});}); window.addEventListener('resize',function(){if(state.dashboard)renderChart(state.dashboard.analytics&&state.dashboard.analytics.domainScores||{});});
+    loadControls(); refresh();
+})();
+</script>
+</body>
+</html>

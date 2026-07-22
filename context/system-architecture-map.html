@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="../services/frontendSecurityService.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARTHHRMS System Architecture Map</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0d1b2e;
+      --panel2: #10243c;
+      --muted: #8da2bd;
+      --text: #eef6ff;
+      --line: #233852;
+      --blue: #38bdf8;
+      --green: #22c55e;
+      --yellow: #facc15;
+      --red: #fb7185;
+      --purple: #a78bfa;
+      --orange: #fb923c;
+      --shadow: 0 20px 55px rgba(0, 0, 0, .35);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        linear-gradient(135deg, rgba(56, 189, 248, .08), transparent 28%),
+        linear-gradient(225deg, rgba(167, 139, 250, .08), transparent 26%),
+        var(--bg);
+    }
+    a { color: inherit; }
+    .shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 22px;
+      border-right: 1px solid var(--line);
+      background: rgba(7, 17, 31, .92);
+      backdrop-filter: blur(14px);
+    }
+    main { padding: 28px; min-width: 0; }
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      font-weight: 900;
+      box-shadow: var(--shadow);
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: clamp(28px, 4vw, 48px); letter-spacing: 0; }
+    h2 { font-size: 24px; margin-bottom: 14px; }
+    h3 { font-size: 16px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .nav {
+      display: grid;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .nav a {
+      text-decoration: none;
+      color: #cfe3f8;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .nav a:hover { border-color: var(--line); background: rgba(56,189,248,.08); }
+    .topbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .search {
+      min-width: min(100%, 420px);
+      flex: 0 1 520px;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(13, 27, 46, .82);
+      outline: none;
+    }
+    .search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
+    .hero {
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(16, 36, 60, .96), rgba(13, 27, 46, .96));
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+    .hero p { max-width: 1080px; line-height: 1.65; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+    .metric, .card, details {
+      border: 1px solid var(--line);
+      background: rgba(13, 27, 46, .82);
+      border-radius: 14px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, .22);
+    }
+    .metric { padding: 16px; }
+    .metric strong { display: block; font-size: 28px; margin-bottom: 4px; }
+    section { margin: 26px 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { padding: 16px; min-width: 0; }
+    .card p { line-height: 1.55; }
+    .card ul { margin: 10px 0 0; padding-left: 18px; color: #c8d8e8; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      border: 1px solid transparent;
+      margin: 4px 4px 4px 0;
+      white-space: nowrap;
+    }
+    .risk-HIGH, .runtime-HIGH { color: #fecdd3; background: rgba(251, 113, 133, .14); border-color: rgba(251, 113, 133, .36); }
+    .risk-MEDIUM { color: #fde68a; background: rgba(250, 204, 21, .12); border-color: rgba(250, 204, 21, .34); }
+    .risk-LOW { color: #bbf7d0; background: rgba(34, 197, 94, .12); border-color: rgba(34, 197, 94, .34); }
+    .runtime-HYBRID { color: #bae6fd; background: rgba(56, 189, 248, .12); border-color: rgba(56, 189, 248, .32); }
+    .runtime-LOCAL-FIRST { color: #ddd6fe; background: rgba(167, 139, 250, .12); border-color: rgba(167, 139, 250, .32); }
+    .runtime-MIXED { color: #fed7aa; background: rgba(251, 146, 60, .12); border-color: rgba(251, 146, 60, .32); }
+    .runtime-LIVE { color: #bbf7d0; background: rgba(34, 197, 94, .12); border-color: rgba(34, 197, 94, .34); }
+    details { margin-bottom: 12px; overflow: hidden; }
+    summary {
+      cursor: pointer;
+      padding: 15px 17px;
+      border-bottom: 1px solid transparent;
+      font-weight: 800;
+    }
+    details[open] summary { border-color: var(--line); background: rgba(56, 189, 248, .05); }
+    .detail-body { padding: 16px; }
+    .flow {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+    .num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: #07111f;
+      background: var(--blue);
+    }
+    .dep {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(16, 36, 60, .66);
+    }
+    .dep .arrow { text-align: center; color: var(--blue); font-weight: 900; }
+    .node {
+      min-width: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(7, 17, 31, .75);
+      border: 1px solid rgba(141, 162, 189, .22);
+      overflow-wrap: anywhere;
+    }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 780px; background: rgba(13, 27, 46, .72); }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #a8c7e8; background: rgba(16, 36, 60, .96); position: sticky; top: 0; }
+    tr:last-child td { border-bottom: 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .hidden { display: none !important; }
+    .footer {
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding: 22px 0 6px;
+      margin-top: 30px;
+    }
+    @media (max-width: 1180px) {
+      .shell { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; }
+      main { padding: 18px; }
+      .metrics, .grid, .grid.two, .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .metrics, .grid, .grid.two, .grid.four { grid-template-columns: 1fr; }
+      .hero { padding: 20px; }
+      .dep { grid-template-columns: 1fr; }
+      .dep .arrow { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <div class="mark">A</div>
+        <div>
+          <h3>ARTHHRMS</h3>
+          <div class="muted small">Live Architecture Map</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="badge risk-HIGH">High Risk</span>
+        <span class="badge risk-MEDIUM">Medium Risk</span>
+        <span class="badge risk-LOW">Low Risk</span>
+        <span class="badge runtime-HYBRID">Hybrid</span>
+        <span class="badge runtime-LOCAL-FIRST">Local-first</span>
+      </div>
+      <nav class="nav">
+        <a href="#summary">Summary</a>
+        <a href="#layers">Layer Map</a>
+        <a href="#pages">Frontend Pages</a>
+        <a href="#services">Services</a>
+        <a href="#workflows">Operational Flows</a>
+        <a href="#dependencies">Dependencies</a>
+        <a href="#sql">SQL and RLS</a>
+        <a href="#governance">Governance</a>
+        <a href="#testing">Testing</a>
+        <a href="#risks">Risks</a>
+        <a href="#readiness">Readiness</a>
+      </nav>
+    </aside>
+    <main>
+      <div class="topbar">
+        <div>
+          <div class="muted small">Generated from actual files in this repository</div>
+          <h1>System Architecture Graph</h1>
+        </div>
+        <input id="search" class="search" type="search" placeholder="Search modules, services, flows, risks, files...">
+      </div>
+
+      <section id="summary" class="hero searchable" data-search="summary architecture real code db services sql runtime">
+        <h2>Reality Check</h2>
+        <p>
+          This map is derived from the live codebase: dashboard script tags, service globals, DB collections,
+          SQL files, RLS policies, environment flags, workflow constants, and test files. The current system is
+          an authenticated Supabase-backed HRMS with a synchronous browser facade for UI compatibility.
+          Business records are durably stored in tenant-scoped domain projections protected by Row Level Security.
+        </p>
+        <div class="metrics">
+          <div class="metric"><strong>12</strong><span class="muted">HTML pages inspected</span></div>
+          <div class="metric"><strong>24</strong><span class="muted">service files inspected</span></div>
+          <div class="metric"><strong>15</strong><span class="muted">SQL files inspected</span></div>
+          <div class="metric"><strong>0</strong><span class="muted">runtime files changed</span></div>
+        </div>
+      </section>
+
+      <section id="layers">
+        <h2>Layer Map</h2>
+        <div id="layerGrid" class="grid"></div>
+      </section>
+
+      <section id="pages">
+        <h2>Frontend Pages</h2>
+        <div id="pageGrid" class="grid"></div>
+      </section>
+
+      <section id="services">
+        <h2>Service Layer</h2>
+        <div id="serviceGrid" class="grid"></div>
+      </section>
+
+      <section id="workflows">
+        <h2>Operational Flows</h2>
+        <div id="workflowList"></div>
+      </section>
+
+      <section id="dependencies">
+        <h2>Dependency Visualization</h2>
+        <div class="muted small">Edges below are code-derived service/page dependencies. Circular edges are tagged.</div>
+        <div id="dependencyList" class="flow"></div>
+      </section>
+
+      <section id="sql">
+        <h2>SQL and RLS Layer</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Table / Policy Area</th>
+                <th>File</th>
+                <th>Module</th>
+                <th>Runtime</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody id="sqlRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="governance">
+        <h2>Governance and Deployment</h2>
+        <div class="grid two">
+          <div class="card searchable" data-search="feature flags governance platform control roles presets maintenance safe mode">
+            <h3>Feature Governance</h3>
+            <p class="muted">Implemented through platform-control.html, platformGovernanceService, DB platformGovernance, and platform_governance.sql.</p>
+            <div id="flagList"></div>
+          </div>
+          <div class="card searchable" data-search="environment modes development pilot production migration flags">
+            <h3>Environment Modes</h3>
+            <div id="modeList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testing">
+        <h2>Testing and QA Layers</h2>
+        <div id="testGrid" class="grid"></div>
+      </section>
+
+      <section id="risks">
+        <h2>Risk and Bottleneck Analysis</h2>
+        <div id="riskGrid" class="grid two"></div>
+        <h2 style="margin-top:22px;">Performance Hotspots</h2>
+        <div id="hotspotGrid" class="grid two"></div>
+      </section>
+
+      <section id="readiness">
+        <h2>Operational Readiness</h2>
+        <div class="grid two">
+          <div class="card searchable" data-search="strongest areas readiness">
+            <h3>Strongest Areas</h3>
+            <ul id="strongList"></ul>
+          </div>
+          <div class="card searchable" data-search="hardening recommendations future">
+            <h3>Future Hardening</h3>
+            <ul id="hardeningList"></ul>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Machine-readable graph: <strong>context/system-architecture-map.json</strong>. This HTML is self-contained and does not call runtime application code.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const ARCH = {
+      layers: [
+        { name: 'Frontend Layer', runtime: 'MIXED', risk: 'HIGH', items: ['ArthHRMS.html', 'employee-portal.html', 'manager.html', 'admin.html', 'hr-dashboard.html', 'super-admin.html'] },
+        { name: 'Service Layer', runtime: 'HYBRID', risk: 'HIGH', items: ['employeeService', 'attendanceService', 'leaveService', 'expenseService', 'payrollService', 'importService', 'exportService'] },
+        { name: 'Workflow Layer', runtime: 'LOCAL-FIRST', risk: 'HIGH', items: ['workflowEngine', 'notificationService', 'pendingActions', 'auditLogs'] },
+        { name: 'Governance Layer', runtime: 'LOCAL-FIRST', risk: 'HIGH', items: ['platform-control.html', 'platformGovernanceService', 'feature flags', 'role matrix'] },
+        { name: 'Data Layer', runtime: 'SUPABASE', risk: 'HIGH', items: ['db.js', 'Supabase projections', 'RLS', 'normalization', 'ID generation'] },
+        { name: 'SQL Layer', runtime: 'HYBRID', risk: 'HIGH', items: ['employees', 'attendance', 'leave_requests', 'expense_claims', 'payroll tables', 'RLS policies'] },
+        { name: 'Auth Layer', runtime: 'HYBRID', risk: 'HIGH', items: ['authService', 'authInviteService', 'auth-callback.html', 'auth_user_id mapping'] },
+        { name: 'Monitoring Layer', runtime: 'LOCAL-FIRST', risk: 'HIGH', items: ['operationsMonitoringService', 'errorService', 'operationIncidents', 'serviceErrorLogs'] },
+        { name: 'Testing Layer', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', items: ['qaValidationService', 'enterpriseTestLabService', 'tests/*.js', 'QA_TEST_SCENARIOS.md'] },
+        { name: 'Deployment Layer', runtime: 'HYBRID', risk: 'HIGH', items: ['supabaseClientService', 'migrationControlService', 'deploymentSafetyService', '.env.*'] }
+      ],
+      pages: [
+        { id: 'ArthHRMS.html', modules: ['login', 'role redirects', 'demo reset'], services: ['authService', 'DB', 'governance', 'migration'], runtime: 'HYBRID', risk: 'HIGH' },
+        { id: 'auth-callback.html', modules: ['invite callback', 'activation'], services: ['authInviteService', 'authService', 'employeeService'], runtime: 'HYBRID', risk: 'HIGH' },
+        { id: 'setup.html', modules: ['first-time setup', 'platform owner', 'initial HR/admin'], services: ['authService', 'DB'], runtime: 'LOCAL-FIRST', risk: 'HIGH' },
+        { id: 'employee-portal.html', modules: ['home', 'attendance', 'leave', 'lifecycle', 'expenses', 'performance', 'deliverables', 'payroll'], services: ['DB', 'attendanceService', 'leaveService', 'expenseService', 'payrollService'], runtime: 'MIXED', risk: 'MEDIUM' },
+        { id: 'manager.html', modules: ['team', 'attendance', 'leave approvals', 'expense approvals', 'performance', 'deliverables'], services: ['DB', 'leaveService', 'expenseService'], runtime: 'MIXED', risk: 'MEDIUM' },
+        { id: 'admin.html', modules: ['document verification', 'regularization', 'helpdesk', 'onboarding desk'], services: ['DB', 'workflowEngine'], runtime: 'LOCAL-FIRST', risk: 'MEDIUM' },
+        { id: 'hr-dashboard.html', modules: ['employees', 'payroll', 'expenses', 'performance', 'strategic', 'recruitment', 'lifecycle', 'import center'], services: ['DB', 'authInviteService', 'payrollService', 'importService', 'importStagingService'], runtime: 'MIXED', risk: 'HIGH' },
+        { id: 'super-admin.html', modules: ['master dashboard', 'company policy', 'role permissions', 'audit logs', 'broadcast', 'backup'], services: ['DB', 'authInviteService', 'exportService'], runtime: 'LOCAL-FIRST', risk: 'HIGH' },
+        { id: 'platform-control.html', modules: ['feature flags', 'role matrix', 'migration status', 'deployment state'], services: ['platformGovernanceService', 'migrationControlService', 'deploymentSafetyService'], runtime: 'LOCAL-FIRST', risk: 'HIGH' },
+        { id: 'qa-validation.html', modules: ['QA validation', 'health status'], services: ['qaValidationService', 'enterpriseTestLabService'], runtime: 'LOCAL-FIRST', risk: 'MEDIUM' },
+        { id: 'enterprise-test-lab.html', modules: ['test data', 'workflow simulation', 'stress testing'], services: ['enterpriseTestLabService'], runtime: 'LOCAL-FIRST', risk: 'MEDIUM' },
+        { id: 'operations-monitoring.html', modules: ['health checks', 'incidents', 'metrics', 'service errors'], services: ['operationsMonitoringService'], runtime: 'LOCAL-FIRST', risk: 'HIGH' }
+      ],
+      services: [
+        { id: 'db.js', runtime: 'SUPABASE', risk: 'HIGH', maturity: 'production-sensitive', notes: 'Synchronous UI facade with authenticated, tenant-scoped Supabase persistence.' },
+        { id: 'supabaseClientService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Feature flags and Supabase client. Live modules default off unless configured.' },
+        { id: 'authService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'production-sensitive', notes: 'Supabase-first auth with gated local fallback, role mapping, session persistence, redirects.' },
+        { id: 'authInviteService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'production-sensitive', notes: 'Invite endpoint, callback activation, auth_user_id mapping, activation status.' },
+        { id: 'employeeService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Supabase employees table adapter with local mirror/fallback.' },
+        { id: 'attendanceService', runtime: 'HYBRID', risk: 'MEDIUM', maturity: 'pilot-ready', notes: 'Attendance fetch, check-in/out, working hours, late status.' },
+        { id: 'leaveService', runtime: 'HYBRID', risk: 'MEDIUM', maturity: 'pilot-ready', notes: 'Leave apply/fetch/approval, balances, attendance compatibility hook.' },
+        { id: 'expenseService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Expense submit, manager/finance approval, workflow events, attachment structure.' },
+        { id: 'payrollService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'production-sensitive', notes: 'Payroll calculation uses employee, attendance, leave, expenses, workflow, monitoring, deployment safety.' },
+        { id: 'workflowEngine', runtime: 'LOCAL-FIRST', risk: 'HIGH', maturity: 'production-sensitive', notes: 'Central event, notification, audit, pending action, escalation engine.' },
+        { id: 'notificationService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'stable', notes: 'Thin facade over workflowEngine and DB notification helpers.' },
+        { id: 'importService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'production-sensitive', notes: 'SheetJS parse, validation, normalization, staging handoff.' },
+        { id: 'importStagingService', runtime: 'LOCAL-FIRST', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Batches, staging rows, commit, cancel, rollback, safety gates.' },
+        { id: 'platformGovernanceService', runtime: 'LOCAL-FIRST', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Feature visibility, role matrix, presets, maintenance/safe mode.' },
+        { id: 'migrationControlService', runtime: 'HYBRID', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Module status, table checks, connectivity checks, local fallback.' },
+        { id: 'deploymentSafetyService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'pilot-ready', notes: 'Environment states, production/pilot guards, checkpoints.' },
+        { id: 'qaValidationService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'pilot-ready', notes: 'Auth, DB, workflow, notification, storage, import, migration, RLS, export checks.' },
+        { id: 'enterpriseTestLabService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'pilot-ready', notes: 'Isolated datasets, workflow simulation, stress and permission tests.' },
+        { id: 'operationsMonitoringService', runtime: 'LOCAL-FIRST', risk: 'HIGH', maturity: 'pilot-ready', notes: 'Health checks, incidents, metrics, errors, recovery actions.' },
+        { id: 'exportService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'stable', notes: 'CSV exports, backup snapshot, restore validation, payslip model.' },
+        { id: 'storageService', runtime: 'HYBRID', risk: 'MEDIUM', maturity: 'prototype', notes: 'Supabase Storage gate, upload, signed URLs, bucket policy alignment.' },
+        { id: 'errorService', runtime: 'LOCAL-FIRST', risk: 'MEDIUM', maturity: 'stable', notes: 'Timeouts, safe async, retry, user messages, monitoring error logging.' }
+      ],
+      workflows: [
+        { id: 'Leave Workflow', runtime: 'HYBRID', risk: 'MEDIUM', steps: ['Employee apply leave', 'leaveService or DB fallback', 'workflowEngine LEAVE_APPLIED', 'Manager notification and pending action', 'Manager approve/reject', 'Employee and HR notification', 'Audit log', 'Attendance/payroll compatibility'] },
+        { id: 'Expense Workflow', runtime: 'HYBRID', risk: 'HIGH', steps: ['Employee submit expense', 'expenseService or DB fallback', 'workflowEngine EXPENSE_SUBMITTED', 'Manager decision', 'HR/finance payment queue', 'Paid/rejected status', 'Employee notification', 'Audit log'] },
+        { id: 'Payroll Workflow', runtime: 'HYBRID', risk: 'HIGH', steps: ['HR payroll action', 'deploymentSafetyService guard', 'payrollService calculation', 'Employee/attendance/leave/expense inputs', 'Duplicate month prevention', 'PAYROLL_GENERATED', 'Approve', 'Paid', 'Payslip foundation', 'Monitoring'] },
+        { id: 'Invite Onboarding Workflow', runtime: 'HYBRID', risk: 'HIGH', steps: ['HR/super admin creates employee', 'authInviteService.sendInvite', 'Configured edge endpoint', 'Supabase invite email', 'auth-callback.html', 'auth_user_id link', 'Activation Active', 'Audit/notification'] },
+        { id: 'Import Workflow', runtime: 'HYBRID', risk: 'HIGH', steps: ['Upload XLSX', 'importService parse', 'Validation and normalization', 'Staging batch', 'Preview', 'Safety gate', 'Commit', 'Rollback metadata', 'Workflow event', 'Monitoring'] },
+        { id: 'Notification Workflow', runtime: 'LOCAL-FIRST', risk: 'HIGH', steps: ['emitWorkflowEvent', 'workflowEvents store', 'routeNotifications', 'dispatchNotification', 'auditLogs', 'pendingActions', 'dashboard bell/badges', 'mark read'] },
+        { id: 'Monitoring Workflow', runtime: 'LOCAL-FIRST', risk: 'HIGH', steps: ['errorService catches errors', 'recordError', 'recordPerformance', 'workflow critical incident hook', 'operations dashboard', 'resolve incident'] }
+      ],
+      dependencies: [
+        ['all dashboards', 'db.js', 'direct script/runtime dependency', 'HIGH', false],
+        ['all dashboards', 'authService', 'session and route dependency', 'HIGH', false],
+        ['authService', 'authInviteService', 'callback/invite collaboration', 'HIGH', true],
+        ['authInviteService', 'authService', 'session/header lookup', 'HIGH', true],
+        ['employeeService', 'supabaseClientService', 'optional employees table access', 'HIGH', false],
+        ['attendanceService', 'employeeService', 'employee validation and shift source', 'MEDIUM', false],
+        ['leaveService', 'attendanceService', 'approved leave attendance compatibility', 'MEDIUM', false],
+        ['expenseService', 'workflowEngine', 'expense workflow events', 'HIGH', false],
+        ['payrollService', 'employeeService', 'employee and salary input', 'HIGH', false],
+        ['payrollService', 'attendanceService', 'attendance-dependent calculations', 'HIGH', false],
+        ['payrollService', 'leaveService', 'leave deductions', 'HIGH', false],
+        ['payrollService', 'expenseService', 'reimbursements', 'HIGH', false],
+        ['payrollService', 'deploymentSafetyService', 'critical action guard', 'HIGH', false],
+        ['payrollService', 'operationsMonitoringService', 'performance and incident reporting', 'HIGH', false],
+        ['workflowEngine', 'notificationService', 'notification facade cycle', 'MEDIUM', true],
+        ['notificationService', 'workflowEngine', 'dispatcher delegation cycle', 'MEDIUM', true],
+        ['workflowEngine', 'operationsMonitoringService', 'critical event incidents', 'HIGH', true],
+        ['operationsMonitoringService', 'workflowEngine', 'workflow health and incident views', 'HIGH', true],
+        ['importService', 'importStagingService', 'stage before commit', 'HIGH', false],
+        ['importStagingService', 'deploymentSafetyService', 'pilot/production gates', 'HIGH', false],
+        ['importStagingService', 'migrationControlService', 'import readiness', 'HIGH', false],
+        ['platformGovernanceService', 'authService', 'role-aware feature visibility', 'HIGH', false],
+        ['migrationControlService', 'supabaseClientService', 'connectivity and table checks', 'HIGH', false],
+        ['errorService', 'operationsMonitoringService', 'error aggregation', 'MEDIUM', false],
+        ['storageService', 'supabaseClientService', 'optional storage access', 'MEDIUM', false]
+      ],
+      sql: [
+        ['employees', 'context/sql/employees.sql', 'employeeMaster', 'HYBRID', 'HIGH'],
+        ['auth_invitations', 'context/sql/auth_invitations.sql', 'auth', 'HYBRID', 'HIGH'],
+        ['attendance', 'context/sql/attendance.sql', 'attendance', 'HYBRID', 'MEDIUM'],
+        ['leave_requests', 'context/sql/leaveRequests.sql', 'leave', 'HYBRID', 'MEDIUM'],
+        ['expense_claims', 'context/sql/expenseClaims.sql', 'expenseClaims', 'HYBRID', 'HIGH'],
+        ['salary_structures, payroll_cycles, payroll_records, payslips', 'context/sql/payroll.sql', 'payroll', 'HYBRID', 'HIGH'],
+        ['notifications, pending_actions, workflow_events, audit_logs', 'context/sql/notifications_workflow.sql', 'workflow', 'LOCAL-FIRST', 'HIGH'],
+        ['import_batches', 'context/sql/import_batches.sql', 'imports', 'HYBRID', 'HIGH'],
+        ['staging_employees, staging_attendance, staging_payroll', 'context/sql/staging_*.sql', 'imports', 'LOCAL-FIRST', 'HIGH'],
+        ['platform_governance, platform_feature_flags, platform_feature_role_access', 'context/sql/platform_governance.sql', 'governance', 'LOCAL-FIRST', 'HIGH'],
+        ['RLS policy hardening', 'context/sql/rls_security_hardening.sql', 'security', 'SQL-ONLY', 'HIGH'],
+        ['Storage object policies', 'context/sql/storage_policies.sql', 'storage', 'HYBRID', 'HIGH']
+      ],
+      featureFlags: ['USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE', 'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_AUTH', 'USE_SUPABASE_IMPORTS', 'USE_SUPABASE_STORAGE', 'USE_SUPABASE_INVITES', 'PRODUCTION_MODE', 'PILOT_MODE', 'DEVELOPMENT_MODE', 'DEMO_MODE', 'ALLOW_LOCAL_AUTH_FALLBACK', 'REQUIRE_APP_METADATA_ROLE', 'REQUIRE_EMAIL_VERIFIED'],
+      modes: [
+        { id: 'DEVELOPMENT', flags: ['DEVELOPMENT_MODE=true', 'DEMO_MODE=true', 'Supabase module flags false'], risk: 'LOW' },
+        { id: 'PILOT', flags: ['PILOT_MODE=true', 'DEMO_MODE=false', 'employees/auth/invites live flags true'], risk: 'MEDIUM' },
+        { id: 'PRODUCTION', flags: ['PRODUCTION_MODE=true', 'DEMO_MODE=false', 'auth/invites true', 'module table flags off until activated'], risk: 'HIGH' }
+      ],
+      tests: [
+        { id: 'tests/authHardening.test.js', areas: ['invite endpoint gate', 'live invite request', 'auth_user_id mapping', 'callback activation', 'soft delete/archive'], risk: 'HIGH' },
+        { id: 'tests/operationsMonitoring.test.js', areas: ['health check', 'incidents', 'metrics', 'service errors', 'critical workflow incident hook'], risk: 'MEDIUM' },
+        { id: 'tests/enterpriseTestLab.test.js', areas: ['isolated data', 'workflow simulation', 'permission validation', 'stress observations', 'no live data mutation'], risk: 'MEDIUM' },
+        { id: 'context/QA_TEST_SCENARIOS.md', areas: ['manual auth/attendance/leave/expense/payroll/import/notification/RLS/fallback checks'], risk: 'MEDIUM' },
+        { id: 'context/sql/security_policy_tests.sql', areas: ['RLS visibility SQL checks'], risk: 'HIGH' }
+      ],
+      risks: [
+        { id: 'db.js centralization', level: 'HIGH', text: 'db.js is 283806 bytes and owns local persistence, seed data, migrations, compatibility bridges, workflow stores, monitoring stores.' },
+        { id: 'hr-dashboard.html overload', level: 'HIGH', text: 'hr-dashboard.html is 307842 bytes with 187 DB references and many module handlers.' },
+        { id: 'auth invite production path', level: 'HIGH', text: 'Invite onboarding depends on configured endpoint, Supabase Auth, callback, and auth_user_id mapping.' },
+        { id: 'payroll financial sensitivity', level: 'HIGH', text: 'payrollService uses employee, attendance, leave, expense, deployment safety, workflow, and monitoring.' },
+        { id: 'workflowEngine bottleneck', level: 'HIGH', text: 'Notification, audit, pending action, escalation, and monitoring hooks converge in one service.' },
+        { id: 'import data safety', level: 'HIGH', text: 'Import services touch identity, attendance, leave, payroll, staging, migration readiness, workflow, and monitoring.' },
+        { id: 'RLS activation', level: 'HIGH', text: 'SQL policies exist but must be executed and verified before live Supabase activation.' },
+        { id: 'monitoring cycles', level: 'MEDIUM', text: 'workflowEngine and operationsMonitoringService reference each other for critical event and health reporting.' }
+      ],
+      hotspots: [
+        { id: 'hr-dashboard.html', text: 'Largest file, many modules and inline DB/service calls.', risk: 'HIGH' },
+        { id: 'db.js', text: 'Central authenticated persistence facade. A change affects every role.', risk: 'HIGH' },
+        { id: 'employee-portal.html', text: 'Large employee surface with attendance, leave, lifecycle, expense, performance, deliverable, payroll logic.', risk: 'MEDIUM' },
+        { id: 'workflowEngine.js', text: 'Central operational nervous system. Fan-in/fan-out for events, audit, notifications, pending actions.', risk: 'HIGH' },
+        { id: 'payrollService.js', text: 'Cross-module financial calculation service.', risk: 'HIGH' },
+        { id: 'importService.js', text: 'Large parser/validation/staging integration service.', risk: 'HIGH' },
+        { id: 'operationsMonitoringService.js', text: 'Observability service monitors workflow and can be triggered by workflow.', risk: 'MEDIUM' }
+      ],
+      strong: [
+        'Service wrappers exist for employees, attendance, leave, expense, payroll, auth, imports, governance, QA, test lab, and monitoring.',
+        'SQL foundation covers core live tables, staging, invitations, workflow, audit, RLS, storage, and governance.',
+        'Feature flags and environment modes allow controlled local/hybrid/live activation.',
+        'Import pipeline has staging, validation, preview, commit, and rollback structures.',
+        'QA and Enterprise Test Lab include isolated test runs and workflow simulations.',
+        'Operations Monitoring captures incidents, service errors, performance metrics, and recovery actions.'
+      ],
+      hardening: [
+        'Split large dashboard files into module scripts after locking behavior with smoke tests.',
+        'Move direct DB calls behind service facades one module at a time.',
+        'Run Supabase SQL order in staging and record health in Platform Control Center.',
+        'Add workflow route contract tests for notification, pending action, and audit side effects.',
+        'Add payroll golden tests and import rollback tests before production payroll use.',
+        'Guard monitoring against recursive incident creation.'
+      ]
+    };
+
+    function badge(text, cls) {
+      return `<span class="badge ${cls}">${text}</span>`;
+    }
+    function risk(level) { return badge(level, 'risk-' + level); }
+    function runtime(value) { return badge(value, 'runtime-' + value); }
+    function cardSearchText(obj) { return JSON.stringify(obj).toLowerCase(); }
+    function list(items) { return `<ul>${items.map(item => `<li>${item}</li>`).join('')}</ul>`; }
+
+    document.getElementById('layerGrid').innerHTML = ARCH.layers.map(layer => `
+      <article class="card searchable" data-search="${cardSearchText(layer)}">
+        <h3>${layer.name}</h3>
+        <div>${runtime(layer.runtime)}${risk(layer.risk)}</div>
+        ${list(layer.items)}
+      </article>
+    `).join('');
+
+    document.getElementById('pageGrid').innerHTML = ARCH.pages.map(page => `
+      <article class="card searchable" data-search="${cardSearchText(page)}">
+        <h3>${page.id}</h3>
+        <div>${runtime(page.runtime)}${risk(page.risk)}</div>
+        <p class="muted small">Modules</p>
+        ${list(page.modules)}
+        <p class="muted small">Services</p>
+        ${list(page.services)}
+      </article>
+    `).join('');
+
+    document.getElementById('serviceGrid').innerHTML = ARCH.services.map(svc => `
+      <article class="card searchable" data-search="${cardSearchText(svc)}">
+        <h3>${svc.id}</h3>
+        <div>${runtime(svc.runtime)}${risk(svc.risk)}${badge(svc.maturity, 'runtime-MIXED')}</div>
+        <p>${svc.notes}</p>
+      </article>
+    `).join('');
+
+    document.getElementById('workflowList').innerHTML = ARCH.workflows.map(flow => `
+      <details class="searchable" open data-search="${cardSearchText(flow)}">
+        <summary>${flow.id} ${runtime(flow.runtime)} ${risk(flow.risk)}</summary>
+        <div class="detail-body">
+          <div class="flow">
+            ${flow.steps.map((step, idx) => `<div class="step"><div class="num">${idx + 1}</div><div>${step}</div></div>`).join('')}
+          </div>
+        </div>
+      </details>
+    `).join('');
+
+    document.getElementById('dependencyList').innerHTML = ARCH.dependencies.map(dep => `
+      <div class="dep searchable" data-search="${dep.join(' ').toLowerCase()}">
+        <div class="node">${dep[0]}</div>
+        <div class="arrow">-></div>
+        <div class="node">${dep[1]}<br><span class="muted small">${dep[2]}</span><br>${risk(dep[3])}${dep[4] ? badge('Circular', 'risk-MEDIUM') : ''}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('sqlRows').innerHTML = ARCH.sql.map(row => `
+      <tr class="searchable" data-search="${row.join(' ').toLowerCase()}">
+        <td>${row[0]}</td>
+        <td>${row[1]}</td>
+        <td>${row[2]}</td>
+        <td>${runtime(row[3])}</td>
+        <td>${risk(row[4])}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('flagList').innerHTML = ARCH.featureFlags.map(flag => badge(flag, 'runtime-HYBRID')).join('');
+    document.getElementById('modeList').innerHTML = ARCH.modes.map(mode => `
+      <div class="card searchable" style="margin:10px 0 0;" data-search="${cardSearchText(mode)}">
+        <h3>${mode.id}</h3>
+        <div>${risk(mode.risk)}</div>
+        ${list(mode.flags)}
+      </div>
+    `).join('');
+
+    document.getElementById('testGrid').innerHTML = ARCH.tests.map(test => `
+      <article class="card searchable" data-search="${cardSearchText(test)}">
+        <h3>${test.id}</h3>
+        <div>${risk(test.risk)}</div>
+        ${list(test.areas)}
+      </article>
+    `).join('');
+
+    document.getElementById('riskGrid').innerHTML = ARCH.risks.map(item => `
+      <article class="card searchable" data-search="${cardSearchText(item)}">
+        <h3>${item.id}</h3>
+        <div>${risk(item.level)}</div>
+        <p>${item.text}</p>
+      </article>
+    `).join('');
+
+    document.getElementById('hotspotGrid').innerHTML = ARCH.hotspots.map(item => `
+      <article class="card searchable" data-search="${cardSearchText(item)}">
+        <h3>${item.id}</h3>
+        <div>${risk(item.risk)}</div>
+        <p>${item.text}</p>
+      </article>
+    `).join('');
+
+    document.getElementById('strongList').innerHTML = ARCH.strong.map(item => `<li>${item}</li>`).join('');
+    document.getElementById('hardeningList').innerHTML = ARCH.hardening.map(item => `<li>${item}</li>`).join('');
+
+    document.getElementById('search').addEventListener('input', event => {
+      const q = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('.searchable').forEach(node => {
+        const text = (node.dataset.search || node.textContent || '').toLowerCase();
+        node.classList.toggle('hidden', !!q && !text.includes(q));
+      });
+    });
+  </script>
+</body>
+</html>

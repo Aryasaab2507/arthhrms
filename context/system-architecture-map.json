@@ -1,0 +1,1205 @@
+{
+  "generatedAt": "2026-05-18",
+  "source": "Derived from live ARTHHRMS code inspection. No runtime files were modified.",
+  "evidence": {
+    "rootPagesInspected": [
+      "ArthHRMS.html",
+      "auth-callback.html",
+      "setup.html",
+      "employee-portal.html",
+      "manager.html",
+      "admin.html",
+      "hr-dashboard.html",
+      "super-admin.html",
+      "platform-control.html",
+      "qa-validation.html",
+      "enterprise-test-lab.html",
+      "operations-monitoring.html"
+    ],
+    "servicesInspected": [
+      "attendanceService.js",
+      "authInviteService.js",
+      "authService.js",
+      "deploymentSafetyService.js",
+      "employeeService.js",
+      "enterpriseTestLabService.js",
+      "errorService.js",
+      "expenseService.js",
+      "exportService.js",
+      "identityService.js",
+      "importService.js",
+      "importStagingService.js",
+      "leaveService.js",
+      "migrationControlService.js",
+      "notificationService.js",
+      "operationsMonitoringService.js",
+      "payrollService.js",
+      "platformGovernanceService.js",
+      "qaValidationService.js",
+      "storageService.js",
+      "supabaseClient.js",
+      "utilityService.js",
+      "validationService.js",
+      "workflowEngine.js"
+    ],
+    "sqlFilesInspected": [
+      "attendance.sql",
+      "auth_invitations.sql",
+      "employees.sql",
+      "expenseClaims.sql",
+      "import_batches.sql",
+      "leaveRequests.sql",
+      "notifications_workflow.sql",
+      "payroll.sql",
+      "platform_governance.sql",
+      "rls_security_hardening.sql",
+      "security_policy_tests.sql",
+      "staging_attendance.sql",
+      "staging_employees.sql",
+      "staging_payroll.sql",
+      "storage_policies.sql"
+    ],
+    "largestFiles": [
+      { "file": "hr-dashboard.html", "bytes": 307842 },
+      { "file": "db.js", "bytes": 283806 },
+      { "file": "employee-portal.html", "bytes": 132938 },
+      { "file": "super-admin.html", "bytes": 94878 },
+      { "file": "admin.html", "bytes": 70241 },
+      { "file": "manager.html", "bytes": 66950 },
+      { "file": "services/importService.js", "bytes": 50589 },
+      { "file": "services/workflowEngine.js", "bytes": 38697 },
+      { "file": "services/payrollService.js", "bytes": 32655 },
+      { "file": "services/enterpriseTestLabService.js", "bytes": 31530 }
+    ]
+  },
+  "services": [
+    {
+      "id": "db",
+      "name": "DB authenticated persistence facade",
+      "file": "db.js",
+      "layer": "Data Layer",
+      "runtime": "SUPABASE",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "authenticated Supabase projection persistence",
+        "seed and clean-install data",
+        "compatibility service bridges",
+        "normalization and ID generation",
+        "audit, notifications, imports, monitoring stores"
+      ],
+      "evidence": "Defines seed collections, migrate(), generateRecordId(), normalizeDataArchitecture(), and DB.*Service compatibility bridges."
+    },
+    {
+      "id": "supabaseClientService",
+      "name": "Supabase Client Foundation",
+      "file": "services/supabaseClient.js",
+      "layer": "Deployment Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "read runtime config from injected, stored, env, and meta sources",
+        "create Supabase JS client",
+        "feature flag gate",
+        "health check"
+      ],
+      "evidence": "DEFAULT_FLAGS keep live modules disabled by default; getClient() uses Supabase JS when configured."
+    },
+    {
+      "id": "authService",
+      "name": "Authentication Service",
+      "file": "services/authService.js",
+      "layer": "Auth Layer",
+      "runtime": "HYBRID",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "Supabase-first login path",
+        "local fallback gate",
+        "session persistence",
+        "role normalization",
+        "role redirects",
+        "setup detection"
+      ],
+      "evidence": "References USE_SUPABASE_AUTH, REQUIRE_APP_METADATA_ROLE, REQUIRE_EMAIL_VERIFIED, ALLOW_LOCAL_AUTH_FALLBACK, authInviteService, employeeService, DB."
+    },
+    {
+      "id": "authInviteService",
+      "name": "Invite Onboarding Service",
+      "file": "services/authInviteService.js",
+      "layer": "Auth Layer",
+      "runtime": "HYBRID",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "send invite through configured endpoint",
+        "callback activation",
+        "auth_user_id to employee linking",
+        "local invite records",
+        "failed invite handling"
+      ],
+      "evidence": "sendInvite(), handleInviteCallback(), resendInvite(), recordActivationFromUser(); production requires configured invite endpoint."
+    },
+    {
+      "id": "employeeService",
+      "name": "Employee Service",
+      "file": "services/employeeService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "employee fetch/create/update",
+        "Supabase employee mapping",
+        "local fallback mirroring",
+        "manager relationship support"
+      ],
+      "evidence": "Uses USE_SUPABASE_EMPLOYEES, supabase employees table mapping, DB local mirrors."
+    },
+    {
+      "id": "attendanceService",
+      "name": "Attendance Service",
+      "file": "services/attendanceService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "fetch attendance",
+        "employee attendance lookup",
+        "check-in/check-out",
+        "working hour and late minute calculation",
+        "Supabase/local fallback"
+      ],
+      "evidence": "Uses USE_SUPABASE_ATTENDANCE and maps to public.attendance."
+    },
+    {
+      "id": "leaveService",
+      "name": "Leave Service",
+      "file": "services/leaveService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "apply leave",
+        "fetch leave requests",
+        "employee leave lookup",
+        "manager/HR approval states",
+        "leave balance calculation",
+        "attendance compatibility hook"
+      ],
+      "evidence": "Uses USE_SUPABASE_LEAVE and maps to public.leave_requests."
+    },
+    {
+      "id": "expenseService",
+      "name": "Expense Service",
+      "file": "services/expenseService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "submit expense",
+        "manager approval/rejection",
+        "finance/HR processing",
+        "attachment URL support",
+        "workflow event emission"
+      ],
+      "evidence": "Uses USE_SUPABASE_EXPENSES, workflowEngine, and public.expense_claims mapping."
+    },
+    {
+      "id": "payrollService",
+      "name": "Payroll Service",
+      "file": "services/payrollService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "salary structures",
+        "attendance-aware payroll generation",
+        "leave deductions",
+        "expense reimbursements",
+        "approval and paid state",
+        "payslip model"
+      ],
+      "evidence": "Depends on employeeService, attendanceService, leaveService, expenseService, workflowEngine, deploymentSafetyService, operationsMonitoringService."
+    },
+    {
+      "id": "workflowEngine",
+      "name": "Central Workflow Engine",
+      "file": "services/workflowEngine.js",
+      "layer": "Workflow Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "workflow event recording",
+        "notification routing",
+        "audit log writing",
+        "pending action calculation",
+        "escalation candidates",
+        "monitoring incident hooks"
+      ],
+      "evidence": "Defines WORKFLOW_EVENTS, dispatchNotification(), writeAuditLog(), routeNotifications(), createPendingAction(), getPendingSummary(), getEscalationCandidates()."
+    },
+    {
+      "id": "notificationService",
+      "name": "Notification Service",
+      "file": "services/notificationService.js",
+      "layer": "Workflow Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "notification dispatch facade",
+        "role/employee notification fetch",
+        "unread counts",
+        "mark read"
+      ],
+      "evidence": "Thin wrapper around workflowEngine.dispatchNotification and DB notification helpers."
+    },
+    {
+      "id": "importService",
+      "name": "Import Parsing and Validation Service",
+      "file": "services/importService.js",
+      "layer": "Service Layer",
+      "runtime": "HYBRID",
+      "maturity": "production-sensitive",
+      "risk": "HIGH",
+      "responsibilities": [
+        "SheetJS parsing",
+        "template rows",
+        "row normalization",
+        "validation",
+        "staging handoff",
+        "optional live import path"
+      ],
+      "evidence": "Uses XLSX, importStagingService, employeeService, attendanceService, leaveService, payrollService, workflowEngine."
+    },
+    {
+      "id": "importStagingService",
+      "name": "Import Staging Service",
+      "file": "services/importStagingService.js",
+      "layer": "Service Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "import batch staging",
+        "commit",
+        "cancel",
+        "rollback",
+        "role gating",
+        "deployment safety checks",
+        "monitoring incidents"
+      ],
+      "evidence": "stageImport(), commitImportBatch(), rollbackImportBatch(); depends on deploymentSafetyService, migrationControlService, operationsMonitoringService."
+    },
+    {
+      "id": "platformGovernanceService",
+      "name": "Platform Governance Service",
+      "file": "services/platformGovernanceService.js",
+      "layer": "Governance Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "feature visibility",
+        "role-feature access",
+        "preset modes",
+        "maintenance/safe mode banners",
+        "dashboard section gating"
+      ],
+      "evidence": "Wraps show()/section visibility and uses DB platformGovernance."
+    },
+    {
+      "id": "migrationControlService",
+      "name": "Migration Control Service",
+      "file": "services/migrationControlService.js",
+      "layer": "Deployment Layer",
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "module migration states",
+        "Supabase connectivity checks",
+        "table existence checks",
+        "module activation gates",
+        "forced local fallback",
+        "import readiness"
+      ],
+      "evidence": "definitions() maps employees, attendance, leaveRequests, expenseClaims, payroll, notificationsWorkflow, imports, authInvitations, platformGovernance."
+    },
+    {
+      "id": "deploymentSafetyService",
+      "name": "Deployment Safety Service",
+      "file": "services/deploymentSafetyService.js",
+      "layer": "Deployment Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "environment state",
+        "pilot/production guards",
+        "critical action confirmations",
+        "deployment checkpoints",
+        "health snapshot"
+      ],
+      "evidence": "Uses DB deploymentState, migrationControlService, authService, supabaseClientService."
+    },
+    {
+      "id": "qaValidationService",
+      "name": "QA Validation Service",
+      "file": "services/qaValidationService.js",
+      "layer": "Testing Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "auth checks",
+        "database checks",
+        "workflow checks",
+        "notification checks",
+        "storage/import/migration/RLS/export checks",
+        "workflow simulations"
+      ],
+      "evidence": "runValidation() is exercised by qa-validation.html."
+    },
+    {
+      "id": "enterpriseTestLabService",
+      "name": "Enterprise Test Lab Service",
+      "file": "services/enterpriseTestLabService.js",
+      "layer": "Testing Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "isolated test data generation",
+        "workflow simulation",
+        "permission validation",
+        "stress testing",
+        "edge-case testing",
+        "failure simulation"
+      ],
+      "evidence": "generateTestDataset(), runEnterpriseSuite(); tests verify live data is not mutated."
+    },
+    {
+      "id": "operationsMonitoringService",
+      "name": "Operations Monitoring Service",
+      "file": "services/operationsMonitoringService.js",
+      "layer": "Monitoring Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "HIGH",
+      "responsibilities": [
+        "health checks",
+        "incident tracking",
+        "service error logs",
+        "performance metrics",
+        "workflow incident hooks",
+        "retention cleanup"
+      ],
+      "evidence": "runHealthCheck(), createIncident(), recordError(), recordPerformance(), getOperationalDashboard(), installGlobalHooks()."
+    },
+    {
+      "id": "exportService",
+      "name": "Export and Backup Service",
+      "file": "services/exportService.js",
+      "layer": "Service Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "CSV exports",
+        "backup snapshot export",
+        "restore validation",
+        "payslip document model"
+      ],
+      "evidence": "exportAttendance(), exportLeave(), exportExpense(), exportPayroll(), exportBackupSnapshot(), buildPayslipDocumentModel()."
+    },
+    {
+      "id": "storageService",
+      "name": "Storage Service",
+      "file": "services/storageService.js",
+      "layer": "Data Layer",
+      "runtime": "HYBRID",
+      "maturity": "prototype",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "Supabase Storage toggle",
+        "file validation",
+        "upload path building",
+        "signed URL creation",
+        "storage plan"
+      ],
+      "evidence": "Uses USE_SUPABASE_STORAGE and buckets from storage_policies.sql."
+    },
+    {
+      "id": "errorService",
+      "name": "Error and Async Safety Service",
+      "file": "services/errorService.js",
+      "layer": "Monitoring Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM",
+      "responsibilities": [
+        "user-friendly error messages",
+        "timeouts",
+        "button processing state",
+        "global action wrappers",
+        "monitoring error logging"
+      ],
+      "evidence": "withTimeout(), safeAsync(), guardedAction(), wrapGlobalAction(), retry()."
+    },
+    {
+      "id": "utilityService",
+      "name": "Utility and Validation Facades",
+      "file": "services/utilityService.js, services/validationService.js, services/identityService.js",
+      "layer": "Service Layer",
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "LOW",
+      "responsibilities": [
+        "ID generation wrappers",
+        "normalization wrappers",
+        "duplicate checks",
+        "relationship audit"
+      ],
+      "evidence": "Thin wrappers over DB.UtilityService and normalization helpers."
+    }
+  ],
+  "pages": [
+    {
+      "id": "login",
+      "file": "ArthHRMS.html",
+      "layer": "Frontend Layer",
+      "modules": ["login", "role redirects", "demo reset"],
+      "services": ["authService", "db", "platformGovernanceService", "migrationControlService", "deploymentSafetyService"],
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "maturity": "production-sensitive",
+      "evidence": "Loads db.js, Supabase JS, authService, migration/deployment/governance services."
+    },
+    {
+      "id": "authCallback",
+      "file": "auth-callback.html",
+      "layer": "Auth Layer",
+      "modules": ["invite callback", "activation"],
+      "services": ["authInviteService", "authService", "employeeService", "workflowEngine"],
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "maturity": "production-sensitive"
+    },
+    {
+      "id": "setup",
+      "file": "setup.html",
+      "layer": "Deployment Layer",
+      "modules": ["first-time setup", "company details", "platform owner", "initial HR/admin"],
+      "services": ["authService", "db"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "maturity": "pilot-ready"
+    },
+    {
+      "id": "employeePortal",
+      "file": "employee-portal.html",
+      "layer": "Frontend Layer",
+      "modules": ["home", "profile", "attendance", "leave", "lifecycle", "expenses", "performance", "deliverables", "payroll", "training", "notifications", "documents"],
+      "services": ["db", "authService", "attendanceService", "leaveService", "expenseService", "payrollService"],
+      "runtime": "MIXED",
+      "risk": "MEDIUM",
+      "maturity": "stable",
+      "evidence": "Contains 112 DB references and direct service calls for attendance, leave, expense, payroll."
+    },
+    {
+      "id": "managerDashboard",
+      "file": "manager.html",
+      "layer": "Frontend Layer",
+      "modules": ["dashboard", "team", "attendance", "leave approvals", "expense approvals", "performance", "deliverables", "training", "tasks", "notifications"],
+      "services": ["db", "authService", "leaveService", "expenseService"],
+      "runtime": "MIXED",
+      "risk": "MEDIUM",
+      "maturity": "stable"
+    },
+    {
+      "id": "adminOps",
+      "file": "admin.html",
+      "layer": "Frontend Layer",
+      "modules": ["dashboard", "attendance", "shifts", "training", "notifications", "document verification", "regularization", "helpdesk", "onboarding desk", "reports"],
+      "services": ["db", "authService", "workflowEngine"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "MEDIUM",
+      "maturity": "stable"
+    },
+    {
+      "id": "hrDashboard",
+      "file": "hr-dashboard.html",
+      "layer": "Frontend Layer",
+      "modules": ["employees", "attendance", "leave", "roster", "payroll", "expenses", "performance", "strategic deliverables", "recruitment", "lifecycle", "training", "shifts", "notifications", "reports", "import center", "documents"],
+      "services": ["db", "authInviteService", "employeeService", "leaveService", "expenseService", "payrollService", "importService", "importStagingService", "errorService"],
+      "runtime": "MIXED",
+      "risk": "HIGH",
+      "maturity": "production-sensitive",
+      "evidence": "Largest page, 307842 bytes, 187 DB references, 21 importService references."
+    },
+    {
+      "id": "superAdmin",
+      "file": "super-admin.html",
+      "layer": "Frontend Layer",
+      "modules": ["master dashboard", "company policy", "role permissions", "audit logs", "broadcast", "users", "teams", "employees", "attendance", "payroll", "settings", "backup"],
+      "services": ["db", "authInviteService", "exportService"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "maturity": "production-sensitive"
+    },
+    {
+      "id": "platformControl",
+      "file": "platform-control.html",
+      "layer": "Governance Layer",
+      "modules": ["feature flags", "role matrix", "presets", "migration status", "deployment state", "branding", "audit"],
+      "services": ["platformGovernanceService", "migrationControlService", "deploymentSafetyService", "qaValidationService", "enterpriseTestLabService", "operationsMonitoringService"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "maturity": "pilot-ready"
+    },
+    {
+      "id": "qaValidation",
+      "file": "qa-validation.html",
+      "layer": "Testing Layer",
+      "modules": ["QA validation", "checkpoint creation", "health status"],
+      "services": ["qaValidationService", "enterpriseTestLabService", "operationsMonitoringService", "deploymentSafetyService"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "MEDIUM",
+      "maturity": "pilot-ready"
+    },
+    {
+      "id": "enterpriseTestLab",
+      "file": "enterprise-test-lab.html",
+      "layer": "Testing Layer",
+      "modules": ["test data presets", "workflow simulation", "permission validation", "stress tests", "download dataset"],
+      "services": ["enterpriseTestLabService"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "MEDIUM",
+      "maturity": "pilot-ready"
+    },
+    {
+      "id": "operationsMonitoring",
+      "file": "operations-monitoring.html",
+      "layer": "Monitoring Layer",
+      "modules": ["health checks", "incidents", "metrics", "service errors", "recovery actions", "retention cleanup"],
+      "services": ["operationsMonitoringService", "deploymentSafetyService"],
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "maturity": "pilot-ready"
+    }
+  ],
+  "modules": [
+    {
+      "id": "employeeMaster",
+      "name": "Employee Master",
+      "primaryPages": ["hrDashboard", "superAdmin", "platformControl"],
+      "primaryServices": ["employeeService", "authInviteService", "db"],
+      "dataStores": ["employees", "users", "authInvites"],
+      "sqlTables": ["employees", "auth_invitations"],
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH"
+    },
+    {
+      "id": "attendance",
+      "name": "Attendance",
+      "primaryPages": ["employeePortal", "managerDashboard", "adminOps", "hrDashboard", "superAdmin"],
+      "primaryServices": ["attendanceService", "db"],
+      "dataStores": ["attendance", "attendanceRegularizations", "shifts"],
+      "sqlTables": ["attendance"],
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "leave",
+      "name": "Leave Management",
+      "primaryPages": ["employeePortal", "managerDashboard", "hrDashboard"],
+      "primaryServices": ["leaveService", "workflowEngine", "notificationService"],
+      "dataStores": ["leaveRequests", "notifications", "auditLogs", "pendingActions"],
+      "sqlTables": ["leave_requests"],
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "expenseClaims",
+      "name": "Expense Claims",
+      "primaryPages": ["employeePortal", "managerDashboard", "hrDashboard", "superAdmin"],
+      "primaryServices": ["expenseService", "workflowEngine", "storageService"],
+      "dataStores": ["expenseClaims", "notifications", "auditLogs", "pendingActions"],
+      "sqlTables": ["expense_claims"],
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH"
+    },
+    {
+      "id": "payroll",
+      "name": "Payroll and Payslips",
+      "primaryPages": ["employeePortal", "hrDashboard", "superAdmin"],
+      "primaryServices": ["payrollService", "deploymentSafetyService", "workflowEngine", "exportService"],
+      "dataStores": ["payroll", "payrollCycles", "salaryStructures", "payslips"],
+      "sqlTables": ["salary_structures", "payroll_cycles", "payroll_records", "payslips"],
+      "runtime": "HYBRID",
+      "maturity": "production-sensitive",
+      "risk": "HIGH"
+    },
+    {
+      "id": "strategicDeliverables",
+      "name": "Strategic Deliverables",
+      "primaryPages": ["employeePortal", "managerDashboard", "hrDashboard", "superAdmin"],
+      "primaryServices": ["db", "workflowEngine"],
+      "dataStores": ["strategicDeliverables", "deliverableReviews", "notifications", "auditLogs"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "recruitment",
+      "name": "Recruitment",
+      "primaryPages": ["hrDashboard"],
+      "primaryServices": ["db"],
+      "dataStores": ["jobOpenings", "jobApplications"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "prototype",
+      "risk": "LOW"
+    },
+    {
+      "id": "lifecycle",
+      "name": "Employee Lifecycle",
+      "primaryPages": ["employeePortal", "hrDashboard", "adminOps"],
+      "primaryServices": ["db", "workflowEngine"],
+      "dataStores": ["onboardingTasks", "resignationRequests", "exitInterviews", "onboardingCollections"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "performance",
+      "name": "Performance and Appraisal",
+      "primaryPages": ["employeePortal", "managerDashboard", "hrDashboard"],
+      "primaryServices": ["db"],
+      "dataStores": ["performanceGoals", "appraisals", "reviewCycles"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "adminOperations",
+      "name": "Admin Operations Desk",
+      "primaryPages": ["adminOps"],
+      "primaryServices": ["db", "workflowEngine"],
+      "dataStores": ["documentVerifications", "attendanceRegularizations", "helpdeskTickets", "onboardingCollections"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "stable",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "importCenter",
+      "name": "Enterprise Import Center",
+      "primaryPages": ["hrDashboard"],
+      "primaryServices": ["importService", "importStagingService", "migrationControlService", "deploymentSafetyService"],
+      "dataStores": ["importLogs", "importBatches", "importStagingRows", "importRollbackLogs"],
+      "sqlTables": ["import_batches", "staging_employees", "staging_attendance", "staging_payroll"],
+      "runtime": "HYBRID",
+      "maturity": "pilot-ready",
+      "risk": "HIGH"
+    },
+    {
+      "id": "notificationsWorkflow",
+      "name": "Notifications, Pending Actions, Audit",
+      "primaryPages": ["employeePortal", "managerDashboard", "adminOps", "hrDashboard", "superAdmin"],
+      "primaryServices": ["workflowEngine", "notificationService"],
+      "dataStores": ["notifications", "workflowEvents", "pendingActions", "auditLogs"],
+      "sqlTables": ["notifications", "pending_actions", "workflow_events", "audit_logs"],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "production-sensitive",
+      "risk": "HIGH"
+    },
+    {
+      "id": "platformGovernance",
+      "name": "Platform Governance",
+      "primaryPages": ["platformControl"],
+      "primaryServices": ["platformGovernanceService", "migrationControlService", "deploymentSafetyService"],
+      "dataStores": ["platformGovernance", "migrationState", "deploymentState", "migrationLogs", "deploymentLogs"],
+      "sqlTables": ["platform_governance", "platform_feature_flags", "platform_feature_role_access"],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "HIGH"
+    },
+    {
+      "id": "testingQa",
+      "name": "QA and Enterprise Test Lab",
+      "primaryPages": ["qaValidation", "enterpriseTestLab"],
+      "primaryServices": ["qaValidationService", "enterpriseTestLabService"],
+      "dataStores": ["qaValidationRuns", "testLabRuns"],
+      "sqlTables": ["security_policy_tests.sql"],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "operationsMonitoring",
+      "name": "Operations Monitoring",
+      "primaryPages": ["operationsMonitoring"],
+      "primaryServices": ["operationsMonitoringService", "errorService"],
+      "dataStores": ["operationIncidents", "operationMetrics", "serviceErrorLogs"],
+      "sqlTables": [],
+      "runtime": "LOCAL-FIRST",
+      "maturity": "pilot-ready",
+      "risk": "HIGH"
+    }
+  ],
+  "dependencies": [
+    { "from": "allDashboardPages", "to": "db", "type": "direct script and runtime calls", "risk": "HIGH", "evidence": "Each inspected dashboard loads db.js; hr-dashboard has 187 DB references, employee portal has 112." },
+    { "from": "allDashboardPages", "to": "authService", "type": "session and route guard", "risk": "HIGH" },
+    { "from": "authService", "to": "supabaseClientService", "type": "optional live auth client", "risk": "HIGH" },
+    { "from": "authService", "to": "authInviteService", "type": "invite callback and activation collaboration", "risk": "HIGH", "cycle": true },
+    { "from": "authInviteService", "to": "authService", "type": "session and current auth header lookup", "risk": "HIGH", "cycle": true },
+    { "from": "authInviteService", "to": "operationsMonitoringService", "type": "invite failure reporting", "risk": "MEDIUM" },
+    { "from": "employeeService", "to": "supabaseClientService", "type": "optional employees table access", "risk": "HIGH" },
+    { "from": "employeeService", "to": "db", "type": "local fallback mirror", "risk": "HIGH" },
+    { "from": "attendanceService", "to": "employeeService", "type": "employee validation and shift status", "risk": "MEDIUM" },
+    { "from": "leaveService", "to": "attendanceService", "type": "approved leave attendance compatibility", "risk": "MEDIUM" },
+    { "from": "expenseService", "to": "workflowEngine", "type": "expense workflow events", "risk": "HIGH" },
+    { "from": "payrollService", "to": "employeeService", "type": "employee list and salary source", "risk": "HIGH" },
+    { "from": "payrollService", "to": "attendanceService", "type": "attendance-dependent salary calculation", "risk": "HIGH" },
+    { "from": "payrollService", "to": "leaveService", "type": "leave deductions", "risk": "HIGH" },
+    { "from": "payrollService", "to": "expenseService", "type": "expense reimbursements", "risk": "HIGH" },
+    { "from": "payrollService", "to": "deploymentSafetyService", "type": "critical payroll action guard", "risk": "HIGH" },
+    { "from": "payrollService", "to": "operationsMonitoringService", "type": "payroll performance and incident hooks", "risk": "HIGH" },
+    { "from": "workflowEngine", "to": "notificationService", "type": "notification enrichment fallback", "risk": "MEDIUM", "cycle": true },
+    { "from": "notificationService", "to": "workflowEngine", "type": "dispatcher delegation", "risk": "MEDIUM", "cycle": true },
+    { "from": "workflowEngine", "to": "operationsMonitoringService", "type": "critical event incident reporting", "risk": "HIGH", "cycle": true },
+    { "from": "operationsMonitoringService", "to": "workflowEngine", "type": "health and failed workflow counts", "risk": "HIGH", "cycle": true },
+    { "from": "importService", "to": "importStagingService", "type": "stage before commit", "risk": "HIGH" },
+    { "from": "importService", "to": "employeeService", "type": "employee import validation and creation", "risk": "HIGH" },
+    { "from": "importService", "to": "attendanceService", "type": "attendance import compatibility", "risk": "MEDIUM" },
+    { "from": "importService", "to": "leaveService", "type": "leave import compatibility", "risk": "MEDIUM" },
+    { "from": "importService", "to": "payrollService", "type": "payroll import compatibility", "risk": "HIGH" },
+    { "from": "importStagingService", "to": "deploymentSafetyService", "type": "pilot/production import gates", "risk": "HIGH" },
+    { "from": "importStagingService", "to": "migrationControlService", "type": "import readiness checks", "risk": "HIGH" },
+    { "from": "importStagingService", "to": "operationsMonitoringService", "type": "import incident/performance reporting", "risk": "HIGH" },
+    { "from": "platformGovernanceService", "to": "authService", "type": "role-aware feature visibility", "risk": "HIGH" },
+    { "from": "platformGovernanceService", "to": "db", "type": "platform governance persistence", "risk": "HIGH" },
+    { "from": "migrationControlService", "to": "supabaseClientService", "type": "connectivity and table checks", "risk": "HIGH" },
+    { "from": "deploymentSafetyService", "to": "migrationControlService", "type": "deployment health snapshot", "risk": "MEDIUM" },
+    { "from": "qaValidationService", "to": "authService", "type": "auth readiness validation", "risk": "MEDIUM" },
+    { "from": "qaValidationService", "to": "migrationControlService", "type": "migration readiness validation", "risk": "MEDIUM" },
+    { "from": "enterpriseTestLabService", "to": "platformGovernanceService", "type": "permission validation", "risk": "MEDIUM" },
+    { "from": "errorService", "to": "operationsMonitoringService", "type": "service error aggregation", "risk": "MEDIUM" },
+    { "from": "storageService", "to": "supabaseClientService", "type": "optional Supabase Storage access", "risk": "MEDIUM" }
+  ],
+  "workflows": [
+    {
+      "id": "leaveWorkflow",
+      "name": "Leave Workflow",
+      "runtime": "HYBRID",
+      "risk": "MEDIUM",
+      "steps": [
+        "Employee page applyLeave()",
+        "leaveService.applyLeave() or DB.applyLeave()",
+        "workflowEngine.emitWorkflowEvent(LEAVE_APPLIED)",
+        "Manager notification and pending action",
+        "Manager approve/reject through manager.html",
+        "workflowEngine emits LEAVE_APPROVED or LEAVE_REJECTED",
+        "Employee and HR notifications",
+        "Audit log written",
+        "Attendance/payroll compatibility depends on final approval state"
+      ]
+    },
+    {
+      "id": "expenseWorkflow",
+      "name": "Expense Workflow",
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "steps": [
+        "Employee submit expense in employee-portal.html",
+        "expenseService.submitExpense() or DB expense fallback",
+        "workflowEngine emits EXPENSE_SUBMITTED",
+        "Manager pending decision and notification",
+        "Manager approve/reject in manager.html",
+        "workflowEngine emits EXPENSE_APPROVED or EXPENSE_REJECTED",
+        "HR/finance payment queue in hr-dashboard.html",
+        "HR mark paid/reject",
+        "workflowEngine emits EXPENSE_PAID or EXPENSE_REJECTED",
+        "Employee notification and audit log"
+      ]
+    },
+    {
+      "id": "payrollWorkflow",
+      "name": "Payroll Workflow",
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "steps": [
+        "HR payroll action in hr-dashboard.html",
+        "deploymentSafetyService guard for critical payroll action",
+        "payrollService.generatePayroll()",
+        "employeeService, attendanceService, leaveService, expenseService inputs",
+        "duplicate employee-month prevention",
+        "workflowEngine emits PAYROLL_GENERATED",
+        "approvePayroll() and markPayrollPaid()",
+        "workflowEngine emits PAYROLL_APPROVED and PAYROLL_PAID",
+        "payslip foundation exposed to employee portal",
+        "operationsMonitoringService records errors/performance if failures occur"
+      ]
+    },
+    {
+      "id": "onboardingWorkflow",
+      "name": "Invite and Onboarding Workflow",
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "steps": [
+        "HR or super admin creates employee/user",
+        "authInviteService.sendInvite()",
+        "Configured invite endpoint sends Supabase Auth invite",
+        "auth-callback.html handles invite acceptance",
+        "authInviteService.handleInviteCallback()",
+        "DB.linkAuthUserToEmployee() writes auth_user_id mapping",
+        "Activation status changes to Active",
+        "Audit and notification records are written where hooks are present"
+      ]
+    },
+    {
+      "id": "importWorkflow",
+      "name": "Enterprise Import Workflow",
+      "runtime": "HYBRID",
+      "risk": "HIGH",
+      "steps": [
+        "HR dashboard Data Import Center loads SheetJS",
+        "importService.parseWorkbookFile()",
+        "importService.validateRows()",
+        "importService.stageImport() delegates to importStagingService",
+        "importStagingService writes importBatches and importStagingRows",
+        "Preview shows success, warning, failed rows",
+        "deploymentSafetyService and migrationControlService gate commit",
+        "importStagingService.commitImportBatch() moves staged rows to local structures",
+        "Rollback metadata is stored in importRollbackLogs",
+        "workflowEngine emits IMPORT_* events",
+        "operationsMonitoringService records import incidents/metrics"
+      ]
+    },
+    {
+      "id": "notificationWorkflow",
+      "name": "Notification and Pending Action Workflow",
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "steps": [
+        "Service emits workflowEngine.emitWorkflowEvent(type, payload)",
+        "workflowEngine records workflowEvents",
+        "workflowEngine.routeNotifications(type, event)",
+        "workflowEngine.dispatchNotification() writes notifications",
+        "workflowEngine.writeAuditLog() writes auditLogs",
+        "workflowEngine.createPendingAction() or computedPendingActions creates queues",
+        "Dashboard bell and badges query DB/notificationService",
+        "markNotificationRead() updates read state"
+      ]
+    },
+    {
+      "id": "monitoringWorkflow",
+      "name": "Operations Monitoring Workflow",
+      "runtime": "LOCAL-FIRST",
+      "risk": "HIGH",
+      "steps": [
+        "errorService safeAsync/guardedAction catches service errors",
+        "operationsMonitoringService.recordError() writes serviceErrorLogs",
+        "operationsMonitoringService.recordPerformance() writes operationMetrics",
+        "workflowEngine critical events can create incidents",
+        "import/payroll services report incidents and slow actions",
+        "operations-monitoring.html renders health, incidents, metrics, recovery actions",
+        "resolveIncident() updates operationIncidents"
+      ]
+    }
+  ],
+  "triggers": [
+    { "event": "LEAVE_APPLIED", "module": "Leave", "targets": ["manager"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "LEAVE_APPROVED", "module": "Leave", "targets": ["employee", "hr"], "sideEffects": ["notification", "audit"] },
+    { "event": "LEAVE_REJECTED", "module": "Leave", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "ATTENDANCE_REGULARIZATION_REQUESTED", "module": "Attendance Regularization", "targets": ["admin"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "ATTENDANCE_REGULARIZATION_APPROVED", "module": "Attendance Regularization", "targets": ["employee", "hr"], "sideEffects": ["notification", "audit"] },
+    { "event": "EXPENSE_SUBMITTED", "module": "Expense", "targets": ["manager"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "EXPENSE_APPROVED", "module": "Expense", "targets": ["hr"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "EXPENSE_FINANCE_APPROVED", "module": "Expense", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "EXPENSE_PAID", "module": "Expense", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "PAYROLL_GENERATED", "module": "Payroll", "targets": ["employee"], "sideEffects": ["notification", "audit", "monitoring metric"] },
+    { "event": "PAYROLL_APPROVED", "module": "Payroll", "targets": ["hr", "admin"], "sideEffects": ["notification", "audit"] },
+    { "event": "PAYROLL_PAID", "module": "Payroll", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "IMPORT_STAGED", "module": "Import Center", "targets": ["hr", "super_admin", "platform_owner"], "sideEffects": ["notification", "audit", "monitoring metric"] },
+    { "event": "IMPORT_VALIDATION_FAILED", "module": "Import Center", "targets": ["hr", "super_admin", "platform_owner"], "sideEffects": ["notification", "audit", "incident candidate"] },
+    { "event": "IMPORT_COMMITTED", "module": "Import Center", "targets": ["hr", "super_admin"], "sideEffects": ["notification", "audit"] },
+    { "event": "IMPORT_ROLLED_BACK", "module": "Import Center", "targets": ["hr", "super_admin", "platform_owner"], "sideEffects": ["notification", "audit", "incident candidate"] },
+    { "event": "DELIVERABLE_ASSIGNED", "module": "Strategic Deliverables", "targets": ["employee", "manager"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "DELIVERABLE_REVIEWED", "module": "Strategic Deliverables", "targets": ["hr"], "sideEffects": ["notification", "audit"] },
+    { "event": "DELIVERABLE_CLOSED", "module": "Strategic Deliverables", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "DELIVERABLE_OVERDUE", "module": "Strategic Deliverables", "targets": ["manager", "hr"], "sideEffects": ["notification", "pending action", "audit", "incident if critical"] },
+    { "event": "HELPDESK_TICKET_RAISED", "module": "Helpdesk", "targets": ["admin"], "sideEffects": ["notification", "pending action", "audit"] },
+    { "event": "HELPDESK_TICKET_RESOLVED", "module": "Helpdesk", "targets": ["employee"], "sideEffects": ["notification", "audit"] },
+    { "event": "ONBOARDING_COLLECTION_SAVED", "module": "Onboarding", "targets": ["employee", "hr"], "sideEffects": ["notification", "audit"] },
+    { "event": "DOCUMENT_VERIFICATION_SAVED", "module": "Documents", "targets": ["employee", "hr"], "sideEffects": ["notification", "audit"] }
+  ],
+  "sqlTables": [
+    { "table": "employees", "file": "context/sql/employees.sql", "module": "employeeMaster", "rls": true, "unique": ["emp_id", "auth_user_id", "email"], "risk": "HIGH" },
+    { "table": "auth_invitations", "file": "context/sql/auth_invitations.sql", "module": "auth", "rls": true, "unique": ["invite_id"], "risk": "HIGH" },
+    { "table": "attendance", "file": "context/sql/attendance.sql", "module": "attendance", "rls": true, "unique": ["attendance_id", "emp_id + attendance_date"], "risk": "MEDIUM" },
+    { "table": "leave_requests", "file": "context/sql/leaveRequests.sql", "module": "leave", "rls": true, "unique": ["leave_id"], "risk": "MEDIUM" },
+    { "table": "expense_claims", "file": "context/sql/expenseClaims.sql", "module": "expenseClaims", "rls": true, "unique": ["expense_id"], "risk": "HIGH" },
+    { "table": "salary_structures", "file": "context/sql/payroll.sql", "module": "payroll", "rls": true, "unique": ["structure_id"], "risk": "HIGH" },
+    { "table": "payroll_cycles", "file": "context/sql/payroll.sql", "module": "payroll", "rls": true, "unique": ["cycle_id", "payroll_month"], "risk": "HIGH" },
+    { "table": "payroll_records", "file": "context/sql/payroll.sql", "module": "payroll", "rls": true, "unique": ["payroll_id", "emp_id + payroll_month"], "risk": "HIGH" },
+    { "table": "payslips", "file": "context/sql/payroll.sql", "module": "payroll", "rls": true, "unique": ["payslip_id", "payroll_id"], "risk": "HIGH" },
+    { "table": "notifications", "file": "context/sql/notifications_workflow.sql", "module": "notificationsWorkflow", "rls": true, "unique": ["notification_id"], "risk": "MEDIUM" },
+    { "table": "pending_actions", "file": "context/sql/notifications_workflow.sql", "module": "notificationsWorkflow", "rls": true, "unique": ["pending_action_id"], "risk": "MEDIUM" },
+    { "table": "workflow_events", "file": "context/sql/notifications_workflow.sql", "module": "notificationsWorkflow", "rls": true, "unique": ["event_id"], "risk": "HIGH" },
+    { "table": "audit_logs", "file": "context/sql/notifications_workflow.sql", "module": "notificationsWorkflow", "rls": true, "unique": ["log_id"], "risk": "HIGH" },
+    { "table": "import_batches", "file": "context/sql/import_batches.sql", "module": "importCenter", "rls": true, "unique": ["import_batch_id"], "risk": "HIGH" },
+    { "table": "staging_employees", "file": "context/sql/staging_employees.sql", "module": "importCenter", "rls": true, "unique": ["staging_id"], "risk": "HIGH" },
+    { "table": "staging_attendance", "file": "context/sql/staging_attendance.sql", "module": "importCenter", "rls": true, "unique": ["staging_id"], "risk": "HIGH" },
+    { "table": "staging_payroll", "file": "context/sql/staging_payroll.sql", "module": "importCenter", "rls": true, "unique": ["staging_id"], "risk": "HIGH" },
+    { "table": "platform_governance", "file": "context/sql/platform_governance.sql", "module": "platformGovernance", "rls": true, "unique": [], "risk": "HIGH" },
+    { "table": "platform_feature_flags", "file": "context/sql/platform_governance.sql", "module": "platformGovernance", "rls": true, "unique": [], "risk": "HIGH" },
+    { "table": "platform_feature_role_access", "file": "context/sql/platform_governance.sql", "module": "platformGovernance", "rls": true, "unique": [], "risk": "HIGH" },
+    { "table": "storage.objects policies", "file": "context/sql/storage_policies.sql", "module": "storage", "rls": true, "unique": [], "risk": "HIGH", "buckets": ["employee-docs", "expense-attachments", "payroll-exports", "profile-photos"] }
+  ],
+  "roles": [
+    { "role": "platform_owner", "scope": "root platform governance and migration control", "risk": "HIGH" },
+    { "role": "super_admin", "scope": "organization owner control and broad visibility", "risk": "HIGH" },
+    { "role": "hr", "scope": "HR command workflows, employee master, payroll, imports", "risk": "HIGH" },
+    { "role": "admin", "scope": "HR operations desk, documents, regularization, helpdesk, onboarding collection", "risk": "MEDIUM" },
+    { "role": "manager", "scope": "team visibility and approval queues", "risk": "MEDIUM" },
+    { "role": "employee", "scope": "self-service profile, attendance, leave, expenses, payslips, deliverables", "risk": "MEDIUM" }
+  ],
+  "featureFlags": [
+    "USE_SUPABASE_EMPLOYEES",
+    "USE_SUPABASE_ATTENDANCE",
+    "USE_SUPABASE_LEAVE",
+    "USE_SUPABASE_EXPENSES",
+    "USE_SUPABASE_PAYROLL",
+    "USE_SUPABASE_AUTH",
+    "USE_SUPABASE_IMPORTS",
+    "USE_SUPABASE_STORAGE",
+    "USE_SUPABASE_INVITES",
+    "PRODUCTION_MODE",
+    "PILOT_MODE",
+    "DEVELOPMENT_MODE",
+    "DEMO_MODE",
+    "ALLOW_LOCAL_AUTH_FALLBACK",
+    "REQUIRE_APP_METADATA_ROLE",
+    "REQUIRE_EMAIL_VERIFIED"
+  ],
+  "environmentModes": [
+    {
+      "mode": "DEVELOPMENT",
+      "source": ".env.local, .env.example",
+      "defaultFlags": ["DEVELOPMENT_MODE=true", "DEMO_MODE=true", "Supabase module flags false"],
+      "risk": "LOW"
+    },
+    {
+      "mode": "PILOT",
+      "source": ".env.pilot",
+      "defaultFlags": ["PILOT_MODE=true", "DEMO_MODE=false", "USE_SUPABASE_EMPLOYEES=true", "USE_SUPABASE_AUTH=true", "USE_SUPABASE_INVITES=true"],
+      "risk": "MEDIUM"
+    },
+    {
+      "mode": "PRODUCTION",
+      "source": ".env.production",
+      "defaultFlags": ["PRODUCTION_MODE=true", "DEMO_MODE=false", "USE_SUPABASE_AUTH=true", "USE_SUPABASE_INVITES=true", "module table flags false until activated"],
+      "risk": "HIGH"
+    }
+  ],
+  "riskAreas": [
+    {
+      "id": "dbMonolith",
+      "level": "HIGH",
+      "area": "db.js centralization",
+      "evidence": "Synchronous UI facade with authenticated, tenant-scoped Supabase projection persistence.",
+      "impact": "A regression in DB migrate/normalize affects every page."
+    },
+    {
+      "id": "hrDashboardSize",
+      "level": "HIGH",
+      "area": "hr-dashboard.html overload",
+      "evidence": "307842 bytes, 187 DB references, many modules and inline handlers.",
+      "impact": "High chance of accidental coupling and hard-to-test UI behavior."
+    },
+    {
+      "id": "authInviteProduction",
+      "level": "HIGH",
+      "area": "auth and invite delivery",
+      "evidence": "Production invite requires INVITE_USER_ENDPOINT and auth_user_id mapping; authService/authInviteService are cyclic.",
+      "impact": "Misconfiguration blocks onboarding or creates identity-linking risk."
+    },
+    {
+      "id": "payrollFinancial",
+      "level": "HIGH",
+      "area": "payroll calculation and payment states",
+      "evidence": "payrollService depends on employee, attendance, leave, expense, workflow, deployment safety, monitoring.",
+      "impact": "Cross-module errors can affect salary trust."
+    },
+    {
+      "id": "workflowCentrality",
+      "level": "HIGH",
+      "area": "workflowEngine as operational bottleneck",
+      "evidence": "All notification, audit, pending, escalation paths converge here.",
+      "impact": "A routing bug affects dashboards, pressure widgets, audit trail, and monitoring."
+    },
+    {
+      "id": "importDataSafety",
+      "level": "HIGH",
+      "area": "enterprise import staging and commit",
+      "evidence": "importService is 50589 bytes and touches employee, attendance, leave, payroll, workflow, staging, migration readiness.",
+      "impact": "Bad imports can corrupt identity, attendance, and payroll if gates are bypassed."
+    },
+    {
+      "id": "rlsExecution",
+      "level": "HIGH",
+      "area": "RLS policy activation",
+      "evidence": "RLS SQL exists for core tables, but runtime flags default to fallback/local until Supabase verification.",
+      "impact": "Policy mistakes can create visibility leaks after live activation."
+    },
+    {
+      "id": "monitoringLoop",
+      "level": "MEDIUM",
+      "area": "workflow/monitoring circular observability",
+      "evidence": "workflowEngine reports incidents; operationsMonitoringService reads workflow state and hooks events.",
+      "impact": "Error loops or duplicate incidents are possible if a monitored path fails loudly."
+    }
+  ],
+  "migrationStatus": [
+    { "module": "employees", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/employees.sql", "activationOrder": 1 },
+    { "module": "attendance", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/attendance.sql", "activationOrder": 2 },
+    { "module": "leaveRequests", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/leaveRequests.sql", "activationOrder": 3 },
+    { "module": "expenseClaims", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/expenseClaims.sql", "activationOrder": 4 },
+    { "module": "payroll", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/payroll.sql", "activationOrder": 5 },
+    { "module": "notificationsWorkflow", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "LOCAL-FIRST", "sqlFile": "context/sql/notifications_workflow.sql", "activationOrder": 6 },
+    { "module": "importBatches", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/import_batches.sql", "activationOrder": 7 },
+    { "module": "stagingTables", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "LOCAL-FIRST", "sqlFile": "context/sql/staging_*.sql", "activationOrder": 8 },
+    { "module": "authInvitations", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/auth_invitations.sql", "activationOrder": 9 },
+    { "module": "platformGovernance", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "LOCAL-FIRST", "sqlFile": "context/sql/platform_governance.sql", "activationOrder": 10 },
+    { "module": "storagePolicies", "defaultMode": "LOCAL", "supportedModes": ["LOCAL", "HYBRID", "LIVE"], "runtimeClassification": "HYBRID", "sqlFile": "context/sql/storage_policies.sql", "activationOrder": 11 },
+    { "module": "rlsSecurityHardening", "defaultMode": "SQL-ONLY", "supportedModes": ["VERIFY", "APPLY"], "runtimeClassification": "LOCAL-FIRST", "sqlFile": "context/sql/rls_security_hardening.sql", "activationOrder": 12 },
+    { "module": "securityPolicyTests", "defaultMode": "SQL-ONLY", "supportedModes": ["VERIFY"], "runtimeClassification": "LOCAL-FIRST", "sqlFile": "context/sql/security_policy_tests.sql", "activationOrder": 13 }
+  ],
+  "testCoverage": [
+    {
+      "file": "tests/authHardening.test.js",
+      "areas": ["production invite endpoint gate", "live invite request", "auth_user_id mapping", "callback activation", "duplicate mapping prevention", "soft delete/archive"],
+      "maturity": "targeted smoke coverage"
+    },
+    {
+      "file": "tests/operationsMonitoring.test.js",
+      "areas": ["health check", "incident tracking", "performance metrics", "service error logs", "workflow incident hook", "tracked operation metrics"],
+      "maturity": "targeted smoke coverage"
+    },
+    {
+      "file": "tests/enterpriseTestLab.test.js",
+      "areas": ["isolated data generation", "workflow simulation", "permission validation", "stress observations", "test run logging", "no live data mutation"],
+      "maturity": "targeted smoke coverage"
+    },
+    {
+      "file": "context/QA_TEST_SCENARIOS.md",
+      "areas": ["manual QA flows for auth, attendance, leave, expense, payroll, imports, notifications, role access, RLS, fallback"],
+      "maturity": "manual checklist"
+    },
+    {
+      "file": "context/sql/security_policy_tests.sql",
+      "areas": ["RLS visibility assertions after SQL activation"],
+      "maturity": "SQL test scaffold"
+    }
+  ],
+  "bottlenecks": [
+    {
+      "id": "dbCentralStore",
+      "description": "db.js remains the central runtime persistence and compatibility surface for all role pages.",
+      "evidence": "All inspected pages load db.js and most still call DB directly.",
+      "risk": "HIGH"
+    },
+    {
+      "id": "largeInlineDashboards",
+      "description": "HR, employee, super admin, admin, and manager dashboards contain large inline script blocks and module logic.",
+      "evidence": "hr-dashboard.html 307842 bytes, employee-portal.html 132938 bytes, super-admin.html 94878 bytes.",
+      "risk": "HIGH"
+    },
+    {
+      "id": "workflowFanIn",
+      "description": "Workflow, notification, audit, pending action, and escalation behavior converge into workflowEngine.",
+      "evidence": "workflowEngine defines all workflow events and routing rules.",
+      "risk": "HIGH"
+    },
+    {
+      "id": "payrollDependencyFanIn",
+      "description": "Payroll calculations depend on employee, attendance, leave, expense, deployment safety, workflow, and monitoring.",
+      "evidence": "payrollService references employeeService, attendanceService, leaveService, expenseService, deploymentSafetyService, workflowEngine, operationsMonitoringService.",
+      "risk": "HIGH"
+    },
+    {
+      "id": "importFanOut",
+      "description": "Import services can touch employee, attendance, leave, payroll, staging, migration readiness, workflow, and monitoring paths.",
+      "evidence": "importService and importStagingService references and SQL staging tables.",
+      "risk": "HIGH"
+    },
+    {
+      "id": "cyclicNotificationMonitoring",
+      "description": "notificationService delegates to workflowEngine; workflowEngine can reference notificationService; workflowEngine also reports to operationsMonitoringService while monitoring reads workflow health.",
+      "evidence": "Detected circular dependencies in service references.",
+      "risk": "MEDIUM"
+    }
+  ],
+  "runtimeClassification": [
+    { "module": "auth", "classification": "SUPABASE", "reason": "Protected routes require validated Supabase Auth sessions." },
+    { "module": "employeeMaster", "classification": "SUPABASE", "reason": "Employee CRUD persists through authenticated domain projections and the employee adapter." },
+    { "module": "attendance", "classification": "SUPABASE", "reason": "Attendance CRUD persists through authenticated domain projections and the attendance adapter." },
+    { "module": "leave", "classification": "SUPABASE", "reason": "Leave CRUD persists through authenticated domain projections and the leave adapter." },
+    { "module": "expenseClaims", "classification": "SUPABASE", "reason": "Expense CRUD persists through authenticated tenant-scoped projections." },
+    { "module": "payroll", "classification": "SUPABASE", "reason": "Payroll CRUD persists through authenticated domain projections and payroll tables." },
+    { "module": "storage", "classification": "HYBRID", "reason": "storageService is gated by USE_SUPABASE_STORAGE and storage policies exist." },
+    { "module": "imports", "classification": "HYBRID", "reason": "importService has USE_SUPABASE_IMPORTS path, but current staging is local-first." },
+    { "module": "workflowNotificationsAudit", "classification": "SUPABASE", "reason": "Workflow, notification, and audit records use authenticated tenant-scoped projections." },
+    { "module": "platformGovernance", "classification": "LOCAL-FIRST", "reason": "SQL exists, but platformGovernanceService reads/writes DB platformGovernance." },
+    { "module": "qaValidation", "classification": "LOCAL-FIRST", "reason": "QA validation uses local services and DB run logs." },
+    { "module": "enterpriseTestLab", "classification": "LOCAL-FIRST", "reason": "Service generates isolated in-memory/local test data and persists run history locally." },
+    { "module": "operationsMonitoring", "classification": "SUPABASE", "reason": "Incidents, metrics, and service errors use authenticated governance projections." },
+    { "module": "recruitment", "classification": "LOCAL-FIRST", "reason": "jobOpenings and jobApplications are DB collections only." },
+    { "module": "lifecycleAdminOps", "classification": "LOCAL-FIRST", "reason": "onboarding, resignation, verification, helpdesk, collections are DB collections only." },
+    { "module": "performance", "classification": "LOCAL-FIRST", "reason": "performanceGoals, appraisals, reviewCycles are DB collections only." }
+  ],
+  "operationalReadiness": {
+    "assessment": "Pilot-ready foundation with production-sensitive hotspots.",
+    "strongestAreas": [
+      "Clear service wrappers exist for employees, attendance, leave, expense, payroll, auth, imports, governance, testing, monitoring.",
+      "SQL foundation covers core live tables, staging tables, auth invitations, governance, workflow, audit, RLS, and storage policies.",
+      "Feature flags and environment modes allow controlled local/hybrid/live activation.",
+      "Import pipeline uses staging and rollback concepts instead of direct raw ingest.",
+      "QA and Enterprise Test Lab services include isolation checks and workflow simulations.",
+      "Operations Monitoring captures incidents, service errors, performance metrics, and recovery actions."
+    ],
+    "biggestBottlenecks": [
+      "db.js and hr-dashboard.html are very large central surfaces.",
+      "Many dashboards still call DB directly instead of only service facades.",
+      "Workflow and notification paths are central and partly cyclic.",
+      "Payroll and import paths have broad cross-module dependency fan-in/fan-out.",
+      "Supabase SQL and RLS are prepared, but live activation remains controlled by flags and requires external execution/verification."
+    ],
+    "futureHardeningRecommendations": [
+      "Split hr-dashboard.html and employee-portal.html into module-specific scripts without changing behavior.",
+      "Move direct DB calls behind service methods module by module.",
+      "Add automated browser smoke tests for every role dashboard and bell/pending widget.",
+      "Run SQL execution order in a Supabase staging branch and record live health results in Platform Control Center.",
+      "Add contract tests for workflowEngine routes and notification/audit side effects.",
+      "Add payroll calculation golden tests and import rollback tests before production payroll use.",
+      "Make operationsMonitoringService resilient to recursive incident creation."
+    ]
+  }
+}

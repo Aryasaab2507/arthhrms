@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift & Roster Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/tenantIsolationService.js"></script>
+    <script src="services/leaveAttendanceGovernanceService.js"></script>
+    <script src="services/workingCalendarConfigurationService.js"></script>
+    <script src="services/attendancePolicyConfigurationService.js"></script>
+    <script src="services/shiftRosterConfigurationService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--ink:#111827;--muted:#64748b;--bg:#f6f8fb;--line:#dbe4ef;--blue:#2563eb;--green:#047857;--amber:#b45309;--nav:#0f172a}
+        body{font-family:"Inter","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}.shell{display:grid;grid-template-columns:292px 1fr;min-height:100vh}
+        .side{background:var(--nav);color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}.brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:8px;background:var(--blue);display:grid;place-items:center;font-weight:900}.brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#102033}
+        .mini-input{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;color:#102033;font-weight:800;min-width:138px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px;border-left:4px solid var(--blue)}.metric.good{border-left-color:var(--green)}.metric.warn{border-left-color:var(--amber)}.metric b{display:block;font-size:1.35rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}table{width:100%;border-collapse:collapse;min-width:920px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}.error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand"><div class="mark">SR</div><div><h1>Shift & Roster Center</h1><p>Enterprise workforce scheduling</p></div></div>
+        <nav class="nav" aria-label="Roster sections">
+            <button class="on" onclick="showSection('templates',this)">Shift Templates</button>
+            <button onclick="showSection('calendar',this)">Roster Calendar</button>
+            <button onclick="showSection('assignments',this)">Assignments</button>
+            <button onclick="showSection('coverage',this)">Coverage Map</button>
+            <button onclick="showSection('swaps',this)">Shift Swaps</button>
+            <button onclick="showSection('forecast',this)">Forecast</button>
+            <button onclick="showSection('analytics',this)">Analytics</button>
+            <button onclick="showSection('rotations',this)">Upcoming Rotations</button>
+            <a href="attendance-policy-center.html">Attendance Policy</a>
+            <a href="payroll-configuration-center.html">Payroll Configuration</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top"><div class="title"><h2>Enterprise Shift & Roster Configuration</h2><p>Manage shift templates, rotational rosters, assignments, swaps, coverage forecasts, and tenant-scoped scheduling analytics.</p></div><div class="toolbar"><span class="pill" id="tenantBadge">tenant</span><input class="mini-input" id="tenantScope" placeholder="tenant slug"><button class="btn alt" onclick="refreshCenter()">Refresh</button></div></div>
+        <div class="error" id="errorBox"></div><div class="metrics" id="metricBox"></div>
+        <section class="section on" id="section-templates"><div class="panel"><h3>Shift Templates</h3><div class="table-wrap"><table id="templatesTable"></table></div></div></section>
+        <section class="section" id="section-calendar"><div class="panel"><h3>Roster Calendar</h3><div class="table-wrap"><table id="calendarTable"></table></div></div></section>
+        <section class="section" id="section-assignments"><div class="panel"><h3>Assignments</h3><div class="table-wrap"><table id="assignmentsTable"></table></div></div></section>
+        <section class="section" id="section-coverage"><div class="panel"><h3>Coverage Map</h3><div class="table-wrap"><table id="coverageTable"></table></div></div></section>
+        <section class="section" id="section-swaps"><div class="panel"><h3>Shift Swaps</h3><div class="table-wrap"><table id="swapsTable"></table></div></div></section>
+        <section class="section" id="section-forecast"><div class="panel"><h3>Forecast</h3><div class="table-wrap"><table id="forecastTable"></table></div></div></section>
+        <section class="section" id="section-analytics"><div class="panel"><h3>Analytics</h3><div class="table-wrap"><table id="analyticsTable"></table></div></div></section>
+        <section class="section" id="section-rotations"><div class="panel"><h3>Upcoming Rotations</h3><div class="table-wrap"><table id="rotationsTable"></table></div></div></section>
+    </main>
+</div>
+<script>
+function currentTenant(){try{return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim()||undefined)}catch(error){return''}}
+function actorContext(){const user=authService.getCurrentUser()||{};return{tenantSlug:currentTenant(),actor:user}}
+function showError(message){const node=document.getElementById('errorBox');node.textContent=message||'';node.classList.toggle('on',!!message)}
+function showSection(name,button){document.querySelectorAll('.section').forEach(node=>node.classList.remove('on'));document.getElementById('section-'+name).classList.add('on');document.querySelectorAll('.nav button').forEach(node=>node.classList.remove('on'));if(button)button.classList.add('on')}
+function renderTable(id,columns,rows){const table=document.getElementById(id);const safeRows=rows||[];table.innerHTML='<thead><tr>'+columns.map(c=>'<th>'+c.label+'</th>').join('')+'</tr></thead><tbody>'+safeRows.map(row=>'<tr>'+columns.map(c=>'<td>'+(c.render?c.render(row):(row[c.key]??''))+'</td>').join('')+'</tr>').join('')+(safeRows.length?'':'<tr><td colspan="'+columns.length+'">No records yet.</td></tr>')+'</tbody>'}
+function renderMetrics(dashboard){const analytics=dashboard.analytics||{};document.getElementById('metricBox').innerHTML=[['Templates',dashboard.shiftTemplates?.length||0,'good'],['Rosters',dashboard.rosterCalendar?.length||0,'good'],['Swaps',analytics.swapRequests||0,'warn'],['Health',dashboard.rosterHealthScore||0,'good'],['Coverage',dashboard.coverageScore||0,'good']].map(item=>'<div class="metric '+item[2]+'"><b>'+item[1]+'</b><span>'+item[0]+'</span></div>').join('')}
+function renderDashboard(dashboard){renderMetrics(dashboard);renderTable('templatesTable',[{label:'Shift',key:'shiftName'},{label:'Code',key:'shiftCode'},{label:'Type',key:'shiftType'},{label:'Start',key:'startTime'},{label:'End',key:'endTime'},{label:'Status',key:'status'}],dashboard.shiftTemplates||[]);renderTable('calendarTable',[{label:'Roster',key:'rosterName'},{label:'Code',key:'rosterCode'},{label:'Type',key:'rosterType'},{label:'Start',key:'startDate'},{label:'End',key:'endDate'},{label:'Entries',key:'entries'}],dashboard.rosterCalendar||[]);renderTable('assignmentsTable',[{label:'Assignment',key:'assignmentId'},{label:'Employee',key:'employeeId'},{label:'Template',key:'templateId'},{label:'Effective',key:'effectiveDate'},{label:'Status',key:'status'}],dashboard.assignments||[]);renderTable('coverageTable',[{label:'Metric',key:'metric'},{label:'Value',key:'value'}],Object.entries(dashboard.coverageMap||{}).filter(([,value])=>typeof value!=='object').map(([metric,value])=>({metric,value})));renderTable('swapsTable',[{label:'Swap',key:'swapId'},{label:'Requester',key:'requesterEmployeeId'},{label:'Target',key:'targetEmployeeId'},{label:'Date',key:'date'},{label:'Status',key:'status'}],dashboard.shiftSwaps||[]);renderTable('forecastTable',[{label:'Metric',key:'metric'},{label:'Value',key:'value'}],Object.entries(dashboard.forecast||{}).filter(([,value])=>typeof value!=='object').map(([metric,value])=>({metric,value})));renderTable('analyticsTable',[{label:'Metric',key:'metric'},{label:'Value',key:'value'}],Object.entries(dashboard.analytics||{}).filter(([,value])=>typeof value!=='object').map(([metric,value])=>({metric,value})));renderTable('rotationsTable',[{label:'Roster',key:'rosterId'},{label:'Rotation',render:row=>row.rotationRules?.rotationType||''},{label:'Sequence',render:row=>(row.rotationRules?.sequence||[]).join(', ')}],dashboard.upcomingRotations||[])}
+function refreshCenter(){document.getElementById('tenantBadge').textContent=currentTenant();const dashboard=ShiftRosterConfigurationService.generateRosterDashboard({tenantSlug:currentTenant()},actorContext());if(!dashboard.success)return showError((dashboard.issues||[]).map(i=>i.message).join('\n'));showError('');renderDashboard(dashboard)}
+document.addEventListener('DOMContentLoaded',function init(){try{DB.init();DB.migrate()}catch(error){}document.getElementById('tenantScope').value=currentTenant();refreshCenter()});
+</script>
+</body>
+</html>

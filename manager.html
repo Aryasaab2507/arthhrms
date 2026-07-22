@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Manager Panel — HRMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/loginAttemptSecurityService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/deliverableGovernanceService.js"></script>
+<script src="services/strategicReviewService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+<script src="services/operationsMonitoringService.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles/mobileResponsiveness.css">
+<style>
+:root{--p:#0891b2;--pl:#ecfeff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f0f9ff;--side:#0c1a2e;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 10px rgba(8,145,178,.08);--rad:13px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0c1a2e,#0e4f68,#0891b2);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:22px;padding:42px;width:400px;box-shadow:0 28px 70px rgba(0,0,0,.35)}
+.login-logo{text-align:center;margin-bottom:26px}
+.login-logo .icon{width:54px;height:54px;background:linear-gradient(135deg,#0891b2,#67e8f9);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:10px}
+.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem}
+.login-logo p{font-size:.76rem;color:var(--muted);margin-top:3px}
+.lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
+.linput{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.86rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:13px;transition:border .15s}
+.linput:focus{border-color:var(--p)}
+.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#0891b2,#67e8f9);color:#fff;border:none;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.76rem;font-weight:600;margin-bottom:12px;display:none}
+.hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:11px}
+.other-links{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.other-links a{font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none}
+.sidebar{width:226px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar-logo{padding:20px 17px 13px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#0891b2,#67e8f9);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.logo-name{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:.96rem;margin-top:4px}
+.logo-sub{font-size:.6rem;color:#4a7a90;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.team-chip{padding:10px 14px;margin:10px 8px;background:rgba(255,255,255,.06);border-radius:9px}
+.team-chip .tname{color:#fff;font-weight:700;font-size:.82rem}
+.team-chip .tmeta{font-size:.67rem;color:#4a7a90;margin-top:2px}
+.snav-group{padding:9px 10px 2px;font-size:.6rem;color:#2c5f75;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.snav{display:flex;align-items:center;gap:9px;padding:8px 11px;margin:1px 7px;border-radius:8px;color:#7ab8c8;font-size:.8rem;font-weight:500;cursor:pointer;transition:all .15s}
+.snav:hover,.snav.on{background:rgba(8,145,178,.22);color:#fff}
+.snav.on{color:#67e8f9}
+.snav .icon{font-size:.9rem;width:18px;text-align:center}
+.sidebar-foot{margin-top:auto;padding:11px 7px;border-top:1px solid rgba(255,255,255,.06)}
+.main{margin-left:226px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;height:56px;padding:0 23px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 var(--border);position:sticky;top:0;z-index:50}
+.page-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.96rem}
+.role-badge{padding:4px 11px;border-radius:20px;background:linear-gradient(135deg,#0891b2,#67e8f9);color:#fff;font-size:.67rem;font-weight:700}
+.notif-wrap{position:relative}
+.notif-btn{width:34px;height:34px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:none;color:var(--p)}
+.notif-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:10px;background:var(--r);color:#fff;font-size:.6rem;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 5px}
+.notif-panel{display:none;position:absolute;right:0;top:41px;width:315px;max-height:350px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 45px rgba(15,23,42,.18);padding:10px;z-index:120}
+.notif-panel.open{display:block}
+.notif-mini{padding:9px 10px;border-radius:9px;background:var(--bg);border-left:3px solid var(--p);margin-bottom:8px;cursor:pointer}
+.notif-mini.unread{background:#fff7ed;border-left-color:var(--r)}
+.notif-mini-title{font-size:.78rem;font-weight:800}
+.notif-mini-msg{font-size:.7rem;color:var(--muted);margin-top:3px;line-height:1.35}
+.uchip{display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:9px;padding:4px 10px 4px 4px}
+.uav{width:27px;height:27px;border-radius:7px;background:linear-gradient(135deg,#0891b2,#67e8f9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.68rem}
+.content{padding:18px 22px;flex:1}
+.section{display:none}.section.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sc{background:var(--card);border-radius:var(--rad);padding:15px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sc-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sc-n{font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:900;line-height:1}
+.sc-l{font-size:.68rem;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border-radius:var(--rad);padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:15px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.91rem}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.87}
+.btn-primary{background:linear-gradient(135deg,#0891b2,#67e8f9);color:#fff}
+.btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.btn-ghost{background:var(--pl);color:var(--p)}
+.btn-sm{padding:4px 9px;font-size:.68rem}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:0 0 8px;text-align:left}
+.tbl td{padding:8px 0;border-top:1px solid var(--border);font-size:.78rem;vertical-align:middle}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700}
+.b-present{background:var(--gl);color:#047857}.b-absent{background:var(--rl);color:var(--r)}.b-late{background:var(--ol);color:var(--o)}.b-leave{background:var(--pl);color:#0891b2}
+.b-approved{background:var(--gl);color:#047857}.b-rejected{background:var(--rl);color:var(--r)}.b-pending{background:var(--ol);color:var(--o)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.fg label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select,.fg textarea{padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:.78rem;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;transition:border .15s}
+.fg input:focus,.fg select:focus{border-color:var(--p);background:#fff}
+.fg textarea{resize:vertical;min-height:60px}
+#toast{position:fixed;bottom:18px;right:18px;background:#0c1a2e;color:#fff;padding:10px 16px;border-radius:9px;font-size:.78rem;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.28);transform:translateY(60px);opacity:0;transition:all .25s;z-index:9999;border-left:4px solid #0891b2;max-width:240px}
+.sidebar{height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:10px}
+.sidebar-logo,.sidebar-foot{flex-shrink:0}
+.sidebar-foot{position:sticky;bottom:0;background:var(--side);z-index:2}
+.main,.topbar,.content,.card{min-width:0}
+.topbar-l{display:flex;align-items:center;gap:10px;min-width:0}
+.menu-btn{display:none;width:36px;height:36px;border-radius:9px;border:none;background:var(--pl);color:var(--p);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:90;display:none}
+.sidebar-backdrop.open{display:block}
+.topbar-r{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap;justify-content:flex-end}
+.page-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uchip{min-width:0}.uchip>div:last-child{min-width:0}
+@media (max-width:1400px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.three-col{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1200px){
+  .sidebar{transform:translateX(-100%);transition:transform .22s ease;z-index:120;box-shadow:18px 0 50px rgba(15,23,42,.22)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .menu-btn{display:inline-flex}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}.full{grid-column:1}
+  .content{padding:16px}
+  .topbar{padding:0 14px}
+  .card{overflow-x:auto}
+  .tbl{min-width:680px}
+}
+@media (max-width:760px){
+  .sidebar{width:min(86vw,280px)}
+  .stats{grid-template-columns:1fr}
+  .topbar{height:auto;min-height:56px;padding:10px 12px;gap:10px;align-items:flex-start}
+  .role-badge{display:none}
+  .notif-panel{right:-8px;width:min(315px,calc(100vw - 24px))}
+  .login-box{width:92vw;padding:30px 20px;border-radius:16px}
+  .content{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+      <h2>Manager Panel</h2>
+      <p>HRMS — Team Management</p>
+    </div>
+    <div class="lerr" id="lerr">Invalid credentials.</div>
+    <label class="lbl">Email</label>
+    <input class="linput" id="lemail" placeholder="manager@company.com"/>
+    <label class="lbl">Password</label>
+    <input class="linput" id="lpass" type="password"/>
+    <button class="lbtn" onclick="doLogin()">Login as Manager →</button>
+    <div class="hint">Use your activated company account.</div>
+    
+  </div>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+    <div class="logo-name">Manager Panel</div>
+    <div class="logo-sub">Team View</div>
+  </div>
+  <div class="team-chip">
+    <div class="tname" id="mgTeamName">My Team</div>
+    <div class="tmeta" id="mgTeamMeta">Team sync</div>
+  </div>
+  <div class="snav-group">Team</div>
+  <div class="snav on" onclick="show('dashboard',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Team Dashboard</div>
+  <div class="snav" onclick="show('team',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Team Members</div>
+  <div class="snav" onclick="show('attendance',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Team Attendance</div>
+  <div class="snav" onclick="show('leave',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span> Leave Requests <span id="mgPendingBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('expenses',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Team Expense Approvals <span id="mgExpenseBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('performance',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span> Team Performance Reviews <span id="mgReviewBadge" style="background:var(--ol);color:var(--o);font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('deliverables',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg></span> Team Deliverables Review <span id="mgDeliverableBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('training',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Team Training</div>
+  <div class="snav" onclick="show('tasks',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></span> Assign Tasks</div>
+  <div class="snav" onclick="show('notifications',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span> Notifications</div>
+  <div class="sidebar-foot">
+    <div class="snav" onclick="logout()"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Logout</div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="topbar">
+    <div class="topbar-l"><button class="menu-btn" onclick="toggleSidebar()" title="Menu"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><div><div class="page-title" id="pageTitle">Team Dashboard</div><div style="font-size:.67rem;color:var(--muted)">Manager Panel — Team Only View</div></div></div>
+    <div class="topbar-r">
+      <div class="notif-wrap">
+        <button class="notif-btn" onclick="toggleMgBell(event)"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="mgBellCount"></span></button>
+        <div class="notif-panel" id="mgBellPanel"></div>
+      </div>
+      <span class="role-badge"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> MANAGER</span>
+      <div class="uchip"><div class="uav" id="mgAv">MG</div><div><div style="font-size:.77rem;font-weight:700" id="mgName">Manager</div></div></div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section on" id="sec-dashboard">
+      <div id="mgPressureLoop" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px"></div>
+      <div class="stats" id="mgStats"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Team Attendance Today</div></div>
+          <div id="mgAttToday"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Pending Leave Requests</div><button class="btn btn-ghost btn-sm" onclick="show('leave',null)">Manage →</button></div>
+          <div id="mgLeavePreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM MEMBERS -->
+    <div class="section" id="sec-team">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> My Team Members</div></div>
+        <div id="mgTeamList"></div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="sec-attendance">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Team Attendance</div>
+          <div style="display:flex;gap:7px">
+            <input type="date" id="mgAttDate" onchange="renderMgAttendance()" style="padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:.76rem;font-family:'DM Sans',sans-serif;outline:none"/>
+            <button class="btn btn-ghost btn-sm" onclick="exportMgAttCSV()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> CSV</button>
+          </div>
+        </div>
+        <table class="tbl"><thead><tr><th>Member</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
+        <tbody id="mgAttTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- LEAVE -->
+    <div class="section" id="sec-leave">
+      <!-- Apply Leave (Manager's own leave) -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">Apply My Leave</div>
+          <button class="btn btn-ghost btn-sm" onclick="toggleMgrLeaveForm()" id="mgLeaveFormToggle">+ Apply</button>
+        </div>
+        <div id="mgLeaveForm" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg"><label>Leave Type</label>
+              <select id="mgLvType">
+                <option>Casual Leave (CL)</option>
+                <option>Sick Leave (SL)</option>
+                <option>Earned Leave (EL)</option>
+                <option>Work From Home</option>
+              </select>
+            </div>
+            <div class="fg"><label>Contact</label><input id="mgLvContact" placeholder="+91 XXXXXXXXXX"/></div>
+            <div class="fg"><label>From Date</label><input id="mgLvFrom" type="date"/></div>
+            <div class="fg"><label>To Date</label><input id="mgLvTo" type="date"/></div>
+            <div class="fg" style="grid-column:1/3"><label>Reason *</label>
+              <textarea id="mgLvReason" placeholder="Reason for leave…"
+                style="min-height:70px;resize:vertical;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none;width:100%"></textarea>
+            </div>
+          </div>
+          <div id="mgLvBalInfo" style="margin-bottom:10px;padding:8px 12px;background:var(--gl);border-radius:8px;font-size:.78rem;font-weight:600;color:#047857"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="mgApplyLeave()">Submit Application</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleMgrLeaveForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Team Leave Requests -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Team Leave Requests</div>
+          <select id="mgLeaveFilter" onchange="renderMgLeave()" style="padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:.76rem;font-family:'DM Sans',sans-serif;outline:none">
+            <option value="All">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Member</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Document</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="mgLeaveTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TEAM EXPENSE APPROVALS -->
+    <div class="section" id="sec-expenses">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Team Expense Approvals</div></div>
+        <table class="tbl">
+          <thead><tr><th>Claim ID</th><th>Employee Name</th><th>Category</th><th>Amount</th><th>Description</th><th>Current Status</th><th>Manager Remark</th><th>Approve</th><th>Reject</th></tr></thead>
+          <tbody id="mgExpenseTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TEAM PERFORMANCE REVIEWS -->
+    <div class="section" id="sec-performance">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Team Performance Reviews</div></div>
+        <table class="tbl">
+          <thead><tr><th>Goal ID</th><th>Employee Name</th><th>KRA Title</th><th>Target</th><th>Weightage</th><th>Self Rating</th><th>Self Comment</th><th>Manager Rating</th><th>Manager Comment</th><th>Action</th></tr></thead>
+          <tbody id="mgPerformanceTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TEAM DELIVERABLES REVIEW -->
+    <div class="section" id="sec-deliverables">
+      <div class="stats" id="mgDeliverableStats"></div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Manager Strategic Review Center</div></div>
+        <div id="mgReviewCenterStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px"></div>
+        <table class="tbl">
+          <thead><tr><th>Contributor</th><th>Accountability</th><th>Submitted</th><th>Risk</th><th>Status</th><th>Reviewer Actions</th></tr></thead>
+          <tbody id="mgReviewQueueTbody"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Monthly Accountability Review</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:12px">
+          <div class="fg"><label>Deliverable</label><select id="mgDelivSelect"></select></div>
+          <div class="fg"><label>Progress %</label><input id="mgReviewProgress" type="number" min="0" max="100" value="50"/></div>
+          <div class="fg"><label>Reviewer Action</label><select id="mgReviewStatus"><option value="APPROVE_PROGRESS">Approve Progress</option><option value="REQUEST_CLARIFICATION">Request Clarification</option><option value="REJECT_PROGRESS">Reject Progress</option><option value="MARK_AT_RISK">Mark At Risk</option><option value="ESCALATE_RISK">Escalate Risk</option><option value="COMPLETE_DELIVERABLE">Complete Deliverable</option></select></div>
+          <div class="fg"><label>Review Date</label><input id="mgReviewDate" type="date"/></div>
+          <div class="fg"><label>Employee Progress Verification</label><input id="mgEmployeeProgressNote" placeholder="Verified against measurable output"/></div>
+          <div class="fg"><label>Achievements</label><input id="mgAchievements" placeholder="What was achieved"/></div>
+          <div class="fg"><label>Bottlenecks</label><input id="mgBottlenecks" placeholder="Blocked by"/></div>
+          <div class="fg"><label>Manager Remark</label><input id="mgReviewNote" placeholder="Action required"/></div>
+        </div>
+        <button class="btn btn-primary" onclick="submitManagerDeliverableReview()">Save Reviewer Decision</button>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Team Accountability Table</div></div>
+        <table class="tbl">
+          <thead><tr><th>Owner / Contributor</th><th>Deliverable</th><th>Due</th><th>Progress</th><th>Risk</th><th>Status</th></tr></thead>
+          <tbody id="mgDeliverablesTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRAINING -->
+    <div class="section" id="sec-training">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Team Training Status</div></div>
+        <div id="mgTrainingList"></div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="section" id="sec-tasks">
+      <div class="card" style="text-align:center;padding:48px 24px">
+        <div style="font-size:3rem;margin-bottom:12px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12.01" y2="12"/></svg></div>
+        <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem">Task Assignment</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-top:8px">Coming Soon — Full task management with deadlines, priorities, and team assignments</div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="section" id="sec-notifications">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</div></div>
+        <div id="mgNotifList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+DB.init();DB.migrate();
+if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
+const __mgCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('manager') : null;
+if(!__mgCurrent || __mgCurrent.role!=='manager'){ location.replace('ArthHRMS.html'); }
+if(!sessionStorage.getItem('mgUser')) sessionStorage.setItem('mgUser', JSON.stringify(__mgCurrent));
+let ME_MGR=null, MY_TEAM=null, TEAM_IDS=[];
+
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pass=document.getElementById('lpass').value.trim();
+  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'manager') : null;
+  if(!res||res.user.role!=='manager'){document.getElementById('lerr').style.display='block';return;}
+  sessionStorage.setItem('mgUser',JSON.stringify(res.user));
+  initManager(res.user, res.emp);
+}
+function initManager(user, emp){
+  ME_MGR=emp||{id:user.empId,name:user.name};
+  MY_TEAM=DB.getManagerTeam(ME_MGR.id)||null;
+  TEAM_IDS=MY_TEAM?MY_TEAM.memberIds:[ME_MGR.id];
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  const init=(ME_MGR.name||'MG').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('mgAv').textContent=init;
+  document.getElementById('mgName').textContent=ME_MGR.name||user.name;
+  document.getElementById('mgTeamName').textContent=MY_TEAM?MY_TEAM.name:'My Team';
+  document.getElementById('mgTeamMeta').textContent=TEAM_IDS.length+' members';
+  renderAll();
+  refreshMgBell();
+}
+async function logout(){if(window.authService?.logout) await authService.logout(); else {sessionStorage.removeItem('mgUser');sessionStorage.removeItem('currentUser');sessionStorage.removeItem('currentEmployee');}location.href='ArthHRMS.html';}
+function isCompactLayout(){return window.matchMedia('(max-width:1200px)').matches;}
+function toggleSidebar(forceOpen){
+  const sb=document.getElementById('sidebar');
+  const bd=document.getElementById('sidebarBackdrop');
+  if(!sb||!bd)return;
+  const next=typeof forceOpen==='boolean'?forceOpen:!sb.classList.contains('open');
+  sb.classList.toggle('open',next);
+  bd.classList.toggle('open',next);
+}
+function closeSidebar(){toggleSidebar(false);}
+window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=sessionStorage.getItem('mgUser');
+  if(s){const u=JSON.parse(s);const emp=u.empId?DB.getEmployee(u.empId):null;initManager(u,emp);}
+  const d=document.getElementById('mgAttDate');if(d)d.value=today();
+});
+
+function show(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  document.querySelectorAll('.snav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const t={dashboard:'Team Dashboard',team:'Team Members',attendance:'Team Attendance',leave:'Leave Requests',expenses:'Team Expense Approvals',performance:'Team Performance Reviews',deliverables:'Team Deliverables Review',training:'Team Training',tasks:'Assign Tasks',notifications:'Notifications'};
+  document.getElementById('pageTitle').textContent=t[id]||id;
+  if(isCompactLayout())closeSidebar();
+  renderSection(id);
+  refreshMgBell();
+}
+function renderAll(){renderSection('dashboard');}
+function renderSection(id){
+  if(id==='dashboard')renderMgDash();
+  if(id==='team')renderMgTeam();
+  if(id==='attendance')renderMgAttendance();
+  if(id==='leave')renderMgLeave();
+  if(id==='expenses')renderMgExpenses();
+  if(id==='performance')renderMgPerformance();
+  if(id==='deliverables')renderMgDeliverables();
+  if(id==='training')renderMgTraining();
+  if(id==='notifications')renderMgNotifs();
+}
+
+function getTeamEmps(){ return DB.getEmployees().filter(e=>TEAM_IDS.includes(e.id)); }
+
+function mgPressureCard(tone,value,label,note,items){
+  const c={
+    red:['#dc2626','#fee2e2'],
+    yellow:['#d97706','#fef3c7'],
+    green:['#059669','#d1fae5'],
+    blue:['#0891b2','#ecfeff']
+  }[tone]||['#0891b2','#ecfeff'];
+  return `<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${c[0]};border-radius:12px;padding:13px 14px">
+    <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:.69rem;color:var(--muted);font-weight:800;text-transform:uppercase">${label}</div><div style="font-size:.72rem;color:var(--muted);margin-top:4px">${note}</div></div><div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem;color:${c[0]}">${value}</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${items.map(x=>`<span class="badge" style="background:${c[1]};color:${c[0]}">${x}</span>`).join('')}</div>
+  </div>`;
+}
+function mgSetBadge(id,n,tone='red'){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=n||'';
+  el.style.display=n>0?'inline-block':'none';
+  if(tone==='yellow'){el.style.background='var(--ol)';el.style.color='var(--o)';}
+  else {el.style.background='var(--r)';el.style.color='#fff';}
+}
+function renderMgPressureLoop(emps,att,leaves,expenses){
+  const d=DB.get();
+  const todayDate=today();
+  const teamMembers=emps.filter(e=>e.id!==ME_MGR.id);
+  const teamIds=new Set(teamMembers.map(e=>e.id));
+  const deliverables=DB.getStrategicDeliverablesByManager?DB.getStrategicDeliverablesByManager(ME_MGR.id):(d.strategicDeliverables||[]).filter(x=>TEAM_IDS.includes(x.empId));
+  const activeDel=deliverables.filter(x=>!['Closed','Achieved','Completed'].includes(x.status||'Active'));
+  const delayed=activeDel.filter(x=>(x.dueDate&&x.dueDate<todayDate)||['Critical','Delayed'].includes(x.lastRiskLevel||'')).length;
+  const goals=DB.getGoalsForManager?DB.getGoalsForManager(ME_MGR.id):(d.performanceGoals||[]).filter(g=>TEAM_IDS.includes(g.empId));
+  const readyReviews=goals.filter(g=>g.selfRating||g.status==='Self Review Submitted');
+  const completedReviews=readyReviews.filter(g=>g.managerRating);
+  const monthKey=todayDate.slice(0,7);
+  const activeDelIds=new Set(activeDel.map(x=>x.id));
+  const delReviewed=new Set((d.deliverableReviews||[]).filter(r=>activeDelIds.has(r.deliverableId)&&(r.reviewMonth||r.date||'').slice(0,7)===monthKey).map(r=>r.deliverableId));
+  const reviewTotal=readyReviews.length+activeDel.length;
+  const reviewDone=completedReviews.length+delReviewed.size;
+  const reviewPending=Math.max(0,reviewTotal-reviewDone);
+  const reviewPct=reviewTotal?Math.round(reviewDone/reviewTotal*100):100;
+  const attMap=new Map(att.map(a=>[a.empId,a]));
+  const attIssues=teamMembers.filter(e=>{const r=attMap.get(e.id);return !r||['Absent','Late','Leave'].includes(r.status);}).length;
+  const teamHelp=(d.helpdeskTickets||[]).filter(t=>teamIds.has(t.empId)&&t.status!=='Resolved').length;
+  const pressure=leaves.length+expenses.length+delayed+reviewPending+attIssues+teamHelp;
+  const box=document.getElementById('mgPressureLoop');
+  if(box){
+    box.innerHTML=[
+      mgPressureCard(leaves.length?'red':'green',leaves.length,'Leave Approvals Pending',leaves.length?'Leave requests need manager decision':'Leave approval queue clear',[`Pending ${leaves.length}`,`Team ${teamMembers.length}`]),
+      mgPressureCard(expenses.length?'yellow':'green',expenses.length,'Expense Decisions Pending',expenses.length?'Claims need manager decision':'Expense queue clear',[`Claims ${expenses.length}`,`Team ${teamMembers.length}`]),
+      mgPressureCard(attIssues?'yellow':'green',attIssues,'Team Attendance Issues',attIssues?'Late, absent, leave, or no punch':'Attendance steady',[`Issues ${attIssues}`,`Present ${att.filter(a=>a.status==='Present'||a.status==='Late').length}`]),
+      mgPressureCard(teamHelp?'red':'green',teamHelp,'Team Open Help Requests',teamHelp?'Employee support issues are unresolved':'No open support queue',[`Helpdesk ${teamHelp}`,`Delayed ${delayed}`]),
+      mgPressureCard(reviewPct<80?'yellow':'green',reviewPct+'%','Team Review Completion %','Performance and deliverable review closure',[`Pending ${reviewPending}`,`Done ${reviewDone}`])
+    ].join('');
+  }
+  mgSetBadge('mgReviewBadge',reviewPending,'yellow');
+  mgSetBadge('mgDeliverableBadge',delayed,'red');
+}
+
+function renderMgDash(){
+  const emps=getTeamEmps();
+  const att=DB.getTodayAttendance().filter(a=>TEAM_IDS.includes(a.empId));
+  const present=att.filter(a=>a.status==='Present'||a.status==='Late').length;
+  const leaves=DB.getLeaveRequests().filter(l=>TEAM_IDS.includes(l.empId)&&l.status==='Pending');
+  const expenses=DB.getExpenseClaimsForManager(ME_MGR.id);
+  const leaveBadge=document.getElementById('mgPendingBadge');
+  if(leaveBadge){leaveBadge.textContent=leaves.length||'';leaveBadge.style.display=leaves.length>0?'inline-block':'none';}
+  const expBadge=document.getElementById('mgExpenseBadge'); if(expBadge){expBadge.textContent=expenses.length||'';expBadge.style.display=expenses.length>0?'inline-block':'none';}
+  renderMgPressureLoop(emps,att,leaves,expenses);
+  document.getElementById('mgStats').innerHTML=`
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>','#0891b2','#ecfeff',emps.length,'Team Members','')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#059669','#d1fae5',present,'Present Today',Math.round(present/emps.length*100||0)+'%')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>','#d97706','#fef3c7',leaves.length,'Pending Leave','Approve')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>','#dc2626','#fee2e2',expenses.length,'Pending Expenses','Decide')}
+  `;
+  // today attendance
+  const attMap=new Map(att.map(a=>[a.empId,a]));
+  document.getElementById('mgAttToday').innerHTML=emps.length
+    ?emps.map(e=>{const a=attMap.get(e.id);const status=a?.status||'No Record';const cls=status.toLowerCase().replace(' ','-');return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:.8rem;font-weight:600">${e.name||e.id}</div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:.74rem;color:var(--muted)">${a?.checkIn||'Not marked'}</span><span class="badge b-${cls==='no-record'?'absent':cls}">${status}</span></div></div>`;}).join('')
+    :'<div style="color:var(--muted);font-size:.8rem;padding:8px 0">No team members linked to this manager</div>';
+  // pending leaves
+  document.getElementById('mgLeavePreview').innerHTML=leaves.length
+    ?leaves.map(l=>{const e=DB.getEmployee(l.empId)||{};return`<div style="padding:9px 10px;background:var(--bg);border-radius:8px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:.8rem">${e.name} — ${l.type}</div><div style="font-size:.7rem;color:var(--muted)">${l.from} to ${l.to}</div></div><div style="display:flex;gap:5px"><button class="btn btn-success btn-sm" onclick="approveLeave('${l.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectLeave('${l.id}')">Reject</button></div></div></div>`;}).join('')
+    :'<div style="color:var(--muted);font-size:.8rem;padding:8px 0">No pending leave requests</div>';
+}
+
+function renderMgTeam(){
+  const emps=getTeamEmps();
+  document.getElementById('mgTeamList').innerHTML=emps.map(e=>{
+    const ph=e.photo?`<img src="${e.photo}" style="width:36px;height:36px;border-radius:9px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#0891b2,#67e8f9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.78rem">${e.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>`;
+    const todayAtt=DB.get().attendance.find(a=>a.empId===e.id&&a.date===today());
+    return`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">${ph}<div style="flex:1"><div style="font-weight:700;font-size:.84rem">${e.name}</div><div style="font-size:.71rem;color:var(--muted)">${e.desig} · ${e.dept}</div></div><div style="text-align:right"><span class="badge b-${todayAtt?todayAtt.status.toLowerCase().replace(' ','-'):'absent'}">${todayAtt?todayAtt.status:'No Record'}</span><div style="font-size:.68rem;color:var(--muted);margin-top:3px">${e.leaveBalance} days leave</div></div></div>`;
+  }).join('');
+}
+
+function renderMgAttendance(){
+  const date=document.getElementById('mgAttDate')?.value||today();
+  const recs=DB.get().attendance.filter(a=>TEAM_IDS.includes(a.empId)&&a.date===date);
+  const shifts=DB.getShifts();
+  document.getElementById('mgAttTbody').innerHTML=recs.length
+    ?recs.map(a=>{const e=DB.getEmployee(a.empId)||{};const sh=shifts.find(s=>s.id===a.shiftId);return`<tr><td style="font-weight:600;font-size:.79rem">${e.name||a.empId}</td><td>${sh?`<span style="font-size:.7rem;font-weight:700;color:${sh.color}">${sh.name}</span>`:'—'}</td><td style="color:#059669;font-weight:600">${a.checkIn||'—'}</td><td style="color:#dc2626;font-weight:600">${a.checkOut||'—'}</td><td style="font-weight:700;color:var(--p)">${a.workingHours||'—'}</td><td><span class="badge b-${a.status.toLowerCase().replace(' ','-')}">${a.status}</span></td></tr>`;}).join('')
+    :'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No records for this date</td></tr>';
+}
+function exportMgAttCSV(){downloadCSV('team-attendance.csv',DB.get().attendance.filter(a=>TEAM_IDS.includes(a.empId)).map(a=>{const e=DB.getEmployee(a.empId)||{};return{EmpID:a.empId,Name:e.name||'',Date:a.date,CheckIn:a.checkIn||'',CheckOut:a.checkOut||'',Hours:a.workingHours||'',Status:a.status};}));toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading…');}
+
+function toggleMgrLeaveForm(){
+  const form = document.getElementById('mgLeaveForm');
+  const btn  = document.getElementById('mgLeaveFormToggle');
+  const show = form.style.display === 'none';
+  form.style.display = show ? 'block' : 'none';
+  btn.textContent    = show ? 'Cancel' : '+ Apply';
+  if(show && ME_MGR){
+    const emp = DB.getEmployee(ME_MGR.id);
+    if(emp){
+      const el = document.getElementById('mgLvBalInfo');
+      if(el) el.textContent = 'Leave balance: ' + emp.leaveBalance + ' days remaining';
+    }
+    const t = today();
+    const f = document.getElementById('mgLvFrom'); if(f) f.value = t;
+    const to = document.getElementById('mgLvTo');  if(to) to.value = t;
+  }
+}
+
+async function mgApplyLeave(){
+  if(!ME_MGR) return;
+  const emp    = DB.getEmployee(ME_MGR.id);
+  const from   = document.getElementById('mgLvFrom').value;
+  const to     = document.getElementById('mgLvTo').value;
+  const reason = document.getElementById('mgLvReason').value.trim();
+  const reasonWords = reason ? reason.split(/\s+/).filter(Boolean).length : 0;
+  if(!from || !to || !reason){ toast('Please fill all required fields','warn'); return; }
+  if(reasonWords > 30){ toast('Leave reason can be maximum 30 words','warn'); return; }
+  if(from > to){ toast('From date must be before To date','warn'); return; }
+  if(emp && dateDiff(from,to) > emp.leaveBalance){
+    toast('Not enough leave balance (' + (emp.leaveBalance||0) + ' days left)','warn'); return;
+  }
+  try{
+    const result = window.leaveService?.applyLeave ? await window.leaveService.applyLeave({
+      empId  : ME_MGR.id,
+      type   : document.getElementById('mgLvType').value,
+      from, to, reason,
+      document: null,
+    }) : DB.applyLeave({
+      empId  : ME_MGR.id,
+      type   : document.getElementById('mgLvType').value,
+      from, to, reason,
+      document: null,
+    });
+    if(result?.error) throw new Error(result.error);
+  }catch(err){
+    toast(err?.message || 'Unable to submit leave request','warn');
+    return;
+  }
+  toast('Leave application submitted. HR will review it.');
+  document.getElementById('mgLvReason').value = '';
+  toggleMgrLeaveForm();
+  renderMgLeave();
+}
+
+function renderMgLeave(){
+  const filter = document.getElementById('mgLeaveFilter')?.value || 'All';
+  // Include manager own leaves too
+  const allIds = [...new Set([...TEAM_IDS, ME_MGR?.id].filter(Boolean))];
+  let reqs = DB.getLeaveRequests().filter(l => allIds.includes(l.empId));
+  if(filter !== 'All') reqs = reqs.filter(l => l.status === filter);
+  const pending = reqs.filter(l => l.status === 'Pending').length;
+  const badge = document.getElementById('mgPendingBadge');
+  if(badge) badge.textContent = pending || '';
+
+  document.getElementById('mgLeaveTbody').innerHTML = reqs.length
+    ? reqs.map(l => {
+        const emp  = DB.getEmployee(l.empId) || {};
+        const days = dateDiff(l.from, l.to);
+        const isOwn = l.empId === ME_MGR?.id;
+        const statusBg = l.status==='Approved'?'var(--gl)':l.status==='Rejected'?'var(--rl)':'var(--ol)';
+        const statusCl = l.status==='Approved'?'#047857':l.status==='Rejected'?'var(--r)':'var(--o)';
+        const action = (!isOwn && l.status === 'Pending')
+          ? `<div style="display:flex;gap:4px">
+               <button class="btn btn-success btn-sm" onclick="approveLeave('${l.id}')">Approve</button>
+               <button class="btn btn-danger btn-sm"  onclick="rejectLeave('${l.id}')">Reject</button>
+             </div>`
+          : (isOwn && l.status === 'Pending'
+              ? '<span style="font-size:.72rem;color:var(--muted)">Awaiting HR</span>'
+              : `<span style="font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px;background:${statusBg};color:${statusCl}">${l.status}</span>`
+            );
+        const docCell = l.document
+          ? `<a href="${l.document}" download style="font-size:.72rem;color:var(--p);font-weight:600;text-decoration:none">View</a>`
+          : '<span style="font-size:.72rem;color:var(--muted)">—</span>';
+        return `<tr>
+          <td style="font-weight:600;font-size:.79rem">${emp.name||l.empId}${isOwn?' <span style="font-size:.65rem;color:var(--p)">(Me)</span>':''}</td>
+          <td style="font-size:.77rem">${l.type}</td>
+          <td>${l.from}</td><td>${l.to}</td><td>${days}d</td>
+          <td style="font-size:.75rem;max-width:120px;white-space:pre-wrap;word-break:break-word">${l.reason}</td>
+          <td>${docCell}</td>
+          <td><span style="font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px;background:${statusBg};color:${statusCl}">${l.status}</span></td>
+          <td>${action}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">No leave requests</td></tr>';
+}
+
+async function approveLeave(id){
+  const result = window.leaveService?.approveLeaveManager ? await window.leaveService.approveLeaveManager(id,'',ME_MGR?.id) : DB.updateLeave(id,'Approved','','manager',ME_MGR?.id);
+  if(result?.error){ toast(result.error,'warn'); return; }
+  toast('Leave Approved');
+  renderMgLeave(); renderMgDash(); refreshMgBell();
+}
+async function rejectLeave(id){
+  const result = window.leaveService?.rejectLeave ? await window.leaveService.rejectLeave(id,'','manager',ME_MGR?.id) : DB.updateLeave(id,'Rejected','','manager',ME_MGR?.id);
+  if(result?.error){ toast(result.error,'warn'); return; }
+  toast('Leave Rejected');
+  renderMgLeave(); renderMgDash(); refreshMgBell();
+}
+
+function mgExpenseStatusBadge(status){
+  const cls = status && status.indexOf('Rejected') > -1 ? 'b-rejected' :
+    status === 'Pending HR Payment' || status === 'Paid' ? 'b-approved' : 'b-pending';
+  return `<span class="badge ${cls}">${status || 'Pending Manager Approval'}</span>`;
+}
+
+async function renderMgExpenses(){
+  if(!ME_MGR) return;
+  const claims = window.expenseService?.fetchExpenseForManager ? await window.expenseService.fetchExpenseForManager(ME_MGR.id) : DB.getExpenseClaimsForManager(ME_MGR.id);
+  const expBadge=document.getElementById('mgExpenseBadge'); if(expBadge){expBadge.textContent=claims.length||'';expBadge.style.display=claims.length>0?'inline-block':'none';}
+  document.getElementById('mgExpenseTbody').innerHTML = claims.length
+    ? claims.map(c => {
+        const emp = DB.getEmployee(c.empId) || {};
+        return `<tr>
+          <td style="font-weight:700;color:var(--p)">${c.id}</td>
+          <td style="font-weight:600">${emp.name || c.empId}</td>
+          <td>${c.category || ''}</td>
+          <td style="font-weight:700">₹${Number(c.amount || 0).toLocaleString('en-IN')}</td>
+          <td style="max-width:160px;white-space:pre-wrap;word-break:break-word">${c.description || ''}</td>
+          <td>${mgExpenseStatusBadge(c.status)}</td>
+          <td><input id="mgExpRemark_${c.id}" placeholder="Remark" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.74rem;width:130px;font-family:'DM Sans',sans-serif;outline:none"/></td>
+          <td><button class="btn btn-success btn-sm" onclick="approveTeamExpense('${c.id}')">Approve</button></td>
+          <td><button class="btn btn-danger btn-sm" onclick="rejectTeamExpense('${c.id}')">Reject</button></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px">No team expense claims pending manager approval</td></tr>';
+}
+
+async function approveTeamExpense(id){
+  const remark = document.getElementById('mgExpRemark_' + id)?.value.trim() || '';
+  const result = window.expenseService?.approveExpenseManager ? await window.expenseService.approveExpenseManager(id, remark, ME_MGR?.id) : DB.approveExpenseClaimByManager(id, remark, ME_MGR?.id);
+  if(result?.error){ toast(result.error,'warn'); return; }
+  toast('Expense approved for HR payment');
+  await renderMgExpenses();
+  renderMgDash();
+  refreshMgBell();
+}
+
+async function rejectTeamExpense(id){
+  const remark = document.getElementById('mgExpRemark_' + id)?.value.trim() || '';
+  const result = window.expenseService?.rejectExpenseManager ? await window.expenseService.rejectExpenseManager(id, remark, ME_MGR?.id) : DB.rejectExpenseClaimByManager(id, remark, ME_MGR?.id);
+  if(result?.error){ toast(result.error,'warn'); return; }
+  toast('Expense rejected');
+  await renderMgExpenses();
+  renderMgDash();
+  refreshMgBell();
+}
+
+function mgPerfRatingOptions(selected){
+  return [1,2,3,4,5].map(n => `<option value="${n}" ${Number(selected)===n?'selected':''}>${n}</option>`).join('');
+}
+
+function renderMgPerformance(){
+  if(!ME_MGR) return;
+  const goals = DB.getGoalsForManager(ME_MGR.id);
+  document.getElementById('mgPerformanceTbody').innerHTML = goals.length
+    ? goals.map(g => {
+        const emp = DB.getEmployee(g.empId) || {};
+        return `<tr>
+          <td style="font-weight:700;color:var(--p)">${g.id}</td>
+          <td style="font-weight:700">${emp.name || g.empId}</td>
+          <td>${g.kraTitle || ''}</td>
+          <td style="max-width:140px;white-space:pre-wrap;word-break:break-word">${g.targetMetric || ''}</td>
+          <td>${Number(g.weightage || 0)}%</td>
+          <td><span class="badge b-approved">${g.selfRating}</span></td>
+          <td style="max-width:140px;white-space:pre-wrap;word-break:break-word">${g.selfComment || g.selfComments || '—'}</td>
+          <td><select id="mgPerfRating_${g.id}" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.74rem;font-family:'DM Sans',sans-serif">${mgPerfRatingOptions(3)}</select></td>
+          <td><input id="mgPerfComment_${g.id}" placeholder="Manager comment" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.74rem;width:130px;font-family:'DM Sans',sans-serif;outline:none"/></td>
+          <td><button class="btn btn-primary btn-sm" onclick="submitMgPerformanceReview('${g.id}')">Submit Review</button></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:16px">No team KRAs pending manager review</td></tr>';
+}
+
+function submitMgPerformanceReview(goalId){
+  const rating = document.getElementById('mgPerfRating_' + goalId)?.value;
+  const comment = document.getElementById('mgPerfComment_' + goalId)?.value.trim() || '';
+  if(!rating){ toast('Please select manager rating','warn'); return; }
+  DB.submitManagerReview(goalId, rating, comment);
+  toast('Manager review submitted');
+  renderMgPerformance();
+}
+
+function mgRiskBadge(text){
+  const t=String(text||'Attention');
+  const red=['Critical','Delayed','Failed','At Risk'];
+  const green=['On Track','Achieved','Closed','Exceeded'];
+  const bg=red.includes(t)?'var(--rl)':green.includes(t)?'var(--gl)':'var(--ol)';
+  const cl=red.includes(t)?'var(--r)':green.includes(t)?'#047857':'var(--o)';
+  return `<span class="badge" style="background:${bg};color:${cl}">${t}</span>`;
+}
+function mgReviewActionButtons(reviewId){
+  if(!reviewId||String(reviewId).startsWith('OVERDUE-')) return '<span style="font-size:.72rem;color:var(--muted)">Use monthly review form</span>';
+  return `<div style="display:flex;gap:5px;flex-wrap:wrap">
+    <button class="btn btn-success btn-sm" onclick="actOnStrategicReview('${reviewId}','APPROVE_PROGRESS')">Approve</button>
+    <button class="btn btn-primary btn-sm" onclick="actOnStrategicReview('${reviewId}','REQUEST_CLARIFICATION')">Clarify</button>
+    <button class="btn btn-danger btn-sm" onclick="actOnStrategicReview('${reviewId}','ESCALATE_RISK')">Escalate</button>
+  </div>`;
+}
+function renderMgReviewCenter(snapshot){
+  const svc=window.StrategicReviewService;
+  const box=document.getElementById('mgReviewCenterStats');
+  const body=document.getElementById('mgReviewQueueTbody');
+  if(!box||!body)return;
+  if(!svc||!snapshot?.success){
+    box.innerHTML='<div style="font-size:.82rem;color:var(--muted)">Strategic review service unavailable</div>';
+    body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Review center unavailable</td></tr>';
+    return;
+  }
+  const m=snapshot.metrics||{};
+  box.innerHTML=[
+    mgPressureCard(m.pendingReviews?'yellow':'green',m.pendingReviews||0,'Pending Reviews','Contributor updates awaiting reviewer action',[`Overdue ${m.overdueReviews||0}`]),
+    mgPressureCard(m.delayedApprovals?'yellow':'green',m.delayedApprovals||0,'Delayed Approvals','Review items older than SLA',[`Queue ${snapshot.queue.length}`]),
+    mgPressureCard(m.escalations?'red':'green',m.escalations||0,'Escalations','Risk visibility for leadership',[`Clarifications ${m.clarificationLoops||0}`]),
+    mgPressureCard(m.accountabilityHealth<80?'yellow':'green',(m.accountabilityHealth ?? 100)+'%','Accountability Health','Backlog, delay, and risk pressure',[`Delayed ${m.delayedDeliverables||0}`])
+  ].join('');
+  body.innerHTML=snapshot.queue.length?snapshot.queue.map(item=>`<tr>
+    <td style="font-weight:700">${item.contributor_name||item.contributor_id}<br><span style="font-size:.68rem;color:var(--muted)">${item.contributor_id||''}</span></td>
+    <td>${item.deliverable_title||item.deliverable_id}<br><span style="font-size:.68rem;color:var(--muted)">Owner: ${item.strategic_owner_name||item.strategic_owner_id||'Leadership'}</span></td>
+    <td>${item.submitted_at||'-'}<br><span style="font-size:.68rem;color:var(--muted)">${item.ageDays||0} day(s)</span></td>
+    <td>${mgRiskBadge(item.calculatedRisk||item.risk_level)}</td>
+    <td>${mgRiskBadge(item.review_status)}</td>
+    <td>${mgReviewActionButtons(item.review_id)}</td>
+  </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No contributor updates pending review</td></tr>';
+}
+function renderMgDeliverables(){
+  if(!ME_MGR) return;
+  DB.migrate();
+  const analytics=DB.getStrategicAnalytics({managerId:ME_MGR.id});
+  const rows=DB.getStrategicDeliverablesByManager(ME_MGR.id);
+  const snapshot=window.StrategicReviewService?.getReviewCenterSnapshot ? StrategicReviewService.getReviewCenterSnapshot({reviewerId:ME_MGR.id,role:'manager'}) : null;
+  renderMgReviewCenter(snapshot);
+  const active=rows.filter(r=>(r.finalClosureStatus||'Open')==='Open'&&!['Closed','Achieved'].includes(r.status));
+  const nowMonth=today().slice(0,7);
+  const reviews=(DB.get().deliverableReviews||[]).filter(r=>rows.some(x=>x.id===r.deliverableId)&&r.reviewMonth===nowMonth);
+  const completion=active.length?Math.round(reviews.length/active.length*100):100;
+  document.getElementById('mgDeliverableStats').innerHTML=`
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>','#d97706','#fef3c7',analytics.pendingReview,'Team Deliverables Pending Review','')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86z"/></svg>','#dc2626','#fee2e2',analytics.delayed,'Delayed Team Targets','')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/></svg>','#d97706','#fef3c7',analytics.lowProgressEmployees,'Low Progress Employees','')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#059669','#d1fae5',completion+'%','This Month Review Completion','')}
+  `;
+  const sel=document.getElementById('mgDelivSelect');
+  if(sel) sel.innerHTML=active.map(r=>`<option value="${r.deliverableId||r.id}">${r.strategicOwnerName||r.employeeName||r.empId} - ${r.deliverableTitle||r.title}</option>`).join('');
+  const reviewDate=document.getElementById('mgReviewDate'); if(reviewDate&&!reviewDate.value) reviewDate.value=today();
+  document.getElementById('mgDeliverablesTbody').innerHTML=rows.length?rows.map(r=>{const delayed=(r.finalClosureStatus||'Open')==='Open'&&(r.deadlineDate||r.dueDate)<today()&&Number((r.progressPercent ?? r.progress) || 0)<100;return `<tr>
+    <td style="font-weight:700">${r.strategicOwnerName||r.employeeName||r.empId}<br><span style="font-size:.68rem;color:var(--muted)">${(r.contributors||[]).length?'Contributor support: '+(r.contributors||[]).map(c=>c.name||c.empId).join(', '):'Leadership accountability'}</span></td><td>${r.deliverableTitle||r.title}<br><span style="font-size:.68rem;color:var(--muted)">${r.expectedOutcome||r.targetOutcome||''}</span></td><td>${r.deadlineDate||r.dueDate}</td><td><b>${((r.progressPercent ?? r.progress) || 0)}%</b></td>
+    <td>${mgRiskBadge(delayed?'Delayed':(r.lastRiskLevel||'Attention'))}</td><td>${mgRiskBadge((r.finalClosureStatus||'Open')!=='Open'?r.finalClosureStatus:(r.currentStatus||r.status||'Active'))}</td>
+  </tr>`;}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No strategic deliverables assigned to this team</td></tr>';
+}
+function actOnStrategicReview(reviewId,action){
+  const remarks={
+    APPROVE_PROGRESS:'Progress approved by reviewer',
+    REQUEST_CLARIFICATION:'Clarification requested by reviewer',
+    ESCALATE_RISK:'Escalated by reviewer'
+  };
+  const result=window.StrategicReviewService?.performReviewAction
+    ? StrategicReviewService.performReviewAction(reviewId,action,{reviewerId:ME_MGR.id,remark:remarks[action]||'Reviewer action'})
+    : {success:false,error:'Strategic review service unavailable'};
+  toast(result.success?'Review action saved':(result.error||'Review action failed'),result.success?'ok':'warn');
+  renderMgDeliverables();
+  renderMgDash();
+  refreshMgBell();
+}
+function submitManagerDeliverableReview(){
+  const deliverableId=document.getElementById('mgDelivSelect').value;
+  if(!deliverableId){toast('Select a deliverable to review','warn');return;}
+  const reviewDate=document.getElementById('mgReviewDate').value||today();
+  const reviewerAction=document.getElementById('mgReviewStatus').value;
+  const remark=document.getElementById('mgReviewNote').value.trim();
+  if(reviewerAction==='COMPLETE_DELIVERABLE'&&!remark){toast('Closure remark is required to complete a deliverable','warn');return;}
+  if(window.StrategicReviewService?.performReviewAction){
+    const result=StrategicReviewService.performReviewAction('OVERDUE-'+deliverableId,reviewerAction,{
+      reviewerId:ME_MGR.id,
+      reviewDate,
+      progressPercent:document.getElementById('mgReviewProgress').value,
+      remark,
+      closureRemarks:remark,
+      kpiValidated:reviewerAction==='COMPLETE_DELIVERABLE',
+      achievements:document.getElementById('mgAchievements').value.trim(),
+      bottlenecks:document.getElementById('mgBottlenecks').value.trim()
+    });
+    if(!result.success){toast(result.error||'Review action failed','warn');return;}
+  }else{
+    DB.addDeliverableReview({deliverableId,managerId:ME_MGR.id,reviewerAction,reviewDate,reviewMonth:reviewDate.slice(0,7),progressPercent:document.getElementById('mgReviewProgress').value,employeeProgressNote:document.getElementById('mgEmployeeProgressNote').value.trim(),managerAchievements:document.getElementById('mgAchievements').value.trim(),managerBottlenecks:document.getElementById('mgBottlenecks').value.trim(),managerRemark:remark});
+  }
+  ['mgEmployeeProgressNote','mgAchievements','mgBottlenecks','mgReviewNote'].forEach(id=>document.getElementById(id).value='');
+  toast('Reviewer decision saved');
+  renderMgDeliverables();
+}
+
+function renderMgTraining(){
+  const trainings=DB.getTrainings();const allET=DB.get().empTraining;const emps=getTeamEmps();
+  document.getElementById('mgTrainingList').innerHTML=trainings.map(t=>{
+    const teamET=allET.filter(et=>TEAM_IDS.includes(et.empId)&&et.trainingId===t.id);
+    const done=teamET.filter(et=>et.status==='Completed').length;
+    const pct=teamET.length?Math.round(done/teamET.length*100):0;
+    return`<div style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:10px"><div style="font-weight:700;font-size:.83rem">${t.title}</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">Due ${t.dueDate} · Team: ${done}/${teamET.length} completed</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div style="flex:1;height:6px;background:var(--border);border-radius:6px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#0891b2,#67e8f9);border-radius:6px"></div></div><span style="font-size:.7rem;font-weight:700;color:var(--p)">${pct}%</span></div><div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">${emps.map(e=>{const et=teamET.find(x=>x.empId===e.id);const s=et?et.status:'Not Started';return`<span style="font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:8px;background:${s==='Completed'?'var(--gl)':s==='In Progress'?'var(--pl)':'var(--rl)'};color:${s==='Completed'?'#047857':s==='In Progress'?'var(--p)':'var(--r)'}">${e.name.split(' ')[0]}: ${s}</span>`;}).join('')}</div></div>`;
+  }).join('');
+}
+
+function mgNotifRows(){
+  if(!ME_MGR) return [];
+  const map=new Map();
+  (DB.getNotificationsByRole?DB.getNotificationsByRole('MANAGER'):DB.getNotifs('MANAGER')).forEach(n=>map.set(n.id,n));
+  (DB.getNotificationsByEmp?DB.getNotificationsByEmp(ME_MGR.id):DB.getNotifs(ME_MGR.id)).forEach(n=>map.set(n.id,n));
+  return [...map.values()].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||''));
+}
+function mgNotifTargets(){ return ['MANAGER', ME_MGR?.id].filter(Boolean); }
+function mgNotifUnread(n){ return !(n.readBy||[]).some(x=>mgNotifTargets().includes(x)); }
+function refreshMgBell(){
+  if(!ME_MGR) return;
+  const rows=mgNotifRows();
+  const unread=rows.filter(mgNotifUnread).length;
+  const bell=document.getElementById('mgBellCount');
+  if(bell){ bell.textContent=unread>9?'9+':unread; bell.style.display=unread>0?'flex':'none'; }
+  const panel=document.getElementById('mgBellPanel');
+  if(panel) panel.innerHTML=rows.slice(0,6).map(n=>`<div class="notif-mini ${mgNotifUnread(n)?'unread':''}" onclick="mgMarkRead('${n.id}')"><div class="notif-mini-title">${n.title||'Notification'}</div><div class="notif-mini-msg">${n.msg||n.message||''}</div><div style="font-size:.66rem;color:var(--muted);margin-top:4px">${n.module||'General'} · ${n.date||''}</div></div>`).join('')||'<div style="padding:14px;text-align:center;color:var(--muted);font-size:.78rem">No notifications</div>';
+}
+function toggleMgBell(ev){
+  if(ev) ev.stopPropagation();
+  refreshMgBell();
+  document.getElementById('mgBellPanel')?.classList.toggle('open');
+}
+document.addEventListener('click',()=>document.getElementById('mgBellPanel')?.classList.remove('open'));
+
+function renderMgNotifs(){
+  const notifs=mgNotifRows();
+  document.getElementById('mgNotifList').innerHTML=notifs.map(n=>`<div style="padding:9px 12px;border-radius:8px;background:var(--bg);border-left:3px solid ${n.type==='warn'?'var(--o)':n.type==='success'?'var(--g)':'var(--p)'};margin-bottom:8px;${mgNotifUnread(n)?'border-left-width:4px':'opacity:.78'}"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:.79rem">${n.title}</div><div style="font-size:.71rem;color:var(--muted);margin-top:2px">${n.msg||n.message||''}</div><div style="font-size:.65rem;color:#aaa;margin-top:3px">${n.module||'General'} · ${n.date}</div></div>${mgNotifUnread(n)?`<button class="btn btn-ghost btn-sm" onclick="mgMarkRead('${n.id}')">Read</button>`:''}</div></div>`).join('')||'<div style="color:var(--muted);font-size:.8rem;padding:14px">No notifications</div>';
+}
+function mgMarkRead(id){
+  mgNotifTargets().forEach(t=>DB.markNotificationRead?DB.markNotificationRead(id,t):DB.markRead(id,t));
+  refreshMgBell();
+  renderMgNotifs();
+}
+
+function sc(ic,cl,bg,n,l,s){return`<div class="sc"><div class="sc-icon" style="background:${bg}">${ic}</div><div><div class="sc-n" style="color:${cl}">${n}</div><div class="sc-l">${l}</div></div></div>`;}
+let _tt;function toast(msg,t='ok'){if(window.__suppressNextToast&&/download|export|backup|csv|json/i.test(String(msg))){window.__suppressNextToast=false;return;}window.__suppressNextToast=false;const el=document.getElementById('toast');el.innerHTML=msg;el.style.transform='translateY(0)';el.style.opacity='1';el.style.borderLeftColor=t==='warn'?'#d97706':'#0891b2';clearTimeout(_tt);_tt=setTimeout(()=>{el.style.transform='translateY(60px)';el.style.opacity='0';},2500);}
+</script>
+</body>
+</html>

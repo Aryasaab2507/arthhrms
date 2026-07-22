@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Enterprise Test Lab - ARTHHRMS</title>
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+<script src="services/importStagingService.js"></script>
+<script src="services/importService.js"></script>
+<script src="services/enterpriseTestLabService.js"></script>
+<script src="services/operationsMonitoringService.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#1a56db;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#e2e8f0;--r:#dc2626;--g:#059669;--o:#d97706}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.wrap{max-width:1220px;margin:0 auto;padding:24px}
+.top{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:16px}
+h1{font-size:1.45rem}p{color:var(--muted);font-size:.86rem;margin-top:4px}
+.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--p);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:#e2e8f0;color:#0f172a}.btn.warn{background:var(--o)}.btn.green{background:var(--g)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select{border:1px solid var(--border);border-radius:8px;padding:9px;background:#fff;font-weight:800;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kpi{border-left:4px solid var(--p)}.kpi.red{border-left-color:var(--r)}.kpi.green{border-left-color:var(--g)}.kpi.warn{border-left-color:var(--o)}
+.kpi small{display:block;color:var(--muted);font-size:.68rem;font-weight:900;text-transform:uppercase}.kpi b{display:block;font-size:1.55rem;margin-top:6px}.kpi span{font-size:.75rem;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;min-width:860px}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:.78rem;text-align:left;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}
+.badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.pass{background:#dcfce7;color:#166534}.fail{background:#fee2e2;color:#991b1b}.warn{background:#fef3c7;color:#92400e}
+.section-title{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem}
+.toast{position:fixed;right:18px;bottom:18px;background:#0f172a;color:#fff;padding:10px 12px;border-radius:10px;font-size:.8rem;font-weight:800;opacity:0;transform:translateY(12px);transition:.2s}.toast.on{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.grid,.row{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+@media(max-width:620px){.wrap{padding:14px}.grid,.row{grid-template-columns:1fr}.toolbar{align-items:stretch}.toolbar>*{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Enterprise Test Lab</h1>
+      <p>Isolated workflow simulation, stress testing, permission validation, edge cases, and fallback confidence before rollout.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn alt" href="platform-control.html">Platform Control</a>
+      <a class="btn alt" href="operations-monitoring.html">Operations</a>
+      <a class="btn alt" href="qa-validation.html">QA Center</a>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <select id="preset">
+      <option value="small">Small Company</option>
+      <option value="medium">Medium Company</option>
+      <option value="enterprise">Enterprise Simulation</option>
+    </select>
+    <button class="btn alt" onclick="generateDataset()">Generate Isolated Dataset</button>
+    <button class="btn" onclick="runSuite()">Run Full Test Suite</button>
+    <button class="btn alt" onclick="runSingle('workflow')">Workflow</button>
+    <button class="btn alt" onclick="runSingle('stress')">Stress</button>
+    <button class="btn alt" onclick="runSingle('permissions')">Permissions</button>
+    <button class="btn alt" onclick="runSingle('edge')">Edge Cases</button>
+    <button class="btn alt" onclick="runSingle('failure')">Failure Modes</button>
+    <button class="btn green" onclick="downloadDataset()">Download Sandbox JSON</button>
+  </div>
+
+  <div class="grid" id="labCards"></div>
+  <div class="row">
+    <div class="card">
+      <h3 class="section-title">Latest Test Results</h3>
+      <div class="table-wrap"><table id="resultTable"></table></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">Sandbox Data Profile</h3>
+      <div class="table-wrap"><table id="datasetTable"></table></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3 class="section-title">Test Lab Run History</h3>
+    <div class="table-wrap"><table id="historyTable"></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const currentUser = window.authService?.getCurrentUser?.() || {};
+if(!currentUser.role || !['platform_owner','super_admin','hr','admin'].includes(currentUser.role)){
+  location.replace('ArthHRMS.html');
+}
+let latestSandbox=null;
+let latestResult=null;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200);}
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function badge(status){const s=String(status||'').toUpperCase();const cls=s==='PASS'||s==='PASSED'?'pass':s==='FAIL'||s==='FAILED'?'fail':'warn';return `<span class="badge ${cls}">${esc(s||'INFO')}</span>`;}
+function card(tone,value,label,note){return `<div class="card kpi ${tone}"><small>${esc(label)}</small><b>${esc(value)}</b><span>${esc(note)}</span></div>`;}
+function actor(){return {role:currentUser.role||'platform_owner',id:currentUser.id||currentUser.empId||'',name:currentUser.name||currentUser.email||'Test Lab User'};}
+function preset(){return document.getElementById('preset').value;}
+function flatten(result){
+  if(!result)return[];
+  if(result.groups)return result.groups.flatMap(g=>(g.results||[]).map(r=>({...r,group:g.type})));
+  if(result.results && result.results[0]?.results)return result.results.flatMap(g=>(g.results||[]).map(r=>({...r,group:g.type})));
+  return (result.results||[]).map(r=>({...r,group:result.type||'test'}));
+}
+function render(){
+  const latestRun=enterpriseTestLabService.getLatestRun?.();
+  const result=latestResult || latestRun;
+  const rows=flatten(result);
+  const failed=rows.filter(r=>r.status==='FAIL').length;
+  const warnings=rows.filter(r=>r.status==='WARNING').length;
+  const score=result?.score ?? result?.summary?.score ?? (rows.length?Math.round(((rows.length-failed-warnings*.35)/rows.length)*100):0);
+  const sandbox=latestSandbox;
+  document.getElementById('labCards').innerHTML=[
+    card(score>=90?'green':score?'warn':'red',score?score+'%':'Not Run','Test Confidence',result?.status||'Run a suite'),
+    card(failed?'red':'green',failed,'Failed Checks',failed?'Review before rollout':'No failed checks'),
+    card(warnings?'warn':'green',warnings,'Warnings',warnings?'Operational cautions found':'No warnings'),
+    card(sandbox?.isolated?'green':'warn',sandbox?.isolated?'Isolated':'Not Generated','Data Isolation',sandbox?'Sandbox only, no live writes':'Generate a dataset')
+  ].join('');
+  document.getElementById('resultTable').innerHTML=`<thead><tr><th>Status</th><th>Group</th><th>Check</th><th>Message</th></tr></thead><tbody>${
+    rows.length?rows.map(r=>`<tr><td>${badge(r.status)}</td><td>${esc(r.group)}</td><td><b>${esc(r.label)}</b><div class="muted">${esc(r.key)}</div></td><td>${esc(r.message)}</td></tr>`).join(''):'<tr><td colspan="4" class="muted">Run a simulation to populate results.</td></tr>'
+  }</tbody>`;
+  const counts=sandbox?.counts||result?.observations?.datasetCounts||{};
+  document.getElementById('datasetTable').innerHTML=`<thead><tr><th>Area</th><th>Rows</th><th>Isolation</th></tr></thead><tbody>${
+    Object.keys(counts).length?Object.entries(counts).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td><td>${badge('PASS')}</td></tr>`).join(''):'<tr><td colspan="3" class="muted">No sandbox dataset generated yet.</td></tr>'
+  }</tbody>`;
+  const history=enterpriseTestLabService.getRuns?.()||[];
+  document.getElementById('historyTable').innerHTML=`<thead><tr><th>Time</th><th>Preset</th><th>Status</th><th>Score</th><th>Total</th><th>Failed</th><th>Isolation</th></tr></thead><tbody>${
+    history.length?history.slice(0,12).map(r=>`<tr><td>${esc(new Date(r.runAt).toLocaleString())}</td><td>${esc(r.preset)}</td><td>${badge(r.status)}</td><td>${esc(r.score)}%</td><td>${esc(r.summary?.totalTests||0)}</td><td>${esc(r.summary?.failed||0)}</td><td>${badge(r.isolationVerified?'PASS':'FAIL')}</td></tr>`).join(''):'<tr><td colspan="7" class="muted">No test lab runs recorded.</td></tr>'
+  }</tbody>`;
+}
+function generateDataset(){latestSandbox=enterpriseTestLabService.generateTestDataset(preset());latestResult=null;toast('Isolated sandbox generated');render();}
+async function runSuite(){latestResult=await enterpriseTestLabService.runEnterpriseSuite({preset:preset(),actor:actor()});latestSandbox=latestResult.sandbox;toast('Enterprise suite complete');render();}
+function runSingle(type){
+  if(!latestSandbox)latestSandbox=enterpriseTestLabService.generateTestDataset(preset());
+  if(type==='workflow')latestResult=enterpriseTestLabService.runWorkflowSimulation('standard',latestSandbox);
+  if(type==='stress')latestResult=enterpriseTestLabService.runStressTest(preset(),latestSandbox);
+  if(type==='permissions')latestResult=enterpriseTestLabService.runPermissionValidation(latestSandbox);
+  if(type==='edge')latestResult=enterpriseTestLabService.runEdgeCaseTests(latestSandbox);
+  if(type==='failure')latestResult=enterpriseTestLabService.runFailureSimulation(latestSandbox);
+  toast('Simulation complete');
+  render();
+}
+function downloadDataset(){
+  if(!latestSandbox)latestSandbox=enterpriseTestLabService.generateTestDataset(preset());
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(latestSandbox,null,2));
+  a.download='arthhrms-test-lab-sandbox.json';
+  a.click();
+}
+render();
+</script>
+</body>
+</html>

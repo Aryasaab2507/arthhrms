@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Hierarchy Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/tenantIsolationService.js"></script>
+    <script src="services/managerHierarchyService.js"></script>
+    <script src="services/reportingHierarchyService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--ink:#102033;--muted:#65758b;--bg:#f6f8fb;--line:#dbe4ef;--blue:#1d4ed8;--green:#047857;--amber:#b45309;--red:#b91c1c}
+        body{font-family:"Inter","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
+        .side{background:#111827;color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:8px;background:var(--blue);display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#102033}.btn.good{background:var(--green)}.btn.warn{background:var(--amber)}
+        .mini-input{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;color:#102033;font-weight:800;min-width:138px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px;border-left:4px solid var(--blue)}.metric.good{border-left-color:var(--green)}.metric.warn{border-left-color:var(--amber)}.metric b{display:block;font-size:1.35rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.grid label{font-size:.72rem;font-weight:900;text-transform:uppercase;color:var(--muted)}.grid input,.grid select,.grid textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;font-size:.88rem}.grid textarea{min-height:150px;resize:vertical}.full{grid-column:1/-1}
+        .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}table{width:100%;border-collapse:collapse;min-width:880px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.warnb{background:#fef3c7;color:#92400e}
+        .tree{display:grid;gap:7px}.tree-row{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:9px;font-size:.82rem}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr 1fr}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics,.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">OH</div>
+            <div><h1>Organization Hierarchy Center</h1><p>Reporting relationship governance</p></div>
+        </div>
+        <nav class="nav" aria-label="Organization hierarchy sections">
+            <button class="on" onclick="showSection('chart',this)">Organization Chart</button>
+            <button onclick="showSection('relationships',this)">Manager Relationships</button>
+            <button onclick="showSection('approval',this)">Approval Chains</button>
+            <button onclick="showSection('escalation',this)">Escalation Chains</button>
+            <button onclick="showSection('validation',this)">Validation Results</button>
+            <button onclick="showSection('analytics',this)">Analytics</button>
+            <button onclick="showSection('changes',this)">Recent Changes</button>
+            <a href="employee-migration-center.html">Employee Migration</a>
+            <a href="organization-import-center.html">Organization Import</a>
+            <a href="platform-control.html">Platform Control</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Enterprise Reporting Hierarchy Builder</h2>
+                <p>Manage direct, dotted-line, functional, project, department, regional, and custom relationships with versioned rollback and read-only approval and escalation previews.</p>
+            </div>
+            <div class="toolbar">
+                <span class="pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn good" onclick="previewAssignment()">Validate</button>
+                <button class="btn warn" onclick="assignRelationship()">Assign</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="metricBox"></div>
+
+        <section class="section on" id="section-chart">
+            <div class="panel">
+                <h3>Organization Chart</h3>
+                <div class="tree" id="orgTree"></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-relationships">
+            <div class="panel">
+                <h3>Relationship Editor</h3>
+                <div class="grid">
+                    <label>Employee ID<input id="employeeId" value="EMP-1"></label>
+                    <label>Manager ID<input id="managerId" value="MGR-1"></label>
+                    <label>Relationship Type<select id="relationshipType"><option>DIRECT_MANAGER</option><option>DOTTED_LINE_MANAGER</option><option>FUNCTIONAL_MANAGER</option><option>PROJECT_MANAGER</option><option>DEPARTMENT_HEAD</option><option>HR_MANAGER</option><option>CUSTOM</option></select></label>
+                    <label>Effective Date<input id="effectiveDate" type="date"></label>
+                    <label class="full">Reason<textarea id="reason">Reporting hierarchy setup</textarea></label>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Manager Relationships</h3>
+                <div class="table-wrap"><table id="relationshipTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-approval">
+            <div class="panel">
+                <h3>Approval Chains</h3>
+                <div class="table-wrap"><table id="approvalTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-escalation">
+            <div class="panel">
+                <h3>Escalation Chains</h3>
+                <div class="table-wrap"><table id="escalationTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-validation">
+            <div class="panel">
+                <h3>Validation Results</h3>
+                <div class="table-wrap"><table id="validationTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-analytics">
+            <div class="panel">
+                <h3>Hierarchy Health</h3>
+                <div class="table-wrap"><table id="analyticsTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-changes">
+            <div class="panel">
+                <h3>Recent Changes</h3>
+                <div class="table-wrap"><table id="changesTable"></table></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+function currentTenant() {
+    try { return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim() || undefined); }
+    catch (error) { return ''; }
+}
+
+function actorContext() {
+    const user = authService.getCurrentUser() || {};
+    return { tenantSlug: currentTenant(), actor: user };
+}
+
+function showSection(name, button) {
+    document.querySelectorAll('.section').forEach(node => node.classList.remove('on'));
+    document.getElementById('section-' + name).classList.add('on');
+    document.querySelectorAll('.nav button').forEach(node => node.classList.remove('on'));
+    if (button) button.classList.add('on');
+}
+
+function showError(message) {
+    const node = document.getElementById('errorBox');
+    node.textContent = message || '';
+    node.classList.toggle('on', !!message);
+}
+
+function renderTable(id, columns, rows) {
+    const table = document.getElementById(id);
+    const safeRows = rows || [];
+    table.innerHTML = '<thead><tr>' + columns.map(c => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+        safeRows.map(row => '<tr>' + columns.map(c => '<td>' + (c.render ? c.render(row) : (row[c.key] ?? '')) + '</td>').join('') + '</tr>').join('') +
+        (safeRows.length ? '' : '<tr><td colspan="' + columns.length + '">No records yet.</td></tr>') +
+        '</tbody>';
+}
+
+function renderMetrics(report) {
+    const analytics = report?.analytics || {};
+    document.getElementById('metricBox').innerHTML = [
+        ['Depth', analytics.hierarchyDepth || 0],
+        ['Managers', analytics.activeManagers || 0],
+        ['Orphans', analytics.orphanEmployees || 0],
+        ['Health', report?.organizationHealthScore || report?.scores?.organizationHealthScore || 0],
+        ['Coverage', report?.managementCoverageScore || report?.scores?.managementCoverageScore || 0]
+    ].map((item, index) => '<div class="metric ' + (index > 2 ? 'good' : index === 2 ? 'warn' : '') + '"><b>' + item[1] + '</b><span>' + item[0] + '</span></div>').join('');
+}
+
+function assignmentPayload() {
+    return {
+        tenantSlug: currentTenant(),
+        employeeId: document.getElementById('employeeId').value.trim(),
+        managerId: document.getElementById('managerId').value.trim(),
+        relationshipType: document.getElementById('relationshipType').value,
+        effectiveDate: document.getElementById('effectiveDate').value || new Date().toISOString().slice(0, 10),
+        reason: document.getElementById('reason').value.trim() || 'Reporting hierarchy update'
+    };
+}
+
+function previewAssignment() {
+    const result = ReportingHierarchyService.validateHierarchyChange(assignmentPayload(), actorContext());
+    if (!result.success) return showError((result.issues || []).map(i => i.message).join('\n'));
+    showError('');
+    renderTable('validationTable', [
+        { label: 'Employee', key: 'employeeId' },
+        { label: 'Old Manager', key: 'oldManagerId' },
+        { label: 'New Manager', key: 'newManagerId' },
+        { label: 'Relationship', key: 'relationshipType' }
+    ], [result]);
+}
+
+function assignRelationship() {
+    const result = ReportingHierarchyService.assignReportingRelationship(assignmentPayload(), actorContext());
+    if (!result.success) return showError((result.issues || []).map(i => i.message).join('\n'));
+    showError('');
+    refreshCenter();
+}
+
+function flattenTree(nodes, depth, out) {
+    (nodes || []).forEach(node => {
+        out.push({ depth, employeeId: node.employeeId, name: node.name, managerId: node.managerId, department: node.department });
+        flattenTree(node.children || [], depth + 1, out);
+    });
+    return out;
+}
+
+function refreshCenter() {
+    document.getElementById('tenantBadge').textContent = currentTenant();
+    const dashboard = ReportingHierarchyService.generateHierarchyDashboard({ tenantSlug: currentTenant() }, actorContext());
+    if (!dashboard.success) return;
+    const analytics = ReportingHierarchyService.generateHierarchyAnalytics({ tenantSlug: currentTenant() }, actorContext());
+    renderMetrics(analytics);
+    const rows = flattenTree(dashboard.organizationChart.organizationTree || [], 1, []);
+    document.getElementById('orgTree').innerHTML = rows.map(row => '<div class="tree-row" style="margin-left:' + Math.min(48, (row.depth - 1) * 14) + 'px"><b>' + row.employeeId + '</b> ' + row.name + ' <span class="muted">reports to ' + (row.managerId || 'root') + '</span></div>').join('') || '<p class="muted">No hierarchy records available.</p>';
+    renderTable('relationshipTable', [
+        { label: 'Employee', key: 'employeeId' },
+        { label: 'Manager', key: 'managerId' },
+        { label: 'Type', key: 'relationshipType' },
+        { label: 'Effective', key: 'effectiveDate' },
+        { label: 'Status', key: 'status' }
+    ], dashboard.managerRelationships || []);
+    renderTable('approvalTable', [
+        { label: 'Chain', key: 'chainId' },
+        { label: 'Employee', key: 'employeeId' },
+        { label: 'Approvers', render: row => (row.chain || []).map(item => item.employeeId).join(' > ') }
+    ], dashboard.approvalChains || []);
+    renderTable('escalationTable', [
+        { label: 'Chain', key: 'chainId' },
+        { label: 'Employee', key: 'employeeId' },
+        { label: 'Escalation', render: row => (row.chain || []).map(item => item.employeeId).join(' > ') }
+    ], dashboard.escalationChains || []);
+    renderTable('validationTable', [
+        { label: 'Code', key: 'code' },
+        { label: 'Severity', key: 'severity' },
+        { label: 'Message', key: 'message' }
+    ], dashboard.validationResults.issues || []);
+    renderTable('analyticsTable', [
+        { label: 'Metric', key: 'metric' },
+        { label: 'Value', key: 'value' }
+    ], Object.entries(analytics.analytics || {}).map(([metric, value]) => ({ metric, value: typeof value === 'object' ? JSON.stringify(value) : value })));
+    renderTable('changesTable', [
+        { label: 'Version', key: 'versionId' },
+        { label: 'Employee', key: 'employeeId' },
+        { label: 'Action', key: 'action' },
+        { label: 'Reason', key: 'reason' },
+        { label: 'Timestamp', key: 'timestamp' }
+    ], dashboard.recentChanges || []);
+}
+
+document.addEventListener('DOMContentLoaded', function init() {
+    try { DB.init(); DB.migrate(); } catch (error) {}
+    document.getElementById('tenantScope').value = currentTenant();
+    document.getElementById('effectiveDate').value = new Date().toISOString().slice(0, 10);
+    refreshCenter();
+});
+</script>
+</body>
+</html>

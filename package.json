@@ -1,0 +1,21 @@
+{
+  "name": "arthhrms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise HRMS static frontend with authenticated Supabase persistence",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "config:production": "node scripts/generate-runtime-config.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "ci": "npm run test && npm run build && npm run verify:deployment"
+  },
+  "engines": {
+    "node": "24.17.0",
+    "npm": "11.13.0"
+  },
+  "packageManager": "npm@11.13.0",
+  "devDependencies": {
+    "supabase": "2.109.1"
+  }
+}

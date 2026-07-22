@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Validation Center | ArthHRMS</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #182230;
+            --muted: #667085;
+            --line: #d8dee8;
+            --surface: #ffffff;
+            --canvas: #f3f5f8;
+            --nav: #121923;
+            --nav-soft: #202a37;
+            --blue: #1769e0;
+            --blue-soft: #eaf2ff;
+            --green: #138a59;
+            --green-soft: #e7f6ef;
+            --amber: #b75d00;
+            --amber-soft: #fff3df;
+            --red: #c43232;
+            --red-soft: #fdecec;
+            --violet: #6b4cc7;
+            --cyan: #087f8c;
+            --radius: 6px;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--canvas); color: var(--ink); font-size: 14px; }
+        button, input, select, textarea { font: inherit; letter-spacing: 0; }
+        button { cursor: pointer; }
+        .app { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); }
+        .sidebar { background: var(--nav); color: #e7edf6; padding: 18px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; border-bottom: 1px solid #2e3947; }
+        .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; background: #eaf2ff; color: #135bc1; border-radius: 6px; font-weight: 800; }
+        .brand strong { display: block; font-size: 14px; }
+        .brand small { display: block; color: #9eabba; margin-top: 2px; }
+        .nav-label { color: #8795a7; font-size: 11px; font-weight: 700; text-transform: uppercase; margin: 18px 9px 7px; }
+        .nav-link { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: #c6d0dc; background: transparent; border: 0; border-radius: 5px; text-align: left; }
+        .nav-link:hover, .nav-link.active { color: white; background: var(--nav-soft); }
+        .nav-icon { width: 20px; height: 20px; border: 1px solid #637184; border-radius: 4px; display: grid; place-items: center; font-size: 10px; flex: 0 0 20px; }
+        .sidebar-status { margin: 20px 4px 0; padding: 12px; border: 1px solid #354253; border-radius: 6px; }
+        .status-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; color: #aeb9c6; font-size: 12px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+
+        .workspace { min-width: 0; }
+        .topbar { min-height: 64px; background: white; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 24px; position: sticky; top: 0; z-index: 10; }
+        .topbar h1 { font-size: 18px; margin: 0; }
+        .topbar p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+        .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .tenant-badge { border-left: 3px solid var(--blue); padding: 5px 10px; background: #f7f9fc; min-width: 130px; }
+        .tenant-badge small { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+        .tenant-badge strong { display: block; margin-top: 2px; }
+        .content { padding: 20px 24px 36px; max-width: 1700px; margin: 0 auto; }
+
+        .toolbar { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 14px 0 18px; }
+        .toolbar-fields { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+        .field { display: grid; gap: 5px; min-width: 150px; }
+        .field label { font-size: 11px; color: var(--muted); font-weight: 700; }
+        .field input, .field select, .field textarea { width: 100%; border: 1px solid #bfc8d5; border-radius: 5px; background: white; color: var(--ink); padding: 8px 10px; min-height: 36px; }
+        .field textarea { resize: vertical; min-height: 74px; }
+        .button-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .btn { min-height: 36px; border: 1px solid #b8c2cf; border-radius: 5px; background: white; color: #263445; padding: 7px 12px; font-weight: 650; }
+        .btn:hover { background: #f6f8fb; }
+        .btn.primary { background: var(--blue); color: white; border-color: var(--blue); }
+        .btn.danger { color: var(--red); border-color: #e0a9a9; }
+        .btn:disabled { cursor: not-allowed; opacity: .48; }
+
+        .notice { display: flex; gap: 10px; align-items: flex-start; border: 1px solid #c8d8ef; border-left: 4px solid var(--blue); border-radius: 5px; background: #f7faff; padding: 10px 12px; color: #30425a; margin-bottom: 16px; }
+        .notice strong { color: #173c6b; }
+        .notice p { margin: 2px 0 0; font-size: 12px; }
+        .notice-symbol { width: 20px; height: 20px; border: 1px solid var(--blue); color: var(--blue); border-radius: 50%; display: grid; place-items: center; font-weight: 800; flex: 0 0 20px; }
+
+        .score-grid { display: grid; grid-template-columns: repeat(5, minmax(145px, 1fr)); border: 1px solid var(--line); background: white; border-radius: var(--radius); overflow: hidden; }
+        .score { min-height: 104px; padding: 15px; border-right: 1px solid var(--line); position: relative; }
+        .score:last-child { border-right: 0; }
+        .score-label { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .score-value { font-size: 27px; font-weight: 760; margin-top: 8px; line-height: 1; }
+        .score-meta { font-size: 11px; color: var(--muted); margin-top: 9px; }
+        .score-bar { height: 4px; background: #e6eaf0; position: absolute; left: 15px; right: 15px; bottom: 12px; overflow: hidden; border-radius: 3px; }
+        .score-bar span { display: block; height: 100%; width: 0; background: var(--blue); transition: width .2s ease; }
+        .score.red .score-value { color: var(--red); }
+        .score.green .score-value { color: var(--green); }
+
+        .grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .85fr); gap: 16px; margin-top: 16px; align-items: start; }
+        .grid > * { min-width: 0; }
+        .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+        .panel-head { min-height: 49px; padding: 11px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .panel-head h2 { font-size: 14px; margin: 0; }
+        .panel-head p { font-size: 11px; color: var(--muted); margin: 3px 0 0; }
+        .panel-body { padding: 14px; }
+        .panel + .panel { margin-top: 16px; }
+        .chart-wrap { height: 240px; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+        .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+        .legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+
+        .run-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .summary-item { padding-bottom: 9px; border-bottom: 1px solid #edf0f4; min-width: 0; }
+        .summary-item small { color: var(--muted); display: block; font-size: 10px; text-transform: uppercase; }
+        .summary-item strong { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+        .summary-wide { grid-column: 1 / -1; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; }
+
+        .heatmap { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 6px; }
+        .heat-cell { min-height: 55px; border: 1px solid var(--line); border-radius: 4px; padding: 7px; display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; overflow: hidden; }
+        .heat-cell b { font-size: 16px; }
+        .heat-cell.critical { background: var(--red-soft); border-color: #eab1b1; color: #8e2222; }
+        .heat-cell.high { background: var(--amber-soft); border-color: #ecc894; color: #844900; }
+        .heat-cell.medium { background: #fff9db; border-color: #e8dc8e; color: #685c00; }
+        .heat-cell.low { background: var(--green-soft); border-color: #a9dac5; color: #176845; }
+        .empty { min-height: 120px; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; }
+
+        .observation-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .observation-form .wide { grid-column: 1 / -1; }
+        .form-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; align-items: center; padding-top: 4px; }
+        .form-foot small { color: var(--muted); max-width: 480px; }
+
+        .tabs { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; background: #fafbfc; }
+        .tab { border: 0; border-right: 1px solid var(--line); background: transparent; padding: 10px 13px; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+        .tab.active { color: var(--blue); background: white; box-shadow: inset 0 -2px var(--blue); }
+        .table-wrap { overflow: auto; max-height: 410px; }
+        table { width: 100%; border-collapse: collapse; min-width: 760px; }
+        th { position: sticky; top: 0; z-index: 1; background: #f7f8fa; color: #586678; text-align: left; font-size: 10px; text-transform: uppercase; padding: 9px 11px; border-bottom: 1px solid var(--line); }
+        td { padding: 10px 11px; border-bottom: 1px solid #edf0f4; vertical-align: top; }
+        tr:hover td { background: #fbfcfe; }
+        .pill { display: inline-flex; align-items: center; min-height: 23px; padding: 3px 7px; border-radius: 999px; font-size: 10px; font-weight: 750; white-space: nowrap; }
+        .pill.passed, .pill.completed { color: #126b45; background: var(--green-soft); }
+        .pill.failed, .pill.critical, .pill.go_live_blocked { color: #9c2828; background: var(--red-soft); }
+        .pill.blocked, .pill.high, .pill.paused { color: #8b4c00; background: var(--amber-soft); }
+        .pill.running, .pill.medium { color: #175aab; background: var(--blue-soft); }
+        .pill.not_executed, .pill.not_applicable, .pill.low, .pill.info { color: #596779; background: #edf1f5; }
+
+        .recommendations { margin: 0; padding: 0; list-style: none; }
+        .recommendations li { padding: 10px 0 10px 18px; border-bottom: 1px solid #edf0f4; position: relative; line-height: 1.4; }
+        .recommendations li::before { content: ""; width: 6px; height: 6px; background: var(--amber); border-radius: 50%; position: absolute; left: 2px; top: 16px; }
+        .report-tools { display: grid; grid-template-columns: minmax(160px, 1fr) auto auto; gap: 8px; }
+        .toast { position: fixed; right: 20px; bottom: 20px; max-width: 380px; background: #182230; color: white; padding: 11px 14px; border-radius: 5px; box-shadow: 0 8px 28px rgba(10, 20, 35, .22); z-index: 30; display: none; }
+        .toast.error { background: #8d2424; }
+
+        @media (max-width: 1180px) {
+            .score-grid { grid-template-columns: repeat(3, minmax(145px, 1fr)); }
+            .score { border-bottom: 1px solid var(--line); }
+            .grid { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 780px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; padding: 10px 12px; }
+            .brand { padding-bottom: 10px; }
+            .nav-label, .sidebar-status { display: none; }
+            .nav-scroll { display: flex; overflow-x: auto; padding-top: 8px; }
+            .nav-link { width: auto; min-width: max-content; }
+            .topbar { position: static; padding: 12px 15px; align-items: flex-start; }
+            .top-actions { display: none; }
+            .content { padding: 14px 12px 28px; }
+            .toolbar { align-items: stretch; flex-direction: column; }
+            .toolbar-fields { display: grid; grid-template-columns: 1fr 1fr; }
+            .field { min-width: 0; }
+            .score-grid { grid-template-columns: 1fr 1fr; }
+            .score:nth-child(even) { border-right: 0; }
+            .observation-form { grid-template-columns: 1fr; }
+            .observation-form .wide, .form-foot { grid-column: 1; }
+            .form-foot { align-items: stretch; flex-direction: column; }
+            .heatmap { grid-template-columns: repeat(2, minmax(90px, 1fr)); }
+            .report-tools { grid-template-columns: 1fr 1fr; }
+            .report-tools select { grid-column: 1 / -1; }
+        }
+        @media (max-width: 440px) {
+            .toolbar-fields, .score-grid, .run-summary { grid-template-columns: 1fr; }
+            .score { border-right: 0; }
+            .button-row .btn { flex: 1 1 135px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">AH</div>
+            <div><strong>ArthHRMS</strong><small>Security Validation</small></div>
+        </div>
+        <div class="nav-label">Validation Center</div>
+        <div class="nav-scroll">
+            <button class="nav-link active" data-target="overview"><span class="nav-icon">01</span>Overview</button>
+            <button class="nav-link" data-target="identity"><span class="nav-icon">02</span>Authentication & RBAC</button>
+            <button class="nav-link" data-target="isolation"><span class="nav-icon">03</span>Tenant Isolation</button>
+            <button class="nav-link" data-target="privacy"><span class="nav-icon">04</span>Compliance & Privacy</button>
+            <button class="nav-link" data-target="findings"><span class="nav-icon">05</span>Findings</button>
+            <button class="nav-link" data-target="reports"><span class="nav-icon">06</span>Reports</button>
+        </div>
+        <div class="sidebar-status">
+            <strong>Governance guard</strong>
+            <div class="status-line"><span><i class="status-dot"></i>Observation only</span><span>On</span></div>
+            <div class="status-line"><span>Network probing</span><span>Blocked</span></div>
+            <div class="status-line"><span>Production changes</span><span>Blocked</span></div>
+        </div>
+    </aside>
+
+    <main class="workspace">
+        <header class="topbar">
+            <div><h1>Security Validation Center</h1><p>UAT-07 enterprise security, RBAC, compliance, and privacy assurance</p></div>
+            <div class="top-actions"><div class="tenant-badge"><small>Tenant scope</small><strong id="tenantTop">-</strong></div><span class="pill running" id="runStateTop">No active run</span></div>
+        </header>
+
+        <div class="content">
+            <section class="toolbar" id="overview">
+                <div class="toolbar-fields">
+                    <div class="field"><label for="tenantInput">Tenant</label><input id="tenantInput" value="tabsons" autocomplete="off"></div>
+                    <div class="field"><label for="environmentInput">Environment</label><select id="environmentInput"><option>UAT</option><option>STAGING</option><option>SECURITY_TEST</option><option>PRE_PRODUCTION</option><option>SANDBOX</option></select></div>
+                </div>
+                <div class="button-row">
+                    <button class="btn" id="initButton">Initialize controls</button>
+                    <button class="btn primary" id="startButton">Start run</button>
+                    <button class="btn" id="pauseButton" disabled>Pause</button>
+                    <button class="btn" id="resumeButton" disabled>Resume</button>
+                    <button class="btn" id="completeButton" disabled>Complete</button>
+                </div>
+            </section>
+
+            <div class="notice">
+                <div class="notice-symbol">i</div>
+                <div><strong>Evidence-driven validation</strong><p>This center records approved scanner, review, and tabletop observations. It never launches attacks, probes a URL, changes roles, revokes sessions, or edits security configuration.</p></div>
+            </div>
+
+            <section class="score-grid" aria-label="Security scores">
+                <article class="score"><div class="score-label">Security score</div><div class="score-value" id="securityScore">0</div><div class="score-meta" id="securityMeta">No evidence</div><div class="score-bar"><span id="securityBar"></span></div></article>
+                <article class="score"><div class="score-label">Compliance</div><div class="score-value" id="complianceScore">0</div><div class="score-meta">Readiness indicator</div><div class="score-bar"><span id="complianceBar" style="background:var(--violet)"></span></div></article>
+                <article class="score"><div class="score-label">Privacy</div><div class="score-value" id="privacyScore">0</div><div class="score-meta">Control posture</div><div class="score-bar"><span id="privacyBar" style="background:var(--cyan)"></span></div></article>
+                <article class="score"><div class="score-label">Risk score</div><div class="score-value" id="riskScore">0</div><div class="score-meta" id="riskMeta">No open findings</div><div class="score-bar"><span id="riskBar" style="background:var(--red)"></span></div></article>
+                <article class="score"><div class="score-label">Control coverage</div><div class="score-value" id="coverageScore">0%</div><div class="score-meta" id="coverageMeta">0 / 0 controls</div><div class="score-bar"><span id="coverageBar" style="background:var(--green)"></span></div></article>
+            </section>
+
+            <div class="grid">
+                <div>
+                    <section class="panel" id="identity">
+                        <div class="panel-head"><div><h2>Control domain posture</h2><p>Recorded result score and execution coverage by domain</p></div><div class="legend"><span><i style="background:var(--blue)"></i>Score</span><span><i style="background:#cfd7e2"></i>Coverage</span></div></div>
+                        <div class="panel-body"><div class="chart-wrap"><canvas id="domainChart" aria-label="Domain score chart"></canvas></div></div>
+                    </section>
+
+                    <section class="panel" id="isolation">
+                        <div class="panel-head"><div><h2>Record approved observation</h2><p>One immutable result and evidence reference per submission</p></div><span class="pill not_executed">No live probe</span></div>
+                        <div class="panel-body">
+                            <form class="observation-form" id="observationForm">
+                                <div class="field"><label for="domainInput">Domain</label><select id="domainInput"></select></div>
+                                <div class="field"><label for="controlInput">Control</label><select id="controlInput"></select></div>
+                                <div class="field"><label for="statusInput">Observed status</label><select id="statusInput"><option>PASSED</option><option>FAILED</option><option>BLOCKED</option><option>NOT_APPLICABLE</option></select></div>
+                                <div class="field"><label for="sourceInput">Evidence source</label><select id="sourceInput"><option>APPROVED_OBSERVATION</option><option>SECURITY_REVIEW</option><option>APPROVED_SCANNER</option><option>TABLETOP</option><option>EXTERNAL_AUDIT</option></select></div>
+                                <div class="field wide"><label for="referenceInput">Evidence reference</label><input id="referenceInput" placeholder="Example: SEC-REVIEW-2026-014" maxlength="180" required></div>
+                                <div class="field wide"><label for="summaryInput">Observed result</label><textarea id="summaryInput" placeholder="Describe the observed outcome without secrets, tokens, credentials, or personal data." maxlength="1000" required></textarea></div>
+                                <div class="form-foot"><small>Failed or blocked results create an open finding. Critical findings block go-live until mitigated or confirmed false positive.</small><button class="btn primary" id="recordButton" type="submit" disabled>Record observation</button></div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section class="panel" id="privacy">
+                        <div class="panel-head"><div><h2>Validation matrix</h2><p>Latest immutable observation for each in-scope control</p></div><span id="matrixCount" class="pill not_executed">0 controls</span></div>
+                        <div class="tabs" id="domainTabs"></div>
+                        <div class="table-wrap"><table><thead><tr><th>Control</th><th>Domain</th><th>Severity</th><th>Status</th><th>Evidence</th><th>Observed</th></tr></thead><tbody id="matrixBody"></tbody></table></div>
+                    </section>
+                </div>
+
+                <aside>
+                    <section class="panel">
+                        <div class="panel-head"><div><h2>Active run</h2><p>Reproducible validation manifest</p></div><span class="pill not_executed" id="runState">Not started</span></div>
+                        <div class="panel-body"><div class="run-summary" id="runSummary"><div class="empty summary-wide">Initialize controls and start a UAT run.</div></div></div>
+                    </section>
+
+                    <section class="panel" id="findings">
+                        <div class="panel-head"><div><h2>Risk heatmap</h2><p>Open findings by severity and domain</p></div><span class="pill low" id="findingCount">0 open</span></div>
+                        <div class="panel-body"><div class="heatmap" id="riskHeatmap"></div></div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-head"><div><h2>Recommendations</h2><p>Prioritized from recorded evidence</p></div></div>
+                        <div class="panel-body"><ul class="recommendations" id="recommendations"><li>Start a validation run to calculate recommendations.</li></ul></div>
+                    </section>
+
+                    <section class="panel" id="reports">
+                        <div class="panel-head"><div><h2>Governed reports</h2><p>Redacted, tenant-scoped exports</p></div></div>
+                        <div class="panel-body">
+                            <div class="report-tools"><select id="reportType"><option value="EXECUTIVE_SECURITY">Executive Security</option><option value="TECHNICAL_SECURITY">Technical Security</option><option value="COMPLIANCE">Compliance</option><option value="RBAC">RBAC</option><option value="TENANT_ISOLATION">Tenant Isolation</option><option value="PRIVACY">Privacy</option></select><button class="btn" id="jsonExport" disabled>JSON</button><button class="btn" id="csvExport" disabled>CSV</button></div>
+                            <div class="button-row" style="margin-top:10px"><button class="btn" id="queueButton" disabled>Queue background review</button></div>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="db.js"></script>
+<script src="services/workflowTelemetryService.js"></script>
+<script src="services/auditService.js"></script>
+<script src="services/orchestrationMetricsService.js"></script>
+<script src="services/securityValidationService.js"></script>
+<script>
+(function () {
+    'use strict';
+    if (window.DB && typeof DB.init === 'function') DB.init();
+    var svc = window.SecurityValidationService;
+    var state = { run: null, controls: [], dashboard: null, domain: 'ALL' };
+    var colors = { blue: '#1769e0', pale: '#cfd7e2', grid: '#e5e9ef', text: '#667085' };
+
+    function byId(id) { return document.getElementById(id); }
+    function normalizeTenant(value) { return String(value || '').trim().toLowerCase().replace(/^tenant[-_]/, '').replace(/^ten[-_]/, '').replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''); }
+    function activeUser() { return authService.getCurrentUser(); }
+    function context() { var user = activeUser(); var tenant = normalizeTenant(byId('tenantInput').value || 'default'); return { tenantSlug: tenant, actor: { id: user && (user.id || user.empId) || '', role: user && user.role || 'UNAUTHENTICATED', tenantSlug: tenant } }; }
+    function inputScope() { return { tenantSlug: normalizeTenant(byId('tenantInput').value), environment: byId('environmentInput').value }; }
+    function pill(value) { return '<span class="pill ' + String(value || 'not_executed').toLowerCase() + '">' + escapeHtml(String(value || 'NOT EXECUTED').replace(/_/g, ' ')) + '</span>'; }
+    function escapeHtml(value) { var node = document.createElement('div'); node.textContent = String(value == null ? '' : value); return node.innerHTML; }
+    function show(message, error) { var toast = byId('toast'); toast.textContent = message; toast.className = 'toast' + (error ? ' error' : ''); toast.style.display = 'block'; clearTimeout(show.timer); show.timer = setTimeout(function () { toast.style.display = 'none'; }, 3300); }
+    function call(response, successMessage) { if (!response || !response.success) { show(response && response.message || 'Operation failed safely.', true); return false; } show(successMessage || response.message, false); return true; }
+    function formatDate(value) { if (!value) return '-'; var date = new Date(value); return Number.isFinite(date.getTime()) ? date.toLocaleString() : value; }
+
+    function initialize() { var response = svc.initializeValidationLibrary(inputScope(), context()); if (!call(response)) return; loadControls(); refresh(); }
+    function loadControls() { var response = svc.listValidationLibrary(inputScope(), context()); state.controls = response.success ? response.controls : []; populateDomains(); }
+    function start() { var response = svc.startValidationRun(Object.assign(inputScope(), { name: 'Enterprise Security UAT', seed: 'UAT-07-' + new Date().toISOString().slice(0, 10) }), context()); if (!call(response)) return; state.run = response.run; loadControls(); refresh(); }
+    function pause() { if (!state.run) return; var response = svc.pauseValidationRun(Object.assign(inputScope(), { runId: state.run.runId, expectedVersion: state.run.version, reason: 'Operator pause.' }), context()); if (!call(response)) return; state.run = response.run; refresh(); }
+    function resume() { if (!state.run) return; var response = svc.resumeValidationRun(Object.assign(inputScope(), { runId: state.run.runId, expectedVersion: state.run.version }), context()); if (!call(response)) return; state.run = response.run; refresh(); }
+    function complete() { if (!state.run) return; var response = svc.completeValidationRun(Object.assign(inputScope(), { runId: state.run.runId, expectedVersion: state.run.version }), context()); if (!call(response, response && response.goLiveBlocked ? 'Run completed with go-live blockers.' : 'Run completed.')) return; state.run = response.run; refresh(); }
+    function recordObservation(event) { event.preventDefault(); if (!state.run) return; var controlCode = byId('controlInput').value; var response = svc.recordControlResult(Object.assign(inputScope(), { runId: state.run.runId, expectedVersion: state.run.version, sourceTenantSlug: inputScope().tenantSlug, controlCode: controlCode, status: byId('statusInput').value, actualResult: byId('summaryInput').value, submissionId: 'UI-' + Date.now() + '-' + controlCode, evidence: { sourceType: byId('sourceInput').value, reference: byId('referenceInput').value, summary: byId('summaryInput').value } }), context()); if (!call(response)) return; state.run.version = response.runVersion; byId('referenceInput').value = ''; byId('summaryInput').value = ''; refresh(); }
+    function queueReview() { if (!state.run) return; var response = svc.scheduleBackgroundValidation(Object.assign(inputScope(), { runId: state.run.runId, schedule: 'MANUAL' }), context()); call(response); if (response.success) refresh(); }
+    function exportReport(format) { if (!state.run) return; var response = svc.exportReport(Object.assign(inputScope(), { runId: state.run.runId, reportType: byId('reportType').value, format: format }), context()); if (!call(response)) return; var blob = new Blob([response.exportContent], { type: response.export.mimeType }); var link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = response.export.fileName; document.body.appendChild(link); link.click(); link.remove(); setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000); refresh(); }
+
+    function populateDomains() { var domain = byId('domainInput'); var existing = domain.value; var names = Object.keys(svc.DOMAINS); domain.innerHTML = names.map(function (name) { return '<option value="' + name + '">' + name.replace(/_/g, ' ') + '</option>'; }).join(''); if (names.indexOf(existing) !== -1) domain.value = existing; populateControls(); var tabs = ['ALL'].concat(names); byId('domainTabs').innerHTML = tabs.map(function (name) { return '<button class="tab' + (state.domain === name ? ' active' : '') + '" data-domain="' + name + '">' + name.replace(/_/g, ' ') + '</button>'; }).join(''); }
+    function populateControls() { var domain = byId('domainInput').value; var rows = state.controls.filter(function (row) { return row.domain === domain; }); byId('controlInput').innerHTML = rows.map(function (row) { return '<option value="' + escapeHtml(row.code) + '">' + escapeHtml(row.name) + '</option>'; }).join(''); }
+    function setScore(id, barId, value, suffix) { byId(id).textContent = Math.round(Number(value || 0)) + (suffix || ''); byId(barId).style.width = Math.max(0, Math.min(100, Number(value || 0))) + '%'; }
+
+    function refresh() {
+        byId('tenantTop').textContent = inputScope().tenantSlug || '-';
+        var response = svc.generateDashboard(Object.assign(inputScope(), { runId: state.run && state.run.runId }), context()); if (!response.success) { renderEmpty(); return; }
+        state.dashboard = response; if (response.activeRun) state.run = Object.assign({}, state.run || {}, response.activeRun);
+        var analytics = response.analytics || { securityScore: 0, complianceScore: 0, privacyScore: 0, riskScore: 0, controlCoverage: 0, statusCounts: {}, domainScores: {}, recommendations: [] };
+        setScore('securityScore', 'securityBar', analytics.securityScore); setScore('complianceScore', 'complianceBar', analytics.complianceScore); setScore('privacyScore', 'privacyBar', analytics.privacyScore); setScore('riskScore', 'riskBar', analytics.riskScore); setScore('coverageScore', 'coverageBar', analytics.controlCoverage, '%');
+        byId('securityMeta').textContent = analytics.criticalFindings ? analytics.criticalFindings + ' critical finding(s)' : 'No critical findings'; byId('riskMeta').textContent = (analytics.openFindings || 0) + ' open finding(s)'; byId('coverageMeta').textContent = ((analytics.statusCounts && (analytics.statusCounts.PASSED + analytics.statusCounts.FAILED + analytics.statusCounts.BLOCKED + analytics.statusCounts.NOT_APPLICABLE)) || 0) + ' / ' + (state.run && state.run.controlCount || state.controls.length || 0) + ' controls';
+        renderRun(response.activeRun); renderChart(analytics.domainScores || {}); renderMatrix(response, analytics); renderHeatmap(response.findings || []); renderRecommendations(analytics.recommendations || []); updateButtons(response.activeRun); populateDomains();
+    }
+
+    function renderEmpty() { setScore('securityScore', 'securityBar', 0); setScore('complianceScore', 'complianceBar', 0); setScore('privacyScore', 'privacyBar', 0); setScore('riskScore', 'riskBar', 0); setScore('coverageScore', 'coverageBar', 0, '%'); renderRun(null); renderChart({}); renderHeatmap([]); renderRecommendations([]); updateButtons(null); }
+    function renderRun(run) { var status = run ? run.status : 'NOT_EXECUTED'; byId('runState').outerHTML = pill(status).replace('<span ', '<span id="runState" '); byId('runStateTop').outerHTML = pill(run ? (run.outcome || run.status) : 'NOT_EXECUTED').replace('<span ', '<span id="runStateTop" '); var target = byId('runSummary'); if (!run) { target.innerHTML = '<div class="empty summary-wide">Initialize controls and start a UAT run.</div>'; return; } target.innerHTML = '<div class="summary-item"><small>Run ID</small><strong class="mono">' + escapeHtml(run.runId) + '</strong></div><div class="summary-item"><small>Environment</small><strong>' + escapeHtml(run.environment) + '</strong></div><div class="summary-item"><small>Status</small><strong>' + escapeHtml(run.status) + '</strong></div><div class="summary-item"><small>Outcome</small><strong>' + escapeHtml(run.outcome || 'IN PROGRESS') + '</strong></div><div class="summary-item summary-wide"><small>Manifest fingerprint</small><strong class="mono">' + escapeHtml(run.manifestFingerprint) + '</strong></div><div class="summary-item"><small>Reproducible</small><strong>' + (run.reproducible ? 'Yes' : 'No') + '</strong></div><div class="summary-item"><small>Exportable</small><strong>' + (run.exportable ? 'Yes' : 'No') + '</strong></div><div class="summary-item summary-wide"><small>Started</small><strong>' + escapeHtml(formatDate(run.startedAt)) + '</strong></div>'; }
+    function updateButtons(run) { var running = run && run.status === 'RUNNING'; var paused = run && run.status === 'PAUSED'; byId('pauseButton').disabled = !running; byId('resumeButton').disabled = !paused; byId('completeButton').disabled = !(running || paused); byId('recordButton').disabled = !running; byId('jsonExport').disabled = !run; byId('csvExport').disabled = !run; byId('queueButton').disabled = !run || run.status === 'CANCELLED'; }
+
+    function renderChart(domainScores) { var canvas = byId('domainChart'); var ratio = window.devicePixelRatio || 1; var rect = canvas.getBoundingClientRect(); canvas.width = Math.max(640, Math.floor(rect.width * ratio)); canvas.height = Math.max(240, Math.floor(rect.height * ratio)); var ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio); var width = canvas.width / ratio; var height = canvas.height / ratio; ctx.clearRect(0, 0, width, height); var entries = Object.keys(svc.DOMAINS).map(function (name) { return { name: name, score: domainScores[name] ? domainScores[name].score : 0, coverage: domainScores[name] ? domainScores[name].coverage : 0 }; }); var left = 128; var right = 30; var top = 10; var rowHeight = (height - top - 8) / entries.length; entries.forEach(function (row, index) { var y = top + index * rowHeight; ctx.fillStyle = colors.text; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right'; ctx.fillText(row.name.replace(/_/g, ' '), left - 10, y + 12); ctx.fillStyle = colors.grid; ctx.fillRect(left, y + 2, width - left - right, 12); ctx.fillStyle = colors.pale; ctx.fillRect(left, y + 2, (width - left - right) * row.coverage / 100, 12); ctx.fillStyle = colors.blue; ctx.fillRect(left, y + 5, (width - left - right) * row.score / 100, 6); ctx.fillStyle = colors.text; ctx.textAlign = 'left'; ctx.fillText(Math.round(row.score) + '%', width - right + 4, y + 12); }); }
+
+    function allResults(dashboard) { return [].concat(dashboard.authenticationHealth || [], dashboard.authorizationMatrix || [], dashboard.tenantIsolation || [], dashboard.complianceStatus || [], dashboard.privacyStatus || [], dashboard.vulnerabilities || [], dashboard.auditCoverage || [], dashboard.incidentSimulations || []).filter(function (row, index, all) { return all.findIndex(function (candidate) { return candidate.controlCode === row.controlCode; }) === index; }); }
+    function renderMatrix(dashboard, analytics) { var resultMap = {}; allResults(dashboard).forEach(function (row) { resultMap[row.controlCode] = row; }); var rows = state.controls.filter(function (row) { return state.domain === 'ALL' || row.domain === state.domain; }).map(function (control) { return Object.assign({}, control, resultMap[control.code] || { status: 'NOT_EXECUTED', evidenceId: '', observedAt: '' }); }); byId('matrixCount').textContent = rows.length + ' controls'; byId('matrixBody').innerHTML = rows.length ? rows.map(function (row) { return '<tr><td><strong>' + escapeHtml(row.name || row.controlName) + '</strong><br><span class="mono">' + escapeHtml(row.code || row.controlCode) + '</span></td><td>' + escapeHtml(row.domain.replace(/_/g, ' ')) + '</td><td>' + pill(row.severity) + '</td><td>' + pill(row.status) + '</td><td class="mono">' + escapeHtml(row.evidenceId || '-') + '</td><td>' + escapeHtml(formatDate(row.observedAt)) + '</td></tr>'; }).join('') : '<tr><td colspan="6"><div class="empty">No controls are available for this scope.</div></td></tr>'; }
+    function renderHeatmap(findings) { var open = findings.filter(function (row) { return row.status === 'OPEN' || (row.status === 'ACCEPTED' && row.severity === 'CRITICAL'); }); byId('findingCount').textContent = open.length + ' open'; byId('riskHeatmap').innerHTML = open.length ? open.slice(0, 15).map(function (row) { return '<div class="heat-cell ' + row.severity.toLowerCase() + '" title="' + escapeHtml(row.title) + '"><span>' + escapeHtml(row.domain.replace(/_/g, ' ')) + '</span><b>' + escapeHtml(row.severity.slice(0, 1)) + '</b></div>'; }).join('') : '<div class="empty" style="grid-column:1/-1">No open findings in recorded evidence.</div>'; }
+    function renderRecommendations(rows) { byId('recommendations').innerHTML = rows.length ? rows.map(function (row) { return '<li>' + escapeHtml(row) + '</li>'; }).join('') : '<li>Start a validation run to calculate recommendations.</li>'; }
+
+    byId('initButton').addEventListener('click', initialize); byId('startButton').addEventListener('click', start); byId('pauseButton').addEventListener('click', pause); byId('resumeButton').addEventListener('click', resume); byId('completeButton').addEventListener('click', complete); byId('observationForm').addEventListener('submit', recordObservation); byId('domainInput').addEventListener('change', populateControls); byId('queueButton').addEventListener('click', queueReview); byId('jsonExport').addEventListener('click', function () { exportReport('JSON'); }); byId('csvExport').addEventListener('click', function () { exportReport('CSV'); });
+    byId('domainTabs').addEventListener('click', function (event) { var button = event.target.closest('[data-domain]'); if (!button) return; state.domain = button.dataset.domain; populateDomains(); if (state.dashboard) renderMatrix(state.dashboard, state.dashboard.analytics || {}); });
+    document.querySelectorAll('.nav-link').forEach(function (button) { button.addEventListener('click', function () { document.querySelectorAll('.nav-link').forEach(function (row) { row.classList.remove('active'); }); button.classList.add('active'); var target = byId(button.dataset.target); if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
+    window.addEventListener('resize', function () { if (state.dashboard) renderChart(state.dashboard.analytics && state.dashboard.analytics.domainScores || {}); });
+
+    loadControls(); refresh();
+})();
+</script>
+</body>
+</html>

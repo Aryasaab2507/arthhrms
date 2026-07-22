@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Panel — HRMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/loginAttemptSecurityService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+<script src="services/operationsMonitoringService.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--p:#1d4ed8;--pl:#eff6ff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f0f4fb;--side:#0f172a;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 12px rgba(29,78,216,.08);--rad:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a,#1d4ed8);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:22px;padding:42px;width:400px;box-shadow:0 28px 70px rgba(0,0,0,.35)}
+.login-logo{text-align:center;margin-bottom:26px}
+.login-logo .icon{width:54px;height:54px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:10px}
+.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem}
+.login-logo p{font-size:.76rem;color:var(--muted);margin-top:3px}
+.lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
+.linput{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.86rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:13px;transition:border .15s}
+.linput:focus{border-color:var(--p)}
+.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff;border:none;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.76rem;font-weight:600;margin-bottom:12px;display:none}
+.hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:11px}
+.other-links{display:flex;gap:10px;justify-content:center;margin-top:13px;flex-wrap:wrap}
+.other-links a{font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none}
+.sidebar{width:228px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-icon{width:35px;height:35px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.logo-name{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:.98rem;margin-top:5px}
+.logo-sub{font-size:.61rem;color:#5b82b4;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.snav-group{padding:10px 10px 2px;font-size:.61rem;color:#3d5a80;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.snav{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 7px;border-radius:8px;color:#94b4d4;font-size:.81rem;font-weight:500;cursor:pointer;transition:all .15s}
+.snav:hover,.snav.on{background:rgba(29,78,216,.22);color:#fff}
+.snav.on{color:#93c5fd}
+.snav .icon{font-size:.92rem;width:18px;text-align:center}
+.sidebar-foot{margin-top:auto;padding:12px 7px;border-top:1px solid rgba(255,255,255,.06)}
+.main{margin-left:228px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;height:57px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 var(--border);position:sticky;top:0;z-index:50}
+.page-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.98rem}
+.role-badge{padding:4px 11px;border-radius:20px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff;font-size:.68rem;font-weight:700}
+.notif-wrap{position:relative}
+.notif-btn{width:34px;height:34px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:none;color:var(--p)}
+.notif-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:10px;background:var(--r);color:#fff;font-size:.6rem;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 5px}
+.notif-panel{display:none;position:absolute;right:0;top:41px;width:315px;max-height:350px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 45px rgba(15,23,42,.18);padding:10px;z-index:120}
+.notif-panel.open{display:block}
+.notif-mini{padding:9px 10px;border-radius:9px;background:var(--bg);border-left:3px solid var(--p);margin-bottom:8px;cursor:pointer}
+.notif-mini.unread{background:#fff7ed;border-left-color:var(--r)}
+.notif-mini-title{font-size:.78rem;font-weight:800}
+.notif-mini-msg{font-size:.7rem;color:var(--muted);margin-top:3px;line-height:1.35}
+.uchip{display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:9px;padding:5px 11px 5px 5px}
+.uav{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem}
+.content{padding:20px 24px;flex:1}
+.section{display:none}.section.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
+.sc{background:var(--card);border-radius:var(--rad);padding:17px 15px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px}
+.sc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.sc-n{font-family:'Nunito',sans-serif;font-size:1.35rem;font-weight:900;line-height:1}
+.sc-l{font-size:.7rem;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border-radius:var(--rad);padding:17px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.card-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.93rem}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.87}
+.btn-primary{background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff}
+.btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-ghost{background:var(--pl);color:var(--p)}
+.btn-outline{background:transparent;color:var(--p);border:1.5px solid var(--p)}
+.btn-sm{padding:4px 9px;font-size:.69rem}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:0 0 9px;text-align:left}
+.tbl td{padding:9px 0;border-top:1px solid var(--border);font-size:.79rem;vertical-align:middle}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700}
+.b-present{background:var(--gl);color:#047857}.b-absent{background:var(--rl);color:var(--r)}.b-late{background:var(--ol);color:var(--o)}.b-leave{background:var(--pl);color:#1d4ed8}
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:11px}
+.fg label{font-size:.69rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select,.fg textarea{padding:8px 11px;border-radius:8px;border:1.5px solid var(--border);font-size:.79rem;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;transition:border .15s}
+.fg input:focus,.fg select:focus{border-color:var(--p);background:#fff}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+#toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:10px 17px;border-radius:9px;font-size:.8rem;font-weight:600;box-shadow:0 6px 22px rgba(0,0,0,.28);transform:translateY(60px);opacity:0;transition:all .25s;z-index:9999;border-left:4px solid #1d4ed8;max-width:250px}
+.sidebar{height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:10px}
+.sidebar-logo,.sidebar-foot{flex-shrink:0}
+.sidebar-foot{position:sticky;bottom:0;background:var(--side);z-index:2}
+.main,.topbar,.content,.card{min-width:0}
+.topbar-l{display:flex;align-items:center;gap:10px;min-width:0}
+.menu-btn{display:none;width:36px;height:36px;border-radius:9px;border:none;background:var(--pl);color:var(--p);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:90;display:none}
+.sidebar-backdrop.open{display:block}
+.topbar-r{display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap;justify-content:flex-end}
+.page-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uchip{min-width:0}.uchip>div:last-child{min-width:0}
+@media (max-width:1400px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.three-col{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1200px){
+  .sidebar{transform:translateX(-100%);transition:transform .22s ease;z-index:120;box-shadow:18px 0 50px rgba(15,23,42,.22)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .menu-btn{display:inline-flex}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}.full{grid-column:1}
+  .content{padding:16px}
+  .topbar{padding:0 14px}
+  .card{overflow-x:auto}
+  .tbl{min-width:680px}
+}
+@media (max-width:760px){
+  .sidebar{width:min(86vw,280px)}
+  .stats{grid-template-columns:1fr}
+  .topbar{height:auto;min-height:56px;padding:10px 12px;gap:10px;align-items:flex-start}
+  .role-badge{display:none}
+  .notif-panel{right:-8px;width:min(315px,calc(100vw - 24px))}
+  .login-box{width:92vw;padding:30px 20px;border-radius:16px}
+  .content{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <h2>Admin Panel</h2>
+      <p>HRMS — Operations Management</p>
+    </div>
+    <div class="lerr" id="lerr">Invalid credentials.</div>
+    <label class="lbl">Email</label>
+    <input class="linput" id="lemail" placeholder="admin@company.com"/>
+    <label class="lbl">Password</label>
+    <input class="linput" id="lpass" type="password"/>
+    <button class="lbtn" onclick="doLogin()">Login as Admin →</button>
+    <div class="hint">Use your activated company account.</div>
+    
+  </div>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <div class="logo-name">Admin Panel</div>
+    <div class="logo-sub">Operations</div>
+  </div>
+  <div class="snav-group">Overview</div>
+  <div class="snav on" onclick="show('dashboard',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Dashboard</div>
+  <div class="snav-group">Operations</div>
+  <div class="snav" onclick="show('attendance',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Attendance</div>
+  <div class="snav" onclick="show('shifts',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Shifts</div>
+  <div class="snav" onclick="show('training',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Training</div>
+  <div class="snav" onclick="show('notifications',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span> Notifications</div>
+  <!-- ADMIN_OPS_NAV_START -->
+  <div class="snav-group">HR Ops Desk</div>
+  <div class="snav" onclick="show('docverify',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span> Document Verification <span id="adDocBadge" style="background:var(--ol);color:var(--o);font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('regularization',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span> Attendance Regularization <span id="adRegBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('helpdesk',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Helpdesk Tickets <span id="adHelpBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('onboardingdesk',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Onboarding Desk <span id="adOnboardBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <!-- ADMIN_OPS_NAV_END -->
+  <div class="snav-group">Reports</div>
+  <div class="snav" onclick="show('reports',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></span> Reports</div>
+  <div class="sidebar-foot">
+    <div class="snav" onclick="logout()"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Logout</div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="topbar">
+    <div class="topbar-l"><button class="menu-btn" onclick="toggleSidebar()" title="Menu"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><div><div class="page-title" id="pageTitle">Dashboard</div><div style="font-size:.68rem;color:var(--muted)">Admin Panel</div></div></div>
+    <div class="topbar-r">
+      <div class="notif-wrap">
+        <button class="notif-btn" onclick="toggleAdBell(event)"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="adBellCount"></span></button>
+        <div class="notif-panel" id="adBellPanel"></div>
+      </div>
+      <span class="role-badge"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ADMIN</span>
+      <div class="uchip"><div class="uav">AD</div><div><div style="font-size:.78rem;font-weight:700" id="adName">Admin</div></div></div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section on" id="sec-dashboard">
+      <div id="adOpsQueueLoop" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px"></div>
+      <div class="stats" id="adStats"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Today's Attendance</div></div>
+          <div id="adAttSummary"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Training Overview</div></div>
+          <canvas id="adTrainingChart" style="max-height:180px"></canvas>
+        </div>
+      </div>
+      <!-- RECRUITMENT_MODULE_ADMIN_ANALYTICS_START -->
+      <div class="card" style="margin-top:18px">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v.01"/></svg> Recruitment Snapshot</div></div>
+        <div id="adRecruitmentStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+      </div>
+      <!-- RECRUITMENT_MODULE_ADMIN_ANALYTICS_END -->
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="sec-attendance">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Attendance Management</div>
+          <div style="display:flex;gap:8px">
+            <input type="date" id="adAttDate" onchange="renderAdAttendance()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.77rem;font-family:'DM Sans',sans-serif;outline:none"/>
+            <select id="adAttDept" onchange="renderAdAttendance()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.77rem;font-family:'DM Sans',sans-serif;outline:none">
+              <option value="all">All Departments</option>
+              <option>Engineering</option><option>HR</option><option>Finance</option><option>Sales</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="exportAttCSV()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> CSV</button>
+          </div>
+        </div>
+        <div id="adAttStats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+        <table class="tbl"><thead><tr><th>Employee</th><th>Dept</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
+        <tbody id="adAttTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SHIFTS -->
+    <div class="section" id="sec-shifts">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Shift Management</div><button class="btn btn-primary btn-sm" onclick="openShiftForm()">+ New Shift</button></div>
+        <div id="adShiftForm" style="display:none;background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px;border:1.5px solid var(--border)">
+          <div class="two-col">
+            <div class="fg"><label>Name *</label><input id="sfName" placeholder="e.g. Morning Shift"/></div>
+            <div class="fg"><label>Color</label><input id="sfColor" type="color" value="#1d4ed8" style="height:38px;padding:4px"/></div>
+            <div class="fg"><label>Start Time</label><input id="sfStart" type="time" value="09:00"/></div>
+            <div class="fg"><label>End Time</label><input id="sfEnd" type="time" value="18:00"/></div>
+            <div class="fg"><label>Grace (min)</label><input id="sfGrace" type="number" value="15" min="0" max="60"/></div>
+            <div class="fg"><label>Description</label><input id="sfDesc" placeholder="Optional…"/></div>
+          </div>
+          <input type="hidden" id="sfEditId"/>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="saveShift()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save</button>
+            <button class="btn btn-outline btn-sm" onclick="closeShiftForm()">Cancel</button>
+          </div>
+        </div>
+        <div id="adShiftCards"></div>
+      </div>
+    </div>
+
+    <!-- TRAINING -->
+    <div class="section" id="sec-training">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Training Programs</div></div>
+        <div id="adTrainingList"></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="section" id="sec-notifications">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Send Notification</div></div>
+        <div class="fg"><label>Title</label><input id="nTitle" placeholder="Notice title…"/></div>
+        <div class="fg"><label>Message</label><textarea id="nMsg" style="min-height:60px;resize:vertical" placeholder="Message…"></textarea></div>
+        <div class="fg"><label>Type</label><select id="nType"><option value="info">ℹ️ Info</option><option value="warn"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Warning</option><option value="success"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Success</option></select></div>
+        <button class="btn btn-primary" onclick="sendNotice()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Send to All</button>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> All Notifications</div></div>
+        <div id="adNotifList"></div>
+      </div>
+    </div>
+
+    <!-- ADMIN_OPS_SECTIONS_START -->
+    <div class="section" id="sec-docverify">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Document Verification Desk</div></div>
+          <div class="fg"><label>Employee</label><select id="advEmp"></select></div>
+          <div class="two-col">
+            <div class="fg"><label>Aadhaar Status</label><select id="advAadhaar"></select></div>
+            <div class="fg"><label>PAN Status</label><select id="advPan"></select></div>
+            <div class="fg"><label>Bank Details Status</label><select id="advBank"></select></div>
+            <div class="fg"><label>Education Docs Status</label><select id="advEdu"></select></div>
+          </div>
+          <div class="fg"><label>Offer / Joining Docs Status</label><select id="advJoin"></select></div>
+          <div class="fg"><label>Verification Remark</label><textarea id="advRemark" style="min-height:70px;resize:vertical" placeholder="Remark for HR file"></textarea></div>
+          <button class="btn btn-primary" onclick="adOpsSaveDocumentVerification()">Save Verification</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Verification History</div></div>
+          <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Employee</th><th>Aadhaar</th><th>PAN</th><th>Bank</th><th>Education</th><th>Joining</th><th>Remark</th><th>Date</th></tr></thead><tbody id="advHistory"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-regularization">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Attendance Regularization Desk</div></div>
+          <div class="two-col">
+            <div class="fg"><label>Employee</label><select id="aarEmp"></select></div>
+            <div class="fg"><label>Date</label><input id="aarDate" type="date"/></div>
+            <div class="fg"><label>Correct Check In</label><input id="aarIn" type="time"/></div>
+            <div class="fg"><label>Correct Check Out</label><input id="aarOut" type="time"/></div>
+          </div>
+          <div class="fg"><label>Reason</label><textarea id="aarReason" style="min-height:70px;resize:vertical" placeholder="Reason for manual correction"></textarea></div>
+          <button class="btn btn-primary" onclick="adOpsSaveRegularization()">Save Regularization</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Regularization History</div></div>
+          <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Reason</th><th>Saved</th></tr></thead><tbody id="aarHistory"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-helpdesk">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Employee Helpdesk Tickets</div></div>
+          <div class="fg"><label>Ticket ID</label><input id="ahdId" readonly/></div>
+          <div class="two-col">
+            <div class="fg"><label>Employee</label><select id="ahdEmp"></select></div>
+            <div class="fg"><label>Category</label><select id="ahdCategory"><option>Portal Login Issue</option><option>Salary Slip Request</option><option>Attendance Issue</option><option>Document Issue</option><option>ID Card Issue</option><option>Other</option></select></div>
+            <div class="fg"><label>Status</label><select id="ahdStatus"><option>Open</option><option>In Progress</option><option>Resolved</option></select></div>
+            <div class="fg"><label>Resolution Note</label><input id="ahdResolution" placeholder="Resolution note"/></div>
+          </div>
+          <div class="fg"><label>Issue Description</label><textarea id="ahdIssue" style="min-height:70px;resize:vertical" placeholder="Employee issue details"></textarea></div>
+          <button class="btn btn-primary" onclick="adOpsSaveHelpdeskTicket()">Save Ticket</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Ticket Queue</div></div>
+          <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>ID</th><th>Employee</th><th>Category</th><th>Issue</th><th>Status</th><th>Resolution</th><th>Action</th></tr></thead><tbody id="ahdHistory"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-onboardingdesk">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Onboarding Document Collection Desk</div></div>
+          <div class="fg"><label>Employee</label><select id="aocEmp"></select></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <label style="font-size:.78rem;font-weight:700"><input id="aocPhoto" type="checkbox"/> Photo Submitted</label>
+            <label style="font-size:.78rem;font-weight:700"><input id="aocBank" type="checkbox"/> Bank Form Submitted</label>
+            <label style="font-size:.78rem;font-weight:700"><input id="aocId" type="checkbox"/> ID Proof Submitted</label>
+            <label style="font-size:.78rem;font-weight:700"><input id="aocEdu" type="checkbox"/> Education Proof Submitted</label>
+            <label style="font-size:.78rem;font-weight:700"><input id="aocPolicy" type="checkbox"/> Policy Signed</label>
+            <label style="font-size:.78rem;font-weight:700"><input id="aocWelcome" type="checkbox"/> Welcome Kit Issued</label>
+          </div>
+          <button class="btn btn-primary" onclick="adOpsSaveOnboardingCollection()">Save Onboarding Collection</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Onboarding Collection Status</div></div>
+          <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Employee</th><th>Photo</th><th>Bank</th><th>ID</th><th>Education</th><th>Policy</th><th>Kit</th><th>Saved</th></tr></thead><tbody id="aocHistory"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <!-- ADMIN_OPS_SECTIONS_END -->
+
+    <!-- REPORTS -->
+    <div class="section" id="sec-reports">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px">
+        <div class="card" style="text-align:center;cursor:pointer" onclick="exportAttCSV()"><div style="font-size:1.8rem;margin-bottom:8px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-family:'Nunito',sans-serif;font-weight:800">Attendance</div><button class="btn btn-primary btn-sm" style="margin-top:10px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Download</button></div>
+        <div class="card" style="text-align:center;cursor:pointer" onclick="exportShiftCSV()"><div style="font-size:1.8rem;margin-bottom:8px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div style="font-family:'Nunito',sans-serif;font-weight:800">Shifts</div><button class="btn btn-ghost btn-sm" style="margin-top:10px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Download</button></div>
+        <div class="card" style="text-align:center;cursor:pointer" onclick="exportTrainingCSV()"><div style="font-size:1.8rem;margin-bottom:8px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div style="font-family:'Nunito',sans-serif;font-weight:800">Training</div><button class="btn btn-ghost btn-sm" style="margin-top:10px"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Download</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+DB.init();DB.migrate();
+if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
+const __adCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('admin') : null;
+if(!__adCurrent || __adCurrent.role!=='admin'){ location.replace('ArthHRMS.html'); }
+if(!sessionStorage.getItem('adUser')) sessionStorage.setItem('adUser', JSON.stringify(__adCurrent));
+let _adTrChart=null;
+
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pass=document.getElementById('lpass').value.trim();
+  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'admin') : null;
+  if(!res||res.user.role!=='admin'){document.getElementById('lerr').style.display='block';return;}
+  sessionStorage.setItem('adUser',JSON.stringify(res.user));
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('adName').textContent=res.user.name;
+  renderAll();
+  refreshAdBell();
+}
+async function logout(){if(window.authService?.logout) await authService.logout(); else {sessionStorage.removeItem('adUser');sessionStorage.removeItem('currentUser');sessionStorage.removeItem('currentEmployee');}location.href='ArthHRMS.html';}
+function isCompactLayout(){return window.matchMedia('(max-width:1200px)').matches;}
+function toggleSidebar(forceOpen){
+  const sb=document.getElementById('sidebar');
+  const bd=document.getElementById('sidebarBackdrop');
+  if(!sb||!bd)return;
+  const next=typeof forceOpen==='boolean'?forceOpen:!sb.classList.contains('open');
+  sb.classList.toggle('open',next);
+  bd.classList.toggle('open',next);
+}
+function closeSidebar(){toggleSidebar(false);}
+window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=sessionStorage.getItem('adUser');
+  if(s){document.getElementById('loginScreen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('mainArea').style.display='flex';document.getElementById('adName').textContent=JSON.parse(s).name;renderAll();refreshAdBell();}
+  const d=document.getElementById('adAttDate');if(d)d.value=today();
+});
+
+function show(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  document.querySelectorAll('.snav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const t={dashboard:'Dashboard',attendance:'Attendance',shifts:'Shifts',training:'Training',notifications:'Notifications',docverify:'Document Verification',regularization:'Attendance Regularization',helpdesk:'Helpdesk Tickets',onboardingdesk:'Onboarding Desk',reports:'Reports'};
+  document.getElementById('pageTitle').textContent=t[id]||id;
+  if(isCompactLayout())closeSidebar();
+  renderSection(id);
+  refreshAdBell();
+}
+function renderAll(){renderSection('dashboard');}
+function renderSection(id){
+  if(id==='dashboard')renderAdDash();
+  if(id==='attendance')renderAdAttendance();
+  if(id==='shifts')renderAdShifts();
+  if(id==='training')renderAdTraining();
+  if(id==='notifications')renderAdNotifs();
+  if(id==='docverify')renderAdOpsDocumentVerification();
+  if(id==='regularization')renderAdOpsRegularization();
+  if(id==='helpdesk')renderAdOpsHelpdesk();
+  if(id==='onboardingdesk')renderAdOpsOnboardingDesk();
+}
+
+function adQueueCard(tone,value,label,note,items){
+  const c={
+    red:['#dc2626','#fee2e2'],
+    yellow:['#d97706','#fef3c7'],
+    green:['#059669','#d1fae5'],
+    blue:['#1d4ed8','#eff6ff']
+  }[tone]||['#1d4ed8','#eff6ff'];
+  return `<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${c[0]};border-radius:12px;padding:13px 14px">
+    <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:.69rem;color:var(--muted);font-weight:800;text-transform:uppercase">${label}</div><div style="font-size:.72rem;color:var(--muted);margin-top:4px">${note}</div></div><div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem;color:${c[0]}">${value}</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${items.map(x=>`<span class="badge" style="background:${c[1]};color:${c[0]}">${x}</span>`).join('')}</div>
+  </div>`;
+}
+function adCollectionIncomplete(c){return !(c&&c.photoSubmitted&&c.bankFormSubmitted&&c.idProofSubmitted&&c.educationProofSubmitted&&c.policySigned&&c.welcomeKitIssued);}
+function adLatestByEmp(rows){
+  const map=new Map();
+  (rows||[]).forEach(r=>{if(!map.has(r.empId))map.set(r.empId,r);});
+  return map;
+}
+function adOpsCounts(){
+  const d=DB.get();
+  const emps=DB.getEmployees();
+  const regRows=d.attendanceRegularizations||[];
+  const helpRows=d.helpdeskTickets||[];
+  const regs=regRows.filter(r=>r.status==='Pending').length;
+  const help=helpRows.filter(t=>t.status!=='Resolved').length;
+  const collections=adLatestByEmp(d.onboardingCollections||[]);
+  const onboard=emps.filter(e=>adCollectionIncomplete(collections.get(e.id))).length;
+  const verifications=adLatestByEmp(d.documentVerifications||[]);
+  const docFields=['aadhaarStatus','panStatus','bankStatus','educationStatus','joiningStatus'];
+  const docPending=emps.filter(e=>{const v=verifications.get(e.id);return !v||docFields.some(k=>v[k]!=='Verified');}).length;
+  const regDone=regRows.filter(r=>r.status&&r.status!=='Pending').length;
+  const helpDone=helpRows.filter(t=>t.status==='Resolved').length;
+  const onboardDone=emps.filter(e=>!adCollectionIncomplete(collections.get(e.id))).length;
+  const docDone=emps.filter(e=>{const v=verifications.get(e.id);return v&&docFields.every(k=>v[k]==='Verified');}).length;
+  const totalWork=regRows.length+helpRows.length+(emps.length*2);
+  const doneWork=regDone+helpDone+onboardDone+docDone;
+  const resolution=totalWork?Math.round(doneWork/totalWork*100):100;
+  return {regs,help,onboard,docPending,emps:emps.length,resolution};
+}
+function renderAdOpsQueueLoop(){
+  const q=adOpsCounts();
+  const total=q.regs+q.help+q.onboard+q.docPending;
+  const box=document.getElementById('adOpsQueueLoop');
+  if(box){
+    box.innerHTML=[
+      adQueueCard(q.regs?'red':'green',q.regs,'Attendance Corrections Pending',q.regs?'Missed punch cases need action':'No attendance correction queue',[`Pending ${q.regs}`]),
+      adQueueCard(q.help?'red':'green',q.help,'Helpdesk Queue',q.help?'Employee support queue active':'Helpdesk clear',[`Open ${q.help}`]),
+      adQueueCard(q.onboard?'yellow':'green',q.onboard,'Onboarding Incomplete',q.onboard?'New joiner documentation needs follow-up':'Collections complete',[`Employees ${q.emps}`,`Incomplete ${q.onboard}`]),
+      adQueueCard(q.docPending?'yellow':'green',q.docPending,'Document Verification Pending',q.docPending?'Identity/bank/education checks waiting':'Verification desk clear',[`Pending ${q.docPending}`]),
+      adQueueCard(q.resolution>=80?'green':'yellow',q.resolution+'%','Ops Resolution %','Closed tickets, docs, onboarding, and corrections',[`Closed ${q.resolution}%`])
+    ].join('');
+  }
+  return total;
+}
+
+function renderAdDash(){
+  const att=DB.getTodayAttendance();
+  const emps=DB.getEmployees();
+  const present=att.filter(a=>a.status==='Present').length;
+  const late=att.filter(a=>a.status==='Late').length;
+  const absent=att.filter(a=>a.status==='Absent').length;
+  const shifts=DB.getShifts();
+  refreshAdPendingBadges();
+  renderAdOpsQueueLoop();
+  document.getElementById('adStats').innerHTML=`
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>','#1d4ed8','#eff6ff',emps.length,'Employees','')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#059669','#d1fae5',present,'Present','Today')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>','#d97706','#fef3c7',late,'Late','Today')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>','#7c3aed','#f5f3ff',shifts.length,'Shifts','Active')}
+  `;
+  document.getElementById('adAttSummary').innerHTML=att.length
+    ?att.slice(0,6).map(a=>{const e=DB.getEmployee(a.empId)||{};return`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:.8rem;font-weight:600">${e.name||a.empId}</div><span class="badge b-${a.status.toLowerCase().replace(' ','-')}">${a.status}</span></div>`;}).join('')
+    :'<div style="color:var(--muted);font-size:.8rem;padding:8px 0">No attendance marked today</div>';
+  // training chart
+  const trainings=DB.getTrainings();const allET=DB.get().empTraining;
+  const labels=trainings.map(t=>t.title.split(' ').slice(0,2).join(' '));
+  const compPct=trainings.map(t=>{const en=allET.filter(et=>et.trainingId===t.id);const done=en.filter(et=>et.status==='Completed').length;return en.length?Math.round(done/en.length*100):0;});
+  if(_adTrChart)_adTrChart.destroy();
+  const ctx=document.getElementById('adTrainingChart');
+  if(ctx)_adTrChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Completion %',data:compPct,backgroundColor:'#1d4ed8cc',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
+  // RECRUITMENT_MODULE_ADMIN_SCRIPT_START
+  const rec = DB.getRecruitmentStats ? DB.getRecruitmentStats() : { openJobs:0, totalOpenings:0, totalApplications:0, interview:0, hired:0 };
+  const recBox = document.getElementById('adRecruitmentStats');
+  if(recBox){
+    recBox.innerHTML = [
+      adRecMini(rec.openJobs, 'Open Jobs', '#1d4ed8', '#eff6ff'),
+      adRecMini(rec.totalOpenings, 'Open Positions', '#059669', '#d1fae5'),
+      adRecMini(rec.totalApplications, 'Applications', '#d97706', '#fef3c7'),
+      adRecMini((rec.interview || 0) + ' / ' + (rec.hired || 0), 'Interview / Hired', '#db2777', '#fce7f3')
+    ].join('');
+  }
+  // RECRUITMENT_MODULE_ADMIN_SCRIPT_END
+}
+
+// RECRUITMENT_MODULE_ADMIN_HELPER_START
+function adRecMini(num, label, color, bg){
+  return `<div style="background:${bg};border-radius:10px;padding:13px 14px;border:1px solid var(--border)">
+    <div style="font-family:'Nunito',sans-serif;font-size:1.25rem;font-weight:900;color:${color}">${num}</div>
+    <div style="font-size:.72rem;color:var(--muted);font-weight:700;margin-top:2px">${label}</div>
+  </div>`;
+}
+// RECRUITMENT_MODULE_ADMIN_HELPER_END
+
+function renderAdAttendance(){
+  const date=document.getElementById('adAttDate')?.value||today();
+  const dept=document.getElementById('adAttDept')?.value||'all';
+  const d=DB.get();
+  let recs=d.attendance.filter(a=>a.date===date);
+  if(dept!=='all') recs=recs.filter(a=>{const e=d.employees.find(x=>x.id===a.empId);return e&&e.dept===dept;});
+  const shifts=DB.getShifts();
+  const cnts={Present:0,Late:0,Leave:0,Absent:0};
+  recs.forEach(r=>{if(cnts[r.status]!==undefined)cnts[r.status]++;});
+  document.getElementById('adAttStats').innerHTML=Object.entries(cnts).map(([k,v])=>`<span class="badge b-${k.toLowerCase()}" style="padding:5px 13px;font-size:.76rem">${k}: ${v}</span>`).join('');
+  document.getElementById('adAttTbody').innerHTML=recs.length
+    ?recs.map(a=>{const e=DB.getEmployee(a.empId)||{};const sh=shifts.find(s=>s.id===a.shiftId);return`<tr><td style="font-weight:600;font-size:.8rem">${e.name||a.empId}</td><td style="font-size:.76rem;color:var(--muted)">${e.dept||''}</td><td>${sh?`<span style="font-size:.72rem;font-weight:700;color:${sh.color}">${sh.name}</span>`:'—'}</td><td style="color:#059669;font-weight:600">${a.checkIn||'—'}</td><td style="color:#dc2626;font-weight:600">${a.checkOut||'—'}</td><td style="font-weight:700;color:var(--p)">${a.workingHours||'—'}</td><td><span class="badge b-${a.status.toLowerCase().replace(' ','-')}">${a.status}</span></td></tr>`;}).join('')
+    :'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No attendance records for selected date or department</td></tr>';
+}
+function exportAttCSV(){downloadCSV('attendance.csv',DB.get().attendance.map(a=>{const e=DB.getEmployee(a.empId)||{};return{EmpID:a.empId,Name:e.name||'',Dept:e.dept||'',Date:a.date,CheckIn:a.checkIn||'',CheckOut:a.checkOut||'',Hours:a.workingHours||'',Status:a.status};}));toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading…');}
+
+function renderAdShifts(){
+  const shifts=DB.getShifts();
+  document.getElementById('adShiftCards').innerHTML=shifts.length
+    ?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${shifts.map(s=>`<div style="background:var(--bg);border-radius:10px;padding:14px;border:2px solid ${s.color}33"><div style="font-weight:800;font-size:.88rem">${s.name}</div><div style="font-size:.74rem;color:${s.color};margin-top:4px">${s.startTime} – ${s.endTime}</div><div style="font-size:.7rem;color:var(--muted);margin-top:3px">Grace: ${s.graceMinutes} min</div><div style="display:flex;gap:6px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="editShift('${s.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn btn-sm" style="background:var(--rl);color:var(--r);border:none" onclick="deleteShift('${s.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button></div></div>`).join('')}</div>`
+    :'<div style="color:var(--muted);font-size:.82rem">No shifts yet.</div>';
+}
+function openShiftForm(){document.getElementById('adShiftForm').style.display='block';document.getElementById('sfEditId').value='';}
+function closeShiftForm(){document.getElementById('adShiftForm').style.display='none';}
+function editShift(id){const s=DB.getShift(id);if(!s)return;document.getElementById('sfName').value=s.name;document.getElementById('sfStart').value=s.startTime;document.getElementById('sfEnd').value=s.endTime;document.getElementById('sfGrace').value=s.graceMinutes;document.getElementById('sfColor').value=s.color;document.getElementById('sfDesc').value=s.desc||'';document.getElementById('sfEditId').value=id;document.getElementById('adShiftForm').style.display='block';}
+function saveShift(){const name=document.getElementById('sfName').value.trim();const start=document.getElementById('sfStart').value;const end=document.getElementById('sfEnd').value;const grace=parseInt(document.getElementById('sfGrace').value)||15;const color=document.getElementById('sfColor').value;const desc=document.getElementById('sfDesc').value;const editId=document.getElementById('sfEditId').value;if(!name||!start||!end){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Fill required fields','warn');return;}if(editId){DB.updateShift(editId,{name,startTime:start,endTime:end,graceMinutes:grace,color,desc});}else{DB.addShift({name,startTime:start,endTime:end,graceMinutes:grace,color,desc});}toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Shift saved');closeShiftForm();renderAdShifts();}
+function deleteShift(id){const s=DB.getShift(id);if(!s||!confirm('Delete "'+s.name+'"?'))return;DB.deleteShift(id);toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg> Deleted');renderAdShifts();}
+function exportShiftCSV(){downloadCSV('shifts.csv',DB.getShifts().map(s=>({ID:s.id,Name:s.name,Start:s.startTime,End:s.endTime,Grace:s.graceMinutes})));toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading…');}
+
+function renderAdTraining(){
+  const trainings=DB.getTrainings();const allET=DB.get().empTraining;
+  document.getElementById('adTrainingList').innerHTML=trainings.map(t=>{const en=allET.filter(et=>et.trainingId===t.id);const done=en.filter(et=>et.status==='Completed').length;const pct=en.length?Math.round(done/en.length*100):0;return`<div style="padding:12px 14px;background:var(--bg);border-radius:10px;margin-bottom:10px;display:flex;gap:12px;align-items:center"><div style="flex:1"><div style="font-weight:700;font-size:.85rem">${t.title}</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">Due ${t.dueDate} · ${en.length} enrolled · ${t.mandatory?'Mandatory':'Optional'}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div style="flex:1;height:6px;background:var(--border);border-radius:6px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#1d4ed8,#60a5fa);border-radius:6px"></div></div><span style="font-size:.7rem;font-weight:700;color:var(--p)">${pct}%</span></div></div><span style="font-size:.82rem;font-weight:700;color:var(--p)">${done}/${en.length}</span></div>`;}).join('');
+}
+function exportTrainingCSV(){const d=DB.get();downloadCSV('training.csv',d.empTraining.map(et=>{const e=d.employees.find(x=>x.id===et.empId)||{};const t=d.training.find(x=>x.id===et.trainingId)||{};return{EmpID:et.empId,Name:e.name||'',Training:t.title||'',Completed:et.completed,Total:t.totalModules||0,Status:et.status};}));toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading…');}
+
+function adNotifRows(){ return DB.getNotificationsByRole ? DB.getNotificationsByRole('ADMIN') : DB.getNotifs('ADMIN'); }
+function adNotifUnread(n){ return !(n.readBy||[]).includes('ADMIN'); }
+function refreshAdBell(){
+  const rows=adNotifRows();
+  const unread=rows.filter(adNotifUnread).length;
+  const bell=document.getElementById('adBellCount');
+  if(bell){ bell.textContent=unread>9?'9+':unread; bell.style.display=unread>0?'flex':'none'; }
+  const panel=document.getElementById('adBellPanel');
+  if(panel) panel.innerHTML=rows.slice(0,6).map(n=>`<div class="notif-mini ${adNotifUnread(n)?'unread':''}" onclick="adMarkRead('${n.id}')"><div class="notif-mini-title">${n.title||'Notification'}</div><div class="notif-mini-msg">${n.msg||n.message||''}</div><div style="font-size:.66rem;color:var(--muted);margin-top:4px">${n.module||'General'} · ${n.date||''}</div></div>`).join('')||'<div style="padding:14px;text-align:center;color:var(--muted);font-size:.78rem">No notifications</div>';
+  refreshAdPendingBadges();
+}
+function toggleAdBell(ev){
+  if(ev) ev.stopPropagation();
+  refreshAdBell();
+  document.getElementById('adBellPanel')?.classList.toggle('open');
+}
+document.addEventListener('click',()=>document.getElementById('adBellPanel')?.classList.remove('open'));
+function refreshAdPendingBadges(){
+  const q=adOpsCounts();
+  const set=(id,n,tone='red')=>{const el=document.getElementById(id); if(el){el.textContent=n||'';el.style.display=n>0?'inline-block':'none';if(tone==='yellow'){el.style.background='var(--ol)';el.style.color='var(--o)';}else{el.style.background='var(--r)';el.style.color='#fff';}}};
+  set('adRegBadge',q.regs); set('adHelpBadge',q.help); set('adOnboardBadge',q.onboard,'yellow'); set('adDocBadge',q.docPending,'yellow');
+}
+
+function renderAdNotifs(){
+  const notifs=adNotifRows();
+  document.getElementById('adNotifList').innerHTML=notifs.map(n=>`<div style="padding:10px 13px;border-radius:9px;background:var(--bg);border-left:3px solid ${n.type==='warn'?'var(--o)':n.type==='success'?'var(--g)':'var(--p)'};margin-bottom:9px;${adNotifUnread(n)?'border-left-width:4px':'opacity:.78'}"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:.8rem">${n.title}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${n.msg||n.message||''}</div><div style="font-size:.66rem;color:#aaa;margin-top:3px">${n.module||'General'} · ${n.date}</div></div>${adNotifUnread(n)?`<button class="btn btn-ghost btn-sm" onclick="adMarkRead('${n.id}')">Read</button>`:''}</div></div>`).join('')||'<div style="color:var(--muted);font-size:.8rem;padding:14px">No notifications</div>';
+}
+function adMarkRead(id){ DB.markNotificationRead?DB.markNotificationRead(id,'ADMIN'):DB.markRead(id,'ADMIN'); refreshAdBell(); renderAdNotifs(); }
+function sendNotice(){const t=document.getElementById('nTitle').value.trim();const m=document.getElementById('nMsg').value.trim();const type=document.getElementById('nType').value;if(!t||!m){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Fill all fields','warn');return;}DB.addNotif({to:'ALL',title:t,msg:m,type});document.getElementById('nTitle').value='';document.getElementById('nMsg').value='';toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Notification sent');refreshAdBell();renderAdNotifs();}
+
+// ADMIN_OPS_SCRIPT_START
+function adOpsEsc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function adOpsEmpName(empId){const e=DB.getEmployee(empId);return e?`${e.name} (${e.id})`:empId;}
+function adOpsEmpOptions(selected=''){return DB.getEmployees().map(e=>`<option value="${adOpsEsc(e.id)}" ${e.id===selected?'selected':''}>${adOpsEsc(e.name)} (${adOpsEsc(e.id)})</option>`).join('');}
+function adOpsStatusOptions(selected='Missing'){return ['Verified','Missing','Reupload Required'].map(s=>`<option ${s===selected?'selected':''}>${s}</option>`).join('');}
+function adOpsBadge(v){const s=String(v||'');const bg=s==='Verified'||s==='Resolved'?'var(--gl)':s==='Missing'||s==='Open'?'var(--ol)':'var(--pl)';const cl=s==='Verified'||s==='Resolved'?'#047857':s==='Missing'||s==='Open'?'var(--o)':'var(--p)';return `<span class="badge" style="background:${bg};color:${cl}">${adOpsEsc(s)}</span>`;}
+function adOpsYes(v){return v?'<span class="badge" style="background:var(--gl);color:#047857">Yes</span>':'<span class="badge" style="background:var(--ol);color:var(--o)">No</span>';}
+
+function renderAdOpsDocumentVerification(){
+  DB.migrate();
+  const empSel=document.getElementById('advEmp'); if(empSel) empSel.innerHTML=adOpsEmpOptions(empSel.value);
+  ['advAadhaar','advPan','advBank','advEdu','advJoin'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML=adOpsStatusOptions(el.value||'Missing');});
+  document.getElementById('advHistory').innerHTML=(DB.getDocumentVerifications()||[]).map(r=>`<tr>
+    <td>${adOpsEsc(adOpsEmpName(r.empId))}</td><td>${adOpsBadge(r.aadhaarStatus)}</td><td>${adOpsBadge(r.panStatus)}</td><td>${adOpsBadge(r.bankStatus)}</td><td>${adOpsBadge(r.educationStatus)}</td><td>${adOpsBadge(r.joiningStatus)}</td><td>${adOpsEsc(r.remark||'')}</td><td>${adOpsEsc(r.savedOn||'')}</td>
+  </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">No verification records yet</td></tr>';
+}
+
+function adOpsSaveDocumentVerification(){
+  const empId=document.getElementById('advEmp').value;
+  if(!empId){toast('Select employee','warn');return;}
+  DB.saveDocumentVerification({
+    empId,
+    aadhaarStatus:document.getElementById('advAadhaar').value,
+    panStatus:document.getElementById('advPan').value,
+    bankStatus:document.getElementById('advBank').value,
+    educationStatus:document.getElementById('advEdu').value,
+    joiningStatus:document.getElementById('advJoin').value,
+    remark:document.getElementById('advRemark').value.trim()
+  });
+  document.getElementById('advRemark').value='';
+  toast('Document verification saved');
+  renderAdOpsDocumentVerification();
+}
+
+function renderAdOpsRegularization(){
+  DB.migrate();
+  const empSel=document.getElementById('aarEmp'); if(empSel) empSel.innerHTML=adOpsEmpOptions(empSel.value);
+  const dateEl=document.getElementById('aarDate'); if(dateEl&&!dateEl.value) dateEl.value=today();
+  document.getElementById('aarHistory').innerHTML=(DB.getAttendanceRegularizations()||[]).map(r=>`<tr>
+    <td>${adOpsEsc(adOpsEmpName(r.empId))}</td><td>${adOpsEsc(r.date)}</td><td>${adOpsEsc(r.checkIn||'')}</td><td>${adOpsEsc(r.checkOut||'')}</td><td>${adOpsEsc(r.reason||'')}</td><td>${adOpsEsc(r.savedOn||'')}</td>
+  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">No regularization records yet</td></tr>';
+}
+
+function adOpsSaveRegularization(){
+  const empId=document.getElementById('aarEmp').value;
+  const date=document.getElementById('aarDate').value;
+  const checkIn=document.getElementById('aarIn').value;
+  const checkOut=document.getElementById('aarOut').value;
+  const reason=document.getElementById('aarReason').value.trim();
+  if(!empId||!date||!checkIn||!checkOut||!reason){toast('Fill employee, date, times and reason','warn');return;}
+  DB.addAttendanceRegularization({empId,date,checkIn,checkOut,reason});
+  document.getElementById('aarReason').value='';
+  toast('Attendance regularized');
+  refreshAdBell();
+  renderAdOpsRegularization();
+  if(document.getElementById('sec-attendance').classList.contains('on')) renderAdAttendance();
+}
+
+function adOpsNextTicketId(){const rows=DB.getHelpdeskTickets?DB.getHelpdeskTickets():[];const max=rows.reduce((m,t)=>Math.max(m,Number(String(t.id||'').replace(/\D/g,''))||0),0);return 'HD'+String(max+1).padStart(3,'0');}
+
+function renderAdOpsHelpdesk(){
+  DB.migrate();
+  const empSel=document.getElementById('ahdEmp'); if(empSel) empSel.innerHTML=adOpsEmpOptions(empSel.value);
+  const idEl=document.getElementById('ahdId'); if(idEl&&!idEl.value) idEl.value=adOpsNextTicketId();
+  document.getElementById('ahdHistory').innerHTML=(DB.getHelpdeskTickets()||[]).map(t=>`<tr>
+    <td style="font-weight:700;color:var(--p)">${adOpsEsc(t.id)}</td><td>${adOpsEsc(adOpsEmpName(t.empId))}</td><td>${adOpsEsc(t.category)}</td><td>${adOpsEsc(t.issueDescription||'')}</td><td>${adOpsBadge(t.status)}</td><td>${adOpsEsc(t.resolutionNote||'')}</td>
+    <td>${t.status!=='Resolved'?`<button class="btn btn-success btn-sm" onclick="adOpsResolveTicket('${adOpsEsc(t.id)}')">Resolve</button>`:'-'}</td>
+  </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">No tickets yet</td></tr>';
+}
+
+function adOpsSaveHelpdeskTicket(){
+  const empId=document.getElementById('ahdEmp').value;
+  const issueDescription=document.getElementById('ahdIssue').value.trim();
+  if(!empId||!issueDescription){toast('Select employee and enter issue','warn');return;}
+  DB.addHelpdeskTicket({
+    id:document.getElementById('ahdId').value.trim(),
+    empId,
+    category:document.getElementById('ahdCategory').value,
+    issueDescription,
+    status:document.getElementById('ahdStatus').value,
+    resolutionNote:document.getElementById('ahdResolution').value.trim(),
+    createdByRole:'admin'
+  });
+  document.getElementById('ahdId').value='';
+  document.getElementById('ahdIssue').value='';
+  document.getElementById('ahdResolution').value='';
+  document.getElementById('ahdStatus').value='Open';
+  toast('Helpdesk ticket saved');
+  refreshAdBell();
+  renderAdOpsHelpdesk();
+}
+
+function adOpsResolveTicket(id){
+  const note=prompt('Resolution note','Resolved by HR operations desk');
+  if(note===null)return;
+  DB.updateHelpdeskTicket(id,{status:'Resolved',resolutionNote:note});
+  toast('Ticket resolved');
+  refreshAdBell();
+  renderAdOpsHelpdesk();
+}
+
+function renderAdOpsOnboardingDesk(){
+  DB.migrate();
+  const empSel=document.getElementById('aocEmp');
+  if(empSel){
+    const current=empSel.value;
+    empSel.innerHTML=adOpsEmpOptions(current);
+    empSel.onchange=adOpsLoadOnboardingCollection;
+  }
+  adOpsLoadOnboardingCollection();
+  document.getElementById('aocHistory').innerHTML=(DB.getOnboardingCollections()||[]).map(c=>`<tr>
+    <td>${adOpsEsc(adOpsEmpName(c.empId))}</td><td>${adOpsYes(c.photoSubmitted)}</td><td>${adOpsYes(c.bankFormSubmitted)}</td><td>${adOpsYes(c.idProofSubmitted)}</td><td>${adOpsYes(c.educationProofSubmitted)}</td><td>${adOpsYes(c.policySigned)}</td><td>${adOpsYes(c.welcomeKitIssued)}</td><td>${adOpsEsc(c.savedOn||'')}</td>
+  </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">No onboarding collection records yet</td></tr>';
+}
+
+function adOpsLoadOnboardingCollection(){
+  const empId=document.getElementById('aocEmp')?.value;
+  const rec=(DB.getOnboardingCollections(empId)||[])[0]||{};
+  const map={aocPhoto:'photoSubmitted',aocBank:'bankFormSubmitted',aocId:'idProofSubmitted',aocEdu:'educationProofSubmitted',aocPolicy:'policySigned',aocWelcome:'welcomeKitIssued'};
+  Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!rec[key];});
+}
+
+function adOpsSaveOnboardingCollection(){
+  const empId=document.getElementById('aocEmp').value;
+  if(!empId){toast('Select employee','warn');return;}
+  DB.saveOnboardingCollection({
+    empId,
+    photoSubmitted:document.getElementById('aocPhoto').checked,
+    bankFormSubmitted:document.getElementById('aocBank').checked,
+    idProofSubmitted:document.getElementById('aocId').checked,
+    educationProofSubmitted:document.getElementById('aocEdu').checked,
+    policySigned:document.getElementById('aocPolicy').checked,
+    welcomeKitIssued:document.getElementById('aocWelcome').checked
+  });
+  toast('Onboarding collection saved');
+  refreshAdBell();
+  renderAdOpsOnboardingDesk();
+}
+// ADMIN_OPS_SCRIPT_END
+
+function sc(ic,cl,bg,n,l,s){return`<div class="sc"><div class="sc-icon" style="background:${bg}">${ic}</div><div><div class="sc-n" style="color:${cl}">${n}</div><div class="sc-l">${l}</div></div></div>`;}
+let _tt;function toast(msg,t='ok'){if(window.__suppressNextToast&&/download|export|backup|csv|json/i.test(String(msg))){window.__suppressNextToast=false;return;}window.__suppressNextToast=false;const el=document.getElementById('toast');el.innerHTML=msg;el.style.transform='translateY(0)';el.style.opacity='1';el.style.borderLeftColor=t==='warn'?'#d97706':'#1d4ed8';clearTimeout(_tt);_tt=setTimeout(()=>{el.style.transform='translateY(60px)';el.style.opacity='0';},2500);}
+</script>
+</body>
+</html>

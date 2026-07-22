@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working Calendar Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/companyHolidayImportService.js"></script>
+    <script src="services/workingCalendarConfigurationService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--p:#1a56db;--p2:#0891b2;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#dbe4ef;--good:#047857;--bad:#dc2626;--warn:#b45309}
+        body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
+        .side{background:#111827;color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:9px;background:#2563eb;display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px;max-width:760px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--p);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#0f172a}.btn.good{background:var(--good)}.btn.warn{background:var(--warn)}.btn.bad{background:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
+        .mini-input{border:1px solid var(--border);border-radius:8px;padding:9px;background:#fff;color:#0f172a;font-weight:800;min-width:138px}.pill{border:1px solid var(--border);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px;border-left:4px solid var(--p)}.metric.good{border-left-color:var(--good)}.metric.warn{border-left-color:var(--warn)}.metric b{display:block;font-size:1.42rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.grid label{font-size:.72rem;font-weight:900;text-transform:uppercase;color:var(--muted)}.grid input,.grid select,.grid textarea{width:100%;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff;font-size:.88rem}.grid textarea{min-height:128px;resize:vertical}.full{grid-column:1/-1}.span2{grid-column:span 2}
+        .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:860px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1d4ed8}.warnb{background:#fef3c7;color:#92400e}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:9px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        .toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;border-radius:10px;padding:11px 13px;font-size:.82rem;font-weight:850;opacity:0;transform:translateY(12px);transition:.2s;z-index:10}.toast.on{opacity:1;transform:translateY(0)}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr 1fr}.full,.span2{grid-column:auto}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics,.grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">WC</div>
+            <div><h1>Working Calendar Center</h1><p>Holiday, schedule, and shift governance</p></div>
+        </div>
+        <nav class="nav" aria-label="Working calendar sections">
+            <button class="on" onclick="showSection('overview',this)">Overview</button>
+            <button onclick="showSection('calendars',this)">Holiday Calendars</button>
+            <button onclick="showSection('schedule',this)">Working Schedule</button>
+            <button onclick="showSection('shifts',this)">Shift Policies</button>
+            <button onclick="showSection('assignments',this)">Calendar Assignments</button>
+            <button onclick="showSection('import',this)">Import</button>
+            <button onclick="showSection('versioning',this)">Versioning</button>
+            <a href="company-profile-center.html">Company Profile</a>
+            <a href="organization-import-center.html">Organization Import</a>
+            <a href="platform-control.html">Platform Control</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Working Calendar Configuration</h2>
+                <p>Configure tenant-scoped holiday calendars, working hours, weekend rules, shift policies, branch calendars, regional calendars, department calendars, imports, and version history before employees are onboarded.</p>
+            </div>
+            <div class="toolbar">
+                <span class="pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn good" onclick="createCalendar()">Create Calendar</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="metricBox"></div>
+
+        <section class="section on" id="section-overview">
+            <div class="panel">
+                <h3>Calendar Operations Overview</h3>
+                <div class="table-wrap"><table id="overviewTable"></table></div>
+            </div>
+            <div class="panel">
+                <h3>Upcoming Holidays</h3>
+                <div class="table-wrap"><table id="holidayTimelineTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-calendars">
+            <div class="panel">
+                <h3>Holiday Calendars</h3>
+                <div class="grid">
+                    <label>Calendar Name<input id="calendarName" value="Primary Working Calendar"></label>
+                    <label>Year<input id="calendarYear" value="2026"></label>
+                    <label>Region<input id="calendarRegion" value="GLOBAL"></label>
+                    <label>Country<input id="calendarCountry" value="IN"></label>
+                    <label>State<input id="calendarState" value="KA"></label>
+                    <label>Status<select id="calendarStatus"><option>DRAFT</option><option>PUBLISHED</option></select></label>
+                    <label class="full">Holidays<textarea id="holidayRows" placeholder="Republic Day|2026-01-26|NATIONAL|IN"></textarea></label>
+                    <label class="full">Description<input id="calendarDescription" value="Tenant working calendar"></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="createCalendar()">Create Draft</button>
+                    <button class="btn alt" onclick="validateCalendar()">Validate</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Existing Calendars</h3>
+                <div class="table-wrap"><table id="calendarTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-schedule">
+            <div class="panel">
+                <h3>Working Schedule</h3>
+                <div class="grid">
+                    <label>Calendar ID<input id="scheduleCalendarId"></label>
+                    <label>Work Week<select id="workWeekPattern"><option>MONDAY_FRIDAY</option><option>MONDAY_SATURDAY</option><option>SUNDAY_THURSDAY</option><option>CUSTOM</option></select></label>
+                    <label>Working Days<input id="workingDays" value="MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY"></label>
+                    <label>Office Start<input id="officeStart" value="09:30"></label>
+                    <label>Office End<input id="officeEnd" value="18:30"></label>
+                    <label>Grace Minutes<input id="graceMinutes" value="10"></label>
+                    <label>Break Minutes<input id="breakMinutes" value="60"></label>
+                    <label>Core Start<input id="coreStart" value="11:00"></label>
+                    <label>Core End<input id="coreEnd" value="16:00"></label>
+                    <label>Timezone<input id="scheduleTimezone" value="Asia/Kolkata"></label>
+                    <label>Flexible Hours<select id="flexibleHours"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <label>Weekend Rotation<select id="weekendRotation"><option value="false">Disabled</option><option value="true">Enabled</option></select></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="saveSchedule()">Save Schedule</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Working Hours</h3>
+                <div class="table-wrap"><table id="scheduleTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-shifts">
+            <div class="panel">
+                <h3>Shift Policies</h3>
+                <div class="grid">
+                    <label>Calendar ID<input id="shiftCalendarId"></label>
+                    <label>Shift Name<input id="shiftName" value="General Shift"></label>
+                    <label>Shift Type<select id="shiftType"><option>GENERAL</option><option>MORNING</option><option>EVENING</option><option>NIGHT</option><option>ROTATIONAL</option><option>SPLIT</option><option>FLEXIBLE</option><option>CUSTOM</option></select></label>
+                    <label>Start Time<input id="shiftStart" value="09:30"></label>
+                    <label>End Time<input id="shiftEnd" value="18:30"></label>
+                    <label>Timezone<input id="shiftTimezone" value="Asia/Kolkata"></label>
+                    <label>Night Shift<select id="nightShift"><option value="false">No</option><option value="true">Yes</option></select></label>
+                    <label>Overtime Eligible<select id="overtimeEligible"><option value="true">Yes</option><option value="false">No</option></select></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="saveShift()">Create Shift</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Shift Distribution</h3>
+                <div class="table-wrap"><table id="shiftTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-assignments">
+            <div class="panel">
+                <h3>Calendar Assignments</h3>
+                <div class="grid">
+                    <label>Calendar ID<input id="assignmentCalendarId"></label>
+                    <label>Scope<select id="assignmentScope"><option>COMPANY</option><option>BRANCH</option><option>LOCATION</option><option>DEPARTMENT</option><option>BUSINESS_UNIT</option><option>EMPLOYEE</option><option>ROLE</option></select></label>
+                    <label>Department ID<input id="assignmentDepartment"></label>
+                    <label>Location ID<input id="assignmentLocation"></label>
+                    <label>Employee ID<input id="assignmentEmployee"></label>
+                    <label>Role<input id="assignmentRole"></label>
+                    <label>Effective From<input id="assignmentEffectiveFrom" value="2026-01-01"></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="saveAssignment()">Assign Calendar</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Assignment History</h3>
+                <div class="table-wrap"><table id="assignmentTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-import">
+            <div class="panel">
+                <h3>Calendar Import</h3>
+                <div class="grid">
+                    <label>File Name<input id="importFileName" value="holidays.csv"></label>
+                    <label>File Type<select id="importFileType"><option>CSV</option><option>TSV</option><option>XLSX</option><option>ICS</option></select></label>
+                    <label>Calendar Name<input id="importCalendarName" value="Imported Calendar"></label>
+                    <label class="full">Rows<textarea id="importRows" placeholder="Independence Day|2026-08-15|NATIONAL|IN"></textarea></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="importCalendar()">Import Calendar</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Import History</h3>
+                <div class="table-wrap"><table id="importTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-versioning">
+            <div class="panel">
+                <h3>Versioning</h3>
+                <div class="grid">
+                    <label>Calendar ID<input id="versionCalendarId"></label>
+                    <label>Rollback Version<input id="targetVersion" value="1"></label>
+                    <label>Reason<input id="versionReason" value="Calendar governance review"></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn good" onclick="publishCalendar()">Publish</button>
+                    <button class="btn warn" onclick="rollbackCalendar()">Rollback</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Calendar Timeline</h3>
+                <div class="table-wrap"><table id="versionTable"></table></div>
+            </div>
+        </section>
+    </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let dashboard = null;
+function tenant(){ try{return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim()||undefined)}catch(error){return''} }
+function actor(){ return authService.getCurrentUser()||{}; }
+function ctx(){ return { tenantSlug: tenant(), actor: actor() }; }
+function svc(){ return window.WorkingCalendarConfigurationService; }
+function toast(message){ const el=document.getElementById('toast'); el.textContent=message; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),1800); }
+function showError(message){ const el=document.getElementById('errorBox'); if(!message){ el.classList.remove('on'); el.textContent=''; return; } el.textContent=message; el.classList.add('on'); }
+function showSection(id, btn){ document.querySelectorAll('.section').forEach(s=>s.classList.remove('on')); document.getElementById('section-'+id).classList.add('on'); document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on')); if(btn) btn.classList.add('on'); }
+function badge(value){ const ok=['PUBLISHED','ACTIVE','SUCCESS'].includes(String(value).toUpperCase()); const warn=['DRAFT','ROLLED_BACK','VALIDATING'].includes(String(value).toUpperCase()); return `<span class="badge ${ok?'ok':warn?'warnb':'info'}">${value||''}</span>`; }
+function rows(tableId, headers, data){ const table=document.getElementById(tableId); if(!table)return; const body=(data||[]).map(row=>`<tr>${headers.map(h=>`<td>${row[h.key]??''}</td>`).join('')}</tr>`).join(''); table.innerHTML=`<thead><tr>${headers.map(h=>`<th>${h.label}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td colspan="${headers.length}">No records</td></tr>`}</tbody>`; }
+function parseHolidayRows(id){ return (document.getElementById(id).value||'').split(/\n+/).map(line=>line.trim()).filter(Boolean).map(line=>{ const p=line.split('|').map(x=>x.trim()); return { name:p[0], date:p[1], type:p[2]||'COMPANY', region:p[3]||'GLOBAL' }; }); }
+function calendarPayload(){
+    return {
+        tenantSlug: tenant(),
+        name: document.getElementById('calendarName').value,
+        year: Number(document.getElementById('calendarYear').value || new Date().getFullYear()),
+        country: document.getElementById('calendarCountry').value,
+        state: document.getElementById('calendarState').value,
+        region: document.getElementById('calendarRegion').value,
+        status: document.getElementById('calendarStatus').value,
+        description: document.getElementById('calendarDescription').value,
+        holidays: parseHolidayRows('holidayRows'),
+        workWeek: { pattern: document.getElementById('workWeekPattern')?.value || 'MONDAY_FRIDAY', workingDays: (document.getElementById('workingDays')?.value||'MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY').split(',').map(x=>x.trim()) },
+        workingHours: { officeStart: document.getElementById('officeStart')?.value || '09:30', officeEnd: document.getElementById('officeEnd')?.value || '18:30', timezone: document.getElementById('scheduleTimezone')?.value || 'Asia/Kolkata' }
+    };
+}
+function applyResult(result, successMessage){ if(!result || result.success===false){ showError((result?.issues||[]).map(i=>`${i.code}: ${i.message}`).join('\n') || 'Operation failed safely'); return false; } showError(''); toast(successMessage); refreshCenter(); return true; }
+function createCalendar(){ applyResult(svc().createHolidayCalendar(calendarPayload(), ctx()), 'Calendar draft created'); }
+function validateCalendar(){ const result=svc().validateCalendarConfiguration(calendarPayload(), ctx()); if(result.success) toast(`Calendar health ${result.calendarHealthScore}`); else showError(result.issues.map(i=>`${i.code}: ${i.message}`).join('\n')); }
+function saveSchedule(){ applyResult(svc().configureWorkingSchedule({ tenantSlug:tenant(), calendarId:document.getElementById('scheduleCalendarId').value, workWeek:{ pattern:document.getElementById('workWeekPattern').value, workingDays:document.getElementById('workingDays').value.split(',').map(x=>x.trim()), weekendRotation:document.getElementById('weekendRotation').value==='true' }, workingHours:{ officeStart:document.getElementById('officeStart').value, officeEnd:document.getElementById('officeEnd').value, graceMinutes:Number(document.getElementById('graceMinutes').value||0), breakMinutes:Number(document.getElementById('breakMinutes').value||0), flexibleHours:document.getElementById('flexibleHours').value==='true', coreStart:document.getElementById('coreStart').value, coreEnd:document.getElementById('coreEnd').value, timezone:document.getElementById('scheduleTimezone').value } }, ctx()), 'Working schedule saved'); }
+function saveShift(){ applyResult(svc().createShiftPolicy({ tenantSlug:tenant(), calendarId:document.getElementById('shiftCalendarId').value, name:document.getElementById('shiftName').value, type:document.getElementById('shiftType').value, startTime:document.getElementById('shiftStart').value, endTime:document.getElementById('shiftEnd').value, timezone:document.getElementById('shiftTimezone').value, nightShift:document.getElementById('nightShift').value==='true', overtimeEligible:document.getElementById('overtimeEligible').value==='true' }, ctx()), 'Shift policy created'); }
+function saveAssignment(){ applyResult(svc().assignCalendar({ tenantSlug:tenant(), calendarId:document.getElementById('assignmentCalendarId').value, assignmentScope:document.getElementById('assignmentScope').value, departmentId:document.getElementById('assignmentDepartment').value, locationId:document.getElementById('assignmentLocation').value, employeeId:document.getElementById('assignmentEmployee').value, role:document.getElementById('assignmentRole').value, effectiveFrom:document.getElementById('assignmentEffectiveFrom').value }, ctx()), 'Calendar assigned'); }
+function importCalendar(){ applyResult(svc().importHolidayCalendar({ tenantSlug:tenant(), fileName:document.getElementById('importFileName').value, fileType:document.getElementById('importFileType').value, calendarName:document.getElementById('importCalendarName').value, calendarYear:Number(document.getElementById('calendarYear').value || new Date().getFullYear()), rows:parseHolidayRows('importRows') }, ctx()), 'Calendar imported'); }
+function publishCalendar(){ applyResult(svc().publishCalendarVersion({ tenantSlug:tenant(), calendarId:document.getElementById('versionCalendarId').value, reason:document.getElementById('versionReason').value }, ctx()), 'Calendar published'); }
+function rollbackCalendar(){ applyResult(svc().rollbackCalendarVersion({ tenantSlug:tenant(), calendarId:document.getElementById('versionCalendarId').value, targetVersion:Number(document.getElementById('targetVersion').value||1), reason:document.getElementById('versionReason').value }, ctx()), 'Calendar rolled back'); }
+function refreshCenter(){
+    document.getElementById('tenantBadge').textContent=tenant();
+    if(!svc()){ showError('WorkingCalendarConfigurationService is unavailable.'); return; }
+    dashboard=svc().generateWorkingCalendarDashboard({ tenantSlug:tenant() }, ctx());
+    if(!dashboard.success){ showError((dashboard.issues||[]).map(i=>`${i.code}: ${i.message}`).join('\n')); return; }
+    showError('');
+    const a=dashboard.analytics||{};
+    document.getElementById('metricBox').innerHTML=[
+        ['Calendars',dashboard.holidayCalendars.length,'good'],
+        ['Working Days',a.workingDays||0,'good'],
+        ['Holidays',a.holidayCount||0,'warn'],
+        ['Assignments',a.calendarAssignments||0,'good'],
+        ['Health',dashboard.calendarHealthScore||0,'good']
+    ].map(m=>`<div class="metric ${m[2]}"><b>${m[1]}</b><span>${m[0]}</span></div>`).join('');
+    rows('overviewTable',[{key:'name',label:'Calendar'},{key:'year',label:'Year'},{key:'status',label:'Status'},{key:'region',label:'Region'},{key:'version',label:'Version'}],dashboard.holidayCalendars.map(c=>({ ...c, status:badge(c.status) })));
+    rows('holidayTimelineTable',[{key:'name',label:'Holiday'},{key:'date',label:'Date'},{key:'type',label:'Type'},{key:'region',label:'Region'}],dashboard.upcomingHolidays);
+    rows('calendarTable',[{key:'calendarId',label:'ID'},{key:'name',label:'Name'},{key:'year',label:'Year'},{key:'status',label:'Status'},{key:'holidays',label:'Holidays'}],dashboard.holidayCalendars.map(c=>({ calendarId:c.calendarId,name:c.name,year:c.year,status:badge(c.status),holidays:(c.holidays||[]).length })));
+    rows('scheduleTable',[{key:'scheduleId',label:'ID'},{key:'calendarId',label:'Calendar'},{key:'pattern',label:'Work Week'},{key:'hours',label:'Hours'},{key:'timezone',label:'Timezone'}],dashboard.workingSchedules.map(s=>({ scheduleId:s.scheduleId,calendarId:s.calendarId,pattern:s.workWeek?.pattern,hours:`${s.workingHours?.officeStart||''}-${s.workingHours?.officeEnd||''}`,timezone:s.workingHours?.timezone })));
+    rows('shiftTable',[{key:'shiftId',label:'ID'},{key:'name',label:'Name'},{key:'type',label:'Type'},{key:'hours',label:'Hours'},{key:'payroll',label:'Payroll'}],dashboard.shiftPolicies.map(s=>({ shiftId:s.shiftId,name:s.name,type:s.type,hours:`${s.startTime}-${s.endTime}`,payroll:'Unaffected by default' })));
+    rows('assignmentTable',[{key:'assignmentId',label:'ID'},{key:'calendarId',label:'Calendar'},{key:'assignmentScope',label:'Scope'},{key:'departmentId',label:'Department'},{key:'effectiveFrom',label:'Effective From'}],dashboard.calendarAssignments);
+    rows('importTable',[{key:'importId',label:'Import'},{key:'calendarId',label:'Calendar'},{key:'fileName',label:'File'},{key:'fileType',label:'Type'},{key:'importedAt',label:'Imported'}],dashboard.importHistory);
+    rows('versionTable',[{key:'versionId',label:'Version'},{key:'calendarId',label:'Calendar'},{key:'status',label:'Status'},{key:'reason',label:'Reason'},{key:'createdAt',label:'Created'}],dashboard.versionTimeline.map(v=>({ ...v, status:badge(v.status) })));
+}
+document.addEventListener('DOMContentLoaded',function init(){
+    document.getElementById('tenantScope').value=tenant();
+    document.getElementById('holidayRows').value='Republic Day|2026-01-26|NATIONAL|IN\nFounders Day|2026-07-15|COMPANY|GLOBAL\nFloating Wellness Day|2026-12-24|FLOATING|GLOBAL';
+    document.getElementById('importRows').value='Independence Day|2026-08-15|NATIONAL|IN\nBranch Holiday|2026-09-10|BRANCH|IN-KA';
+    refreshCenter();
+});
+</script>
+</body>
+</html>

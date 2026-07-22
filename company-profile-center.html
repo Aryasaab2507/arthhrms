@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Profile Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/companyProfileConfigurationService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--p:#1a56db;--p2:#0ea5e9;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#dbe4ef;--g:#047857;--r:#dc2626;--o:#b45309}
+        body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+        .side{background:#111827;color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:9px;background:#2563eb;display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{margin-top:18px;display:grid;gap:7px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:800;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:16px}.title h2{font-size:1.4rem}.title p{color:var(--muted);font-size:.84rem;margin-top:4px;line-height:1.45}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;font-weight:900;cursor:pointer;background:var(--p);color:#fff}.btn.alt{background:#e2e8f0;color:#0f172a}.btn.good{background:var(--g)}.btn.red{background:var(--r)}
+        .tenant-pill{border:1px solid var(--border);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}.mini-input{border:1px solid var(--border);border-radius:8px;padding:9px;background:#fff;font-weight:800;color:#0f172a;min-width:140px}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px;border-left:4px solid var(--p)}.metric.good{border-left-color:var(--g)}.metric.warn{border-left-color:var(--o)}.metric b{display:block;font-size:1.45rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.form label{font-size:.72rem;font-weight:900;color:var(--muted);text-transform:uppercase}.form input,.form select,.form textarea{width:100%;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff;font-size:.88rem}.form textarea{min-height:96px;resize:vertical}.full{grid-column:1/-1}.span2{grid-column:span 2}
+        .switch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.switch{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--border);border-radius:9px;padding:11px;background:#fff}.switch b{font-size:.84rem}.switch span{display:block;color:var(--muted);font-size:.72rem;margin-top:2px}
+        .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:860px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.b-on{background:#dcfce7;color:#166534}.b-off{background:#fee2e2;color:#991b1b}.b-info{background:#dbeafe;color:#1d4ed8}
+        .toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;border-radius:10px;padding:11px 13px;font-size:.82rem;font-weight:800;opacity:0;transform:translateY(12px);transition:.2s;z-index:10}.toast.on{opacity:1;transform:translateY(0)}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:9px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.form,.switch-grid{grid-template-columns:1fr 1fr}.full,.span2{grid-column:auto}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics,.form,.switch-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">CP</div>
+            <div><h1>Company Profile Center</h1><p>Tenant business configuration</p></div>
+        </div>
+        <nav class="nav" aria-label="Company profile sections">
+            <button class="on" onclick="showSection('overview',this)">Overview</button>
+            <button onclick="showSection('profile',this)">Company Profile</button>
+            <button onclick="showSection('addresses',this)">Addresses</button>
+            <button onclick="showSection('business',this)">Business Settings</button>
+            <button onclick="showSection('structure',this)">Organization Structure</button>
+            <button onclick="showSection('branding',this)">Branding</button>
+            <button onclick="showSection('modules',this)">Modules</button>
+            <button onclick="showSection('preferences',this)">Preferences</button>
+            <button onclick="showSection('history',this)">Timeline & Rollback</button>
+            <a href="organization-import-center.html">Organization Import</a>
+            <a href="platform-control.html">Platform Control</a>
+            <a href="ArthHRMS.html">Login Shell</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Company Profile & Business Configuration</h2>
+                <p>Manage organization-level settings with tenant isolation, version history, rollback support, and complete auditability.</p>
+            </div>
+            <div class="toolbar">
+                <span class="tenant-pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="loadCenter()">Refresh</button>
+                <button class="btn good" onclick="saveCurrentSection()">Save Section</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="healthMetrics"></div>
+
+        <section class="section on" id="section-overview">
+            <div class="panel">
+                <h3>Company Overview</h3>
+                <div class="table-wrap"><table id="overviewTable"></table></div>
+            </div>
+            <div class="panel">
+                <h3>Recent Changes</h3>
+                <div class="table-wrap"><table id="recentChangesTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-profile">
+            <div class="panel">
+                <h3>Company Profile</h3>
+                <div class="form">
+                    <label>Company Name<input id="companyName"></label>
+                    <label>Legal Entity Name<input id="legalEntityName"></label>
+                    <label>Brand Name<input id="brandName"></label>
+                    <label>Company Code<input id="companyCode"></label>
+                    <label>Registration Number<input id="registrationNumber"></label>
+                    <label>GST/VAT Number<input id="gstVatNumber"></label>
+                    <label>PAN/TIN<input id="panTin"></label>
+                    <label>Industry<input id="industry"></label>
+                    <label>Company Size<select id="companySize"><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select></label>
+                    <label>Company Type<input id="companyType" placeholder="Private Limited"></label>
+                    <label>Website<input id="website" placeholder="https://example.com"></label>
+                    <label>Official Email<input id="officialEmail" type="email"></label>
+                    <label class="span2">Phone Numbers<textarea id="phoneNumbers" placeholder="+91 90000 00000"></textarea></label>
+                    <label>Logo<input id="logo" placeholder="https://..."></label>
+                    <label class="full">Brand Assets<textarea id="brandAssets" placeholder="logo,https://assets.example/logo.svg"></textarea></label>
+                    <label class="full">Change Reason<input id="profileReason" value="Company profile updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-addresses">
+            <div class="panel">
+                <h3>Address Management</h3>
+                <p class="muted" style="margin-bottom:10px">Use one line per address: Type, Name, Country, State, City, Postal Code, Timezone, GPS.</p>
+                <div class="form">
+                    <label class="full">Addresses<textarea id="addresses" placeholder="HEAD_OFFICE|Mumbai HQ|India|Maharashtra|Mumbai|400001|Asia/Kolkata|19.0760,72.8777"></textarea></label>
+                    <label class="full">Change Reason<input id="addressesReason" value="Address configuration updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-business">
+            <div class="panel">
+                <h3>Business Settings</h3>
+                <div class="form">
+                    <label>Fiscal Year<input id="fiscalYear" value="APR-MAR"></label>
+                    <label>Financial Year<input id="financialYear" value="2026-2027"></label>
+                    <label>Business Calendar<input id="businessCalendar" value="INDIA_CORPORATE"></label>
+                    <label>Currency<input id="currency" value="INR"></label>
+                    <label>Number Format<input id="numberFormat" value="en-IN"></label>
+                    <label>Date Format<input id="dateFormat" value="DD/MM/YYYY"></label>
+                    <label>Time Format<select id="timeFormat"><option>24H</option><option>12H</option></select></label>
+                    <label>Languages<input id="languages" value="en"></label>
+                    <label>Default Time Zone<input id="defaultTimeZone" value="Asia/Kolkata"></label>
+                    <label>Week Start Day<select id="weekStartDay"><option>MON</option><option>SUN</option><option>SAT</option></select></label>
+                    <label class="full">Change Reason<input id="businessReason" value="Business settings updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-structure">
+            <div class="panel">
+                <h3>Organization Structure</h3>
+                <p class="muted" style="margin-bottom:10px">Use one line per item: Name, Code.</p>
+                <div class="form">
+                    <label>Business Units<textarea id="businessUnits"></textarea></label>
+                    <label>Departments<textarea id="departments"></textarea></label>
+                    <label>Divisions<textarea id="divisions"></textarea></label>
+                    <label>Cost Centers<textarea id="costCenters"></textarea></label>
+                    <label>Profit Centers<textarea id="profitCenters"></textarea></label>
+                    <label>Legal Entities<textarea id="legalEntities"></textarea></label>
+                    <label>Locations<textarea id="locations"></textarea></label>
+                    <label class="span2">Hierarchy<textarea id="hierarchy" placeholder="MFG,D1"></textarea></label>
+                    <label class="full">Change Reason<input id="structureReason" value="Organization structure updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-branding">
+            <div class="panel">
+                <h3>Branding</h3>
+                <div class="form">
+                    <label>Primary Logo<input id="primaryLogo"></label>
+                    <label>Dark Logo<input id="darkLogo"></label>
+                    <label>Favicon<input id="favicon"></label>
+                    <label>Primary Color<input id="primaryColor" value="#1a56db"></label>
+                    <label>Secondary Color<input id="secondaryColor" value="#0ea5e9"></label>
+                    <label>Accent Color<input id="accentColor" value="#059669"></label>
+                    <label>Email Branding<select id="emailBranding"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <label>PDF Branding<select id="pdfBranding"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <label>Portal Branding<select id="portalBranding"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <label class="full">Change Reason<input id="brandingReason" value="Branding updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-modules">
+            <div class="panel">
+                <h3>Module Configuration</h3>
+                <div class="switch-grid" id="moduleSwitches"></div>
+                <div class="form" style="margin-top:12px"><label class="full">Change Reason<input id="modulesReason" value="Module feature flags updated"></label></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-preferences">
+            <div class="panel">
+                <h3>Organization Preferences</h3>
+                <div class="form">
+                    <label>Working Days<input id="workingDays" value="MON,TUE,WED,THU,FRI"></label>
+                    <label>Default Leave Year<select id="defaultLeaveYear"><option>FISCAL</option><option>CALENDAR</option></select></label>
+                    <label>Payroll Frequency<select id="payrollFrequency"><option>MONTHLY</option><option>BI_WEEKLY</option><option>WEEKLY</option></select></label>
+                    <label>Default Shift<input id="defaultShift" value="GENERAL"></label>
+                    <label>Employee ID Format<input id="employeeIdFormat" placeholder="EMP-{YYYY}-{SEQ}"></label>
+                    <label>Attendance Grace Minutes<input id="attendanceGraceMinutes" type="number" value="15"></label>
+                    <label class="span2">Approval Defaults<textarea id="approvalDefaults" placeholder='{"leave":["MANAGER","HR"]}'></textarea></label>
+                    <label>Notification Defaults<textarea id="notificationDefaults" placeholder='{"email":true,"push":true}'></textarea></label>
+                    <label class="span2">Document Number Formats<textarea id="documentNumberFormats" placeholder='{"employee":"EMP-{YYYY}-{SEQ}"}'></textarea></label>
+                    <label class="full">Change Reason<input id="preferencesReason" value="Organization preferences updated"></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-history">
+            <div class="panel">
+                <h3>Configuration Timeline</h3>
+                <div class="table-wrap"><table id="historyTable"></table></div>
+            </div>
+        </section>
+    </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let activeSection='overview';
+let centerState=null;
+const moduleLabels={attendance:'Attendance',payroll:'Payroll',recruitment:'Recruitment',performance:'Performance',assets:'Assets',travel:'Travel',expenses:'Expenses',documents:'Documents',training:'Training',aiAssistant:'AI Assistant',marketplace:'Marketplace',workflows:'Workflows'};
+function svc(){return window.CompanyProfileConfigurationService||window.companyProfileConfigurationService;}
+function currentUser(){return authService.getCurrentUser()||{};}
+function tenant(){try{return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim()||undefined)}catch(error){return''}}
+function ctx(){const user=currentUser();return{tenantSlug:tenant(),routeType:'tenant',actor:user};}
+function val(id){return (document.getElementById(id)?.value||'').trim();}
+function setVal(id,value){const node=document.getElementById(id);if(node)node.value=value??'';}
+function boolVal(id){return val(id)==='true';}
+function list(text){return String(text||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);}
+function lines(text){return String(text||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);}
+function nameCodeRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim()).filter(Boolean);return{name:p[0]||'',code:p[1]||p[0]||''};}).filter(x=>x.name||x.code);}
+function rowsText(rows){return (rows||[]).map(x=>[x.name||'',x.code||''].filter(Boolean).join(',')).join('\n');}
+function addressRowsText(rows){return (rows||[]).map(x=>[x.type||'',x.name||'',x.country||'',x.state||'',x.city||'',x.postalCode||'',x.timezone||'',x.gps||''].join('|')).join('\n');}
+function jsonField(id,fallback){try{return JSON.parse(val(id)||JSON.stringify(fallback||{}));}catch(e){return fallback||{};}}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+function showError(result){const box=document.getElementById('errorBox');const failures=(result?.failures||[]).map(x=>x.message||x.code).join('\n');box.textContent=failures||'Configuration action failed safely.';box.classList.add('on');}
+function clearError(){document.getElementById('errorBox').classList.remove('on');}
+function metricCards(health){
+    const analytics=health?.analytics||{};
+    document.getElementById('healthMetrics').innerHTML=[
+        ['Health',String(health?.configurationHealthScore||0)+'%','good'],
+        ['Maturity',String(health?.organizationMaturityScore||0)+'%','good'],
+        ['Departments',String(analytics.departmentCount||0),''],
+        ['Branches',String(analytics.branchCount||0),''],
+        ['Changes',String(analytics.configurationChanges||0),'warn']
+    ].map(([label,value,cls])=>`<div class="metric ${cls}"><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');
+}
+function renderModules(config){
+    const modules=config.moduleConfiguration||{};
+    document.getElementById('moduleSwitches').innerHTML=Object.keys(moduleLabels).map(key=>`<div class="switch"><div><b>${moduleLabels[key]}</b><span>Tenant feature flag</span></div><input type="checkbox" id="module_${key}" ${modules[key]?'checked':''}></div>`).join('');
+}
+function table(id,headers,rows){
+    document.getElementById(id).innerHTML='<thead><tr>'+headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(cell=>`<td>${cell}</td>`).join('')+'</tr>').join('')+'</tbody>';
+}
+function fillForm(config){
+    const p=config.companyProfile||{}, b=config.businessSettings||{}, s=config.organizationStructure||{}, brand=config.branding||{}, pref=config.organizationPreferences||{};
+    setVal('companyName',p.companyName);setVal('legalEntityName',p.legalEntityName);setVal('brandName',p.brandName);setVal('companyCode',p.companyCode);setVal('registrationNumber',p.registrationNumber);setVal('gstVatNumber',p.gstVatNumber);setVal('panTin',p.panTin);setVal('industry',p.industry);setVal('companySize',p.companySize);setVal('companyType',p.companyType);setVal('website',p.website);setVal('officialEmail',p.officialEmail);setVal('phoneNumbers',(p.phoneNumbers||[]).join('\n'));setVal('logo',p.logo);setVal('brandAssets',(p.brandAssets||[]).map(x=>[x.type||'',x.url||''].join(',')).join('\n'));
+    setVal('addresses',addressRowsText(config.addresses||[]));
+    setVal('fiscalYear',b.fiscalYear);setVal('financialYear',b.financialYear);setVal('businessCalendar',b.businessCalendar);setVal('currency',b.currency);setVal('numberFormat',b.numberFormat);setVal('dateFormat',b.dateFormat);setVal('timeFormat',b.timeFormat);setVal('languages',(b.languages||[]).join(','));setVal('defaultTimeZone',b.defaultTimeZone);setVal('weekStartDay',b.weekStartDay);
+    setVal('businessUnits',rowsText(s.businessUnits));setVal('departments',rowsText(s.departments));setVal('divisions',rowsText(s.divisions));setVal('costCenters',rowsText(s.costCenters));setVal('profitCenters',rowsText(s.profitCenters));setVal('legalEntities',rowsText(s.legalEntities));setVal('locations',rowsText(s.locations));setVal('hierarchy',(s.hierarchy||[]).map(x=>[x.parent||'',x.child||''].join(',')).join('\n'));
+    setVal('primaryLogo',brand.primaryLogo);setVal('darkLogo',brand.darkLogo);setVal('favicon',brand.favicon);setVal('primaryColor',brand.primaryColor);setVal('secondaryColor',brand.secondaryColor);setVal('accentColor',brand.accentColor);setVal('emailBranding',String(!!brand.emailBranding));setVal('pdfBranding',String(!!brand.pdfBranding));setVal('portalBranding',String(brand.portalBranding!==false));
+    setVal('workingDays',(pref.workingDays||[]).join(','));setVal('defaultLeaveYear',pref.defaultLeaveYear);setVal('payrollFrequency',pref.payrollFrequency);setVal('defaultShift',pref.defaultShift);setVal('employeeIdFormat',pref.employeeIdFormat);setVal('attendanceGraceMinutes',pref.attendanceRules?.graceMinutes||15);setVal('approvalDefaults',JSON.stringify(pref.approvalDefaults||{},null,2));setVal('notificationDefaults',JSON.stringify(pref.notificationDefaults||{},null,2));setVal('documentNumberFormats',JSON.stringify(pref.documentNumberFormats||{},null,2));
+    renderModules(config);
+}
+function renderTables(){
+    const config=centerState?.configuration||{}, p=config.companyProfile||{}, b=config.businessSettings||{}, s=config.organizationStructure||{}, hist=centerState?.history?.versions||[];
+    table('overviewTable',['Area','Value'],[
+        ['Company',escapeHtml(p.companyName||'')],
+        ['Legal Entity',escapeHtml(p.legalEntityName||'')],
+        ['Code',escapeHtml(p.companyCode||'')],
+        ['Industry',escapeHtml(p.industry||'')],
+        ['Currency / Timezone',escapeHtml((b.currency||'')+' / '+(b.defaultTimeZone||''))],
+        ['Departments',String((s.departments||[]).length)],
+        ['Locations',String((s.locations||[]).length)]
+    ]);
+    table('recentChangesTable',['Version','Domain','Reason','Changed By','Time'],hist.slice(0,6).map(row=>[escapeHtml(row.versionId),escapeHtml(row.domain),escapeHtml(row.reason),escapeHtml(row.changedBy),escapeHtml(row.timestamp)]));
+    table('historyTable',['Version','Domain','Reason','Changed By','Time','Rollback'],hist.map(row=>[escapeHtml(row.versionId),escapeHtml(row.domain),escapeHtml(row.reason),escapeHtml(row.changedBy),escapeHtml(row.timestamp),`<button class="btn alt" onclick="rollback('${escapeHtml(row.versionId)}')">Rollback</button>`]));
+}
+function loadCenter(){
+    clearError();
+    document.getElementById('tenantBadge').textContent='Tenant: '+tenant();
+    const result=svc().getCompanyProfileCenter({tenantSlug:tenant()},ctx());
+    if(!result.success){showError(result);return;}
+    centerState=result;
+    metricCards(result.health);
+    fillForm(result.configuration);
+    renderTables();
+}
+function profilePayload(){return{tenantSlug:tenant(),companyProfile:{companyName:val('companyName'),legalEntityName:val('legalEntityName'),brandName:val('brandName'),companyCode:val('companyCode'),registrationNumber:val('registrationNumber'),gstVatNumber:val('gstVatNumber'),panTin:val('panTin'),industry:val('industry'),companySize:val('companySize'),companyType:val('companyType'),website:val('website'),officialEmail:val('officialEmail'),phoneNumbers:list(val('phoneNumbers')),logo:val('logo'),brandAssets:lines(val('brandAssets')).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{type:p[0]||'asset',url:p[1]||''};})},reason:val('profileReason')};}
+function addressRows(){return lines(val('addresses')).map(line=>{let p=line.includes('|')?line.split('|').map(x=>x.trim()):line.split(',').map(x=>x.trim());const gps=line.includes('|')?(p[7]||''):p.slice(7).join(',');return{type:p[0]||'',name:p[1]||'',country:p[2]||'',state:p[3]||'',city:p[4]||'',postalCode:p[5]||'',timezone:p[6]||'',gps:gps||''};});}
+function businessPayload(){return{tenantSlug:tenant(),businessSettings:{fiscalYear:val('fiscalYear'),financialYear:val('financialYear'),businessCalendar:val('businessCalendar'),currency:val('currency'),numberFormat:val('numberFormat'),dateFormat:val('dateFormat'),timeFormat:val('timeFormat'),languages:list(val('languages')),defaultTimeZone:val('defaultTimeZone'),weekStartDay:val('weekStartDay')},reason:val('businessReason')};}
+function structurePayload(){return{tenantSlug:tenant(),organizationStructure:{businessUnits:nameCodeRows(val('businessUnits')),departments:nameCodeRows(val('departments')),divisions:nameCodeRows(val('divisions')),costCenters:nameCodeRows(val('costCenters')),profitCenters:nameCodeRows(val('profitCenters')),legalEntities:nameCodeRows(val('legalEntities')),locations:nameCodeRows(val('locations')),hierarchy:lines(val('hierarchy')).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{parent:p[0]||'',child:p[1]||''};})},reason:val('structureReason')};}
+function brandingPayload(){return{tenantSlug:tenant(),branding:{primaryLogo:val('primaryLogo'),darkLogo:val('darkLogo'),favicon:val('favicon'),primaryColor:val('primaryColor'),secondaryColor:val('secondaryColor'),accentColor:val('accentColor'),emailBranding:boolVal('emailBranding'),pdfBranding:boolVal('pdfBranding'),portalBranding:boolVal('portalBranding')},reason:val('brandingReason')};}
+function modulesPayload(){const moduleConfiguration={};Object.keys(moduleLabels).forEach(key=>{moduleConfiguration[key]=!!document.getElementById('module_'+key)?.checked;});return{tenantSlug:tenant(),moduleConfiguration,reason:val('modulesReason')};}
+function preferencesPayload(){return{tenantSlug:tenant(),organizationPreferences:{workingDays:list(val('workingDays')),defaultLeaveYear:val('defaultLeaveYear'),attendanceRules:{graceMinutes:Number(val('attendanceGraceMinutes')||0)},payrollFrequency:val('payrollFrequency'),defaultShift:val('defaultShift'),approvalDefaults:jsonField('approvalDefaults',{}),notificationDefaults:jsonField('notificationDefaults',{}),documentNumberFormats:jsonField('documentNumberFormats',{}),employeeIdFormat:val('employeeIdFormat')},reason:val('preferencesReason')};}
+function saveCurrentSection(){
+    clearError();
+    let result=null;
+    if(activeSection==='profile') result=svc().updateCompanyProfile(profilePayload(),ctx());
+    else if(activeSection==='addresses') result=svc().updateAddressManagement({tenantSlug:tenant(),addresses:addressRows(),reason:val('addressesReason')},ctx());
+    else if(activeSection==='business') result=svc().updateBusinessConfiguration(businessPayload(),ctx());
+    else if(activeSection==='structure') result=svc().updateOrganizationStructure(structurePayload(),ctx());
+    else if(activeSection==='branding') result=svc().updateBranding(brandingPayload(),ctx());
+    else if(activeSection==='modules') result=svc().updateModuleConfiguration(modulesPayload(),ctx());
+    else if(activeSection==='preferences') result=svc().updateOrganizationPreferences(preferencesPayload(),ctx());
+    else {showToast('Open an editable section first.');return;}
+    if(!result.success){showError(result);return;}
+    showToast('Configuration saved and versioned.');
+    loadCenter();
+}
+function rollback(versionId){
+    clearError();
+    const result=svc().rollbackConfiguration({tenantSlug:tenant(),versionId,reason:'Rollback from Company Profile Center'},ctx());
+    if(!result.success){showError(result);return;}
+    showToast('Rollback completed and audited.');
+    loadCenter();
+}
+function showSection(id,btn){
+    activeSection=id;
+    document.querySelectorAll('.section').forEach(x=>x.classList.remove('on'));
+    document.getElementById('section-'+id).classList.add('on');
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));
+    if(btn)btn.classList.add('on');
+    if(id==='history') renderTables();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('tenantScope').value=tenant();
+    loadCenter();
+});
+</script>
+</body>
+</html>

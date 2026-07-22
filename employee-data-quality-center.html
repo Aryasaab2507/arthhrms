@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Data Quality Center - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/tenantIsolationService.js"></script>
+    <script src="services/employeeMasterImportService.js"></script>
+    <script src="services/reportingHierarchyService.js"></script>
+    <script src="services/employeeDataValidationService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--ink:#102033;--muted:#65758b;--bg:#f6f8fb;--line:#dbe4ef;--blue:#1d4ed8;--green:#047857;--amber:#b45309;--red:#b91c1c}
+        body{font-family:"Inter","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
+        .side{background:#111827;color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:8px;background:var(--blue);display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#102033}.btn.good{background:var(--green)}.btn.warn{background:var(--amber)}
+        .mini-input{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;color:#102033;font-weight:800;min-width:138px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px;border-left:4px solid var(--blue)}.metric.good{border-left-color:var(--green)}.metric.warn{border-left-color:var(--amber)}.metric.bad{border-left-color:var(--red)}.metric b{display:block;font-size:1.35rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.warnb{background:#fef3c7;color:#92400e}.info{background:#dbeafe;color:#1d4ed8}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">DQ</div>
+            <div><h1>Employee Data Quality Center</h1><p>Non-destructive validation governance</p></div>
+        </div>
+        <nav class="nav" aria-label="Employee data quality sections">
+            <button class="on" onclick="showSection('summary',this)">Validation Summary</button>
+            <button onclick="showSection('critical',this)">Critical Issues</button>
+            <button onclick="showSection('warnings',this)">Warnings</button>
+            <button onclick="showSection('duplicates',this)">Duplicates</button>
+            <button onclick="showSection('relationships',this)">Relationship Errors</button>
+            <button onclick="showSection('quality',this)">Quality Trends</button>
+            <button onclick="showSection('actions',this)">Recommended Actions</button>
+            <a href="employee-migration-center.html">Employee Migration</a>
+            <a href="organization-hierarchy-center.html">Hierarchy Center</a>
+            <a href="platform-control.html">Platform Control</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Enterprise Employee Data Validation</h2>
+                <p>Validate employee master data, dependencies, duplicates, business rules, and go-live readiness without modifying employee, payroll, attendance, leave, or reporting records.</p>
+            </div>
+            <div class="toolbar">
+                <span class="pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn good" onclick="runValidation()">Run Validation</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="metricBox"></div>
+
+        <section class="section on" id="section-summary">
+            <div class="panel">
+                <h3>Validation Summary</h3>
+                <div class="table-wrap"><table id="summaryTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-critical">
+            <div class="panel">
+                <h3>Critical Issues</h3>
+                <div class="table-wrap"><table id="criticalTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-warnings">
+            <div class="panel">
+                <h3>Warnings</h3>
+                <div class="table-wrap"><table id="warningTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-duplicates">
+            <div class="panel">
+                <h3>Duplicates</h3>
+                <div class="table-wrap"><table id="duplicateTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-relationships">
+            <div class="panel">
+                <h3>Relationship Errors</h3>
+                <div class="table-wrap"><table id="relationshipTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-quality">
+            <div class="panel">
+                <h3>Quality Trends</h3>
+                <div class="table-wrap"><table id="qualityTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-actions">
+            <div class="panel">
+                <h3>Recommended Actions</h3>
+                <p class="muted" style="margin-bottom:10px">Suggestions are advisory only. No automatic corrections are applied.</p>
+                <div class="table-wrap"><table id="actionTable"></table></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+let latestDashboard = null;
+
+function currentTenant() {
+    try { return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim() || undefined); }
+    catch (error) { return ''; }
+}
+
+function actorContext() {
+    const user = authService.getCurrentUser() || {};
+    return { tenantSlug: currentTenant(), actor: user };
+}
+
+function showError(message) {
+    const node = document.getElementById('errorBox');
+    node.textContent = message || '';
+    node.classList.toggle('on', !!message);
+}
+
+function showSection(name, button) {
+    document.querySelectorAll('.section').forEach(node => node.classList.remove('on'));
+    document.getElementById('section-' + name).classList.add('on');
+    document.querySelectorAll('.nav button').forEach(node => node.classList.remove('on'));
+    if (button) button.classList.add('on');
+}
+
+function renderTable(id, columns, rows) {
+    const table = document.getElementById(id);
+    const safeRows = rows || [];
+    table.innerHTML = '<thead><tr>' + columns.map(c => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+        safeRows.map(row => '<tr>' + columns.map(c => '<td>' + (c.render ? c.render(row) : (row[c.key] ?? '')) + '</td>').join('') + '</tr>').join('') +
+        (safeRows.length ? '' : '<tr><td colspan="' + columns.length + '">No records yet.</td></tr>') +
+        '</tbody>';
+}
+
+function renderMetrics(report) {
+    const scores = report?.scores || {};
+    const summary = report?.validationSummary || report?.summary || {};
+    document.getElementById('metricBox').innerHTML = [
+        ['Data Quality', scores.dataQualityScore || report?.dataQualityScore || 0, 'good'],
+        ['Go-Live Score', scores.goLiveReadinessScore || report?.goLiveScore || 0, 'good'],
+        ['Critical', summary.criticalErrors || 0, 'bad'],
+        ['Duplicates', summary.duplicateRecords || summary.duplicateCount || 0, 'warn'],
+        ['Warnings', summary.warnings || 0, 'warn']
+    ].map(item => '<div class="metric ' + item[2] + '"><b>' + item[1] + '</b><span>' + item[0] + '</span></div>').join('');
+}
+
+function issueColumns() {
+    return [
+        { label: 'Code', key: 'code' },
+        { label: 'Severity', key: 'severity', render: row => '<span class="badge ' + (row.severity === 'CRITICAL' ? 'err' : row.severity === 'WARNING' ? 'warnb' : 'info') + '">' + row.severity + '</span>' },
+        { label: 'Message', key: 'message' },
+        { label: 'Employee', render: row => row.metadata?.employeeId || '' }
+    ];
+}
+
+function renderDashboard(dashboard) {
+    latestDashboard = dashboard;
+    renderMetrics(dashboard);
+    renderTable('summaryTable', [
+        { label: 'Metric', key: 'metric' },
+        { label: 'Value', key: 'value' }
+    ], Object.entries(dashboard.validationSummary || {}).map(([metric, value]) => ({ metric, value })));
+    renderTable('criticalTable', issueColumns(), dashboard.criticalIssues || []);
+    renderTable('warningTable', issueColumns(), dashboard.warnings || []);
+    renderTable('duplicateTable', [
+        { label: 'Conflict', key: 'conflictType' },
+        { label: 'Employees', render: row => (row.employeeIds || []).join(', ') },
+        { label: 'Severity', key: 'severity' }
+    ], dashboard.duplicates || []);
+    renderTable('relationshipTable', issueColumns(), dashboard.relationshipErrors || []);
+    renderTable('qualityTable', [
+        { label: 'Run', key: 'runId' },
+        { label: 'Quality', key: 'dataQualityScore' },
+        { label: 'Generated', key: 'generatedAt' }
+    ], dashboard.qualityTrends || []);
+    renderTable('actionTable', [
+        { label: 'Action', key: 'action' },
+        { label: 'Priority', key: 'priority' },
+        { label: 'Requires Approval', key: 'requiresApproval' },
+        { label: 'Count', key: 'count' }
+    ], dashboard.recommendedActions || []);
+}
+
+function runValidation() {
+    const report = EmployeeDataValidationService.generateValidationReport({ tenantSlug: currentTenant() }, actorContext());
+    if (!report.success) return showError((report.issues || []).map(i => i.message).join('\n'));
+    showError('');
+    refreshCenter();
+}
+
+function refreshCenter() {
+    document.getElementById('tenantBadge').textContent = currentTenant();
+    const dashboard = EmployeeDataValidationService.generateQualityDashboard({ tenantSlug: currentTenant() }, actorContext());
+    if (!dashboard.success) return showError((dashboard.issues || []).map(i => i.message).join('\n'));
+    showError('');
+    renderDashboard(dashboard);
+}
+
+document.addEventListener('DOMContentLoaded', function init() {
+    try { DB.init(); DB.migrate(); } catch (error) {}
+    document.getElementById('tenantScope').value = currentTenant();
+    refreshCenter();
+});
+</script>
+</body>
+</html>

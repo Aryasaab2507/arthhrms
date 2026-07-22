@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Access denied - ArthHRMS</title>
+    <style>
+        *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6f8;color:#17202a;font-family:Inter,system-ui,-apple-system,sans-serif}.panel{width:min(460px,calc(100% - 32px));padding:32px;border:1px solid #d9dee5;border-radius:8px;background:#fff;box-shadow:0 12px 34px rgba(15,23,42,.09)}.code{color:#a83232;font-size:14px;font-weight:800;text-transform:uppercase}.panel h1{margin:8px 0 10px;font-size:28px}.panel p{margin:0 0 22px;color:#52606d;line-height:1.55}.actions{display:flex;gap:10px}.actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:6px;text-decoration:none;font-weight:700}.primary{background:#155eef;color:#fff}.secondary{border:1px solid #c8d0da;color:#263445}
+    </style>
+</head>
+<body>
+    <main class="panel" aria-labelledby="deniedTitle">
+        <div class="code">403 Forbidden</div>
+        <h1 id="deniedTitle">Access denied</h1>
+        <p>Your authenticated role does not have permission to open this page.</p>
+        <div class="actions">
+            <a class="primary" id="homeLink" href="ArthHRMS.html">Go to my dashboard</a>
+            <a class="secondary" href="ArthHRMS.html">Return to login</a>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="services/supabaseClient.js"></script>
+    <script src="services/authService.js"></script>
+    <script>
+        (async function(){
+            const validation=await window.authService?.validateCurrentSession?.();
+            if(validation?.authenticated){document.getElementById('homeLink').href=authService.getRoleRedirect(validation.user.role);}
+        })();
+    </script>
+</body>
+</html>

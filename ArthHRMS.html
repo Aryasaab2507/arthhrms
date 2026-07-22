@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArthHRMS - Purpose-driven HR Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="services/supabaseClient.js"></script>
+    <script src="services/errorService.js"></script>
+    <script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+    <script src="services/validationRegistryService.js"></script>
+    <script src="services/exportService.js"></script>
+    <script src="services/storageService.js"></script>
+    <script src="services/employeeService.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/loginAttemptSecurityService.js"></script>
+    <script src="services/authInviteService.js"></script>
+    <script src="services/platformGovernanceService.js"></script>
+    <script src="services/migrationControlService.js"></script>
+    <script src="services/deploymentSafetyService.js"></script>
+    <script src="services/qaValidationService.js"></script>
+    <script src="services/notificationService.js"></script>
+    <script src="services/workflowEngine.js"></script>
+    <script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+    <script src="services/expenseService.js"></script>
+    <script src="services/payrollService.js"></script>
+    <script src="services/attendanceService.js"></script>
+    <script src="services/leaveService.js"></script>
+    <script src="services/operationsMonitoringService.js"></script>
+    <style>
+        :root { --border:#e2e8f0; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1a3a6b 50%, #0ea5e9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.35);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        .brand-section {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            padding: 60px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .logo {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .logo span {
+            background: linear-gradient(135deg, #0ea5e9, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .features {
+            list-style: none;
+            margin-top: 30px;
+        }
+        
+        .features li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .login-section {
+            padding: 60px 40px;
+            background: white;
+        }
+        
+        .role-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .role-tab {
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .role-tab.active {
+            background: linear-gradient(135deg, #1a56db, #0ea5e9);
+            color: white;
+        }
+        
+        .login-form {
+            display: none;
+        }
+        
+        .login-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #1a56db;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a56db, #0ea5e9);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .login-guidance {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                padding: 12px;
+            }
+            .login-container {
+                grid-template-columns: 1fr;
+                max-height: none;
+                border-radius: 20px;
+            }
+            .brand-section {
+                padding: 32px 24px;
+            }
+            .login-section {
+                padding: 32px 24px;
+            }
+            .role-tab {
+                flex: 1 1 120px;
+                text-align: center;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="brand-section">
+            <div class="logo">
+                Arth<span>HRMS</span>
+            </div>
+            <div class="tagline">
+                अर्थपूर्ण HR समाधान<br>
+                Purpose-driven HR Management
+            </div>
+            <ul class="features">
+                <li>✓ Complete HR Management</li>
+                <li>✓ Smart Payroll & Compliance</li>
+                <li>✓ Performance Management</li>
+                <li>✓ Expense Claims & Approvals</li>
+                <li>✓ Recruitment & Onboarding</li>
+                <li>✓ Advanced Analytics</li>
+            </ul>
+        </div>
+        
+        <div class="login-section">
+            <div class="role-tabs">
+                <div class="role-tab active" data-role="platform_owner">Platform Owner</div>
+                <div class="role-tab" data-role="super_admin">Super Admin</div>
+                <div class="role-tab" data-role="admin">Admin</div>
+                <div class="role-tab" data-role="hr">HR</div>
+                <div class="role-tab" data-role="manager">Manager</div>
+                <div class="role-tab" data-role="employee">Employee</div>
+            </div>
+
+            <!-- Platform Owner Login -->
+            <div class="login-form active" id="form-platform_owner">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="po_email" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="po_password" autocomplete="current-password">
+                </div>
+                <button onclick="login('platform_owner')">Login as Platform Owner</button>
+            </div>
+            
+            <!-- Super Admin Login -->
+            <div class="login-form" id="form-super_admin">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="sa_email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="sa_password">
+                </div>
+                <button onclick="login('super_admin')">Login as Super Admin →</button>
+            </div>
+            
+            <!-- Admin Login -->
+            <div class="login-form" id="form-admin">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="admin_email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="admin_password">
+                </div>
+                <button onclick="login('admin')">Login as Admin →</button>
+            </div>
+            
+            <!-- HR Login -->
+            <div class="login-form" id="form-hr">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="hr_email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="hr_password">
+                </div>
+                <button onclick="login('hr')">Login as HR →</button>
+            </div>
+            
+            <!-- Manager Login -->
+            <div class="login-form" id="form-manager">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="mgr_email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="mgr_password">
+                </div>
+                <button onclick="login('manager')">Login as Manager →</button>
+            </div>
+            
+            <!-- Employee Login -->
+            <div class="login-form" id="form-employee">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="emp_email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="emp_password">
+                </div>
+                <button onclick="login('employee')">Login as Employee →</button>
+            </div>
+            
+            <div class="login-guidance" id="loginGuidanceBox"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize database
+        DB.init();
+        DB.migrate();
+
+        // Redirect only after the live Supabase session has been revalidated.
+        (async function autoRedirectIfLoggedIn(){
+            try{
+                if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
+                const restored = await authService.restoreSessionFromSupabase();
+                const u = restored?.user || null;
+                if(!u || !u.role) return;
+                if(u.role==='platform_owner' && window.DB?.isSetupRequired?.()){
+                    window.location.replace('setup.html');
+                    return;
+                }
+                const target = window.authService?.getRoleRedirect ? authService.getRoleRedirect(u.role) : null;
+                if(target && target !== 'ArthHRMS.html') window.location.replace(target);
+            }catch(e){}
+        })();
+
+        function applyLoginEnvironment(){
+            const box = document.getElementById('loginGuidanceBox');
+            if(!box) return;
+            box.style.display='block';
+            box.innerHTML='<strong>Production Access:</strong><br>Use a verified Platform Owner, Super Admin, or tenant account. Credentials are never prefilled or displayed.';
+        }
+        applyLoginEnvironment();
+        
+        // Tab switching
+        document.querySelectorAll('.role-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const role = tab.dataset.role;
+                document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+                document.getElementById(`form-${role}`).classList.add('active');
+            });
+        });
+        
+        async function login(role) {
+            let email, password;
+            
+            switch(role) {
+                case 'platform_owner':
+                    email = document.getElementById('po_email').value;
+                    password = document.getElementById('po_password').value;
+                    break;
+                case 'super_admin':
+                    email = document.getElementById('sa_email').value;
+                    password = document.getElementById('sa_password').value;
+                    break;
+                case 'admin':
+                    email = document.getElementById('admin_email').value;
+                    password = document.getElementById('admin_password').value;
+                    break;
+                case 'hr':
+                    email = document.getElementById('hr_email').value;
+                    password = document.getElementById('hr_password').value;
+                    break;
+                case 'manager':
+                    email = document.getElementById('mgr_email').value;
+                    password = document.getElementById('mgr_password').value;
+                    break;
+                case 'employee':
+                    email = document.getElementById('emp_email').value;
+                    password = document.getElementById('emp_password').value;
+                    break;
+                default:
+                    alert('Unsupported tenant login role.');
+                    return;
+            }
+            
+            if(!window.authService?.isSupabaseAuthEnabled?.()){
+                alert('Enterprise authentication is not configured. Contact the platform administrator.');
+                return;
+            }
+            let result = null;
+            try {
+                result = await authService.loginWithSupabase(email, password, role);
+            } catch (err) {
+                console.error('Login error:', err);
+                alert('Authentication failed. Verify your credentials or contact the platform administrator.');
+                return;
+            }
+            
+            if (!result || result.user.role !== role) {
+                alert('Invalid credentials for ' + role);
+                return;
+            }
+
+            const target = result.user.role==='platform_owner' && window.DB?.isSetupRequired?.()
+                ? 'setup.html'
+                : authService.getRoleRedirect(result.user.role);
+            window.location.replace(target);
+        }
+
+    </script>
+</body>
+</html>

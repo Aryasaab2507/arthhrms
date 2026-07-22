@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Super Admin — HRMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/errorService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/exportService.js"></script>
+<script src="services/storageService.js"></script>
+<script src="services/employeeService.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/loginAttemptSecurityService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<script src="services/migrationControlService.js"></script>
+<script src="services/deploymentSafetyService.js"></script>
+<script src="services/qaValidationService.js"></script>
+<script src="services/notificationService.js"></script>
+<script src="services/workflowEngine.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/expenseService.js"></script>
+<script src="services/payrollService.js"></script>
+<script src="services/attendanceService.js"></script>
+<script src="services/leaveService.js"></script>
+<script src="services/operationsMonitoringService.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--p:#7c3aed;--pd:#6d28d9;--pl:#f5f3ff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f8f7ff;--side:#1e1040;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 12px rgba(124,58,237,.09);--rad:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1e1040,#4c1d95,#7c3aed);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:24px;padding:44px;width:400px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .icon{width:56px;height:56px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:10px}
+.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem}
+.login-logo p{font-size:.78rem;color:var(--muted);margin-top:3px}
+.lbl{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
+.linput{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px;transition:border .15s}
+.linput:focus{border-color:var(--p)}
+.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.78rem;font-weight:600;margin-bottom:12px;display:none}
+.hint{font-size:.73rem;color:var(--muted);text-align:center;margin-top:12px}
+.other-links{display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.other-links a{font-size:.76rem;color:var(--p);font-weight:700;text-decoration:none}
+.sidebar{width:230px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.logo-name{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:1rem;margin-top:5px}
+.logo-sub{font-size:.62rem;color:#8b6fd4;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.snav-group{padding:10px 10px 2px;font-size:.62rem;color:#4d3a7a;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.snav{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 7px;border-radius:8px;color:#a89cc8;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .15s}
+.snav:hover,.snav.on{background:rgba(124,58,237,.25);color:#fff}
+.snav.on{color:#c4b5fd}
+.snav .icon{font-size:.95rem;width:18px;text-align:center}
+.sidebar-foot{margin-top:auto;padding:12px 7px;border-top:1px solid rgba(255,255,255,.06)}
+.main{margin-left:230px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;height:58px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 var(--border);position:sticky;top:0;z-index:50}
+.page-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem}
+.topbar-r{display:flex;align-items:center;gap:10px}
+.role-badge{padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.5px}
+.notif-wrap{position:relative}
+.notif-btn{width:34px;height:34px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:none;color:var(--p)}
+.notif-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:10px;background:var(--r);color:#fff;font-size:.6rem;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 5px}
+.notif-panel{display:none;position:absolute;right:0;top:41px;width:315px;max-height:350px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 45px rgba(15,23,42,.18);padding:10px;z-index:120}
+.notif-panel.open{display:block}
+.notif-mini{padding:9px 10px;border-radius:9px;background:var(--bg);border-left:3px solid var(--p);margin-bottom:8px;cursor:pointer}
+.notif-mini.unread{background:#fff7ed;border-left-color:var(--r)}
+.notif-mini-title{font-size:.78rem;font-weight:800}
+.notif-mini-msg{font-size:.7rem;color:var(--muted);margin-top:3px;line-height:1.35}
+.uchip{display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:9px;padding:5px 12px 5px 5px}
+.uav{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem}
+.content{padding:22px 26px;flex:1}
+.section{display:none}.section.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sc{background:var(--card);border-radius:var(--rad);padding:18px 16px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;transition:transform .17s}
+.sc:hover{transform:translateY(-2px)}
+.sc-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.sc-n{font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:900;line-height:1}
+.sc-l{font-size:.72rem;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border-radius:var(--rad);padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:18px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.95rem}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.87}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
+.btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.btn-outline{background:transparent;color:var(--p);border:1.5px solid var(--p)}
+.btn-ghost{background:var(--pl);color:var(--p)}
+.btn-sm{padding:4px 10px;font-size:.7rem}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:0 0 9px;text-align:left}
+.tbl td{padding:9px 0;border-top:1px solid var(--border);font-size:.8rem;vertical-align:middle}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700}
+.role-super_admin{background:#f5f3ff;color:#7c3aed}
+.role-admin{background:#eff6ff;color:#1d4ed8}
+.role-hr{background:#ecfdf5;color:#047857}
+.role-manager{background:#fff7ed;color:#c2410c}
+.role-employee{background:#f8fafc;color:#475569}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select,.fg textarea{padding:8px 11px;border-radius:8px;border:1.5px solid var(--border);font-size:.8rem;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;transition:border .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--p);background:#fff}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.perm-toggle{width:42px;height:22px;border-radius:20px;border:none;background:var(--border);position:relative;cursor:pointer;transition:.18s}
+.perm-toggle:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);transition:.18s}
+.perm-toggle.on{background:var(--p)}
+.perm-toggle.on:before{left:22px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+#toast{position:fixed;bottom:22px;right:22px;background:#1e1040;color:#fff;padding:11px 18px;border-radius:9px;font-size:.82rem;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999;border-left:4px solid #7c3aed;max-width:260px}
+.modal-bg{position:fixed;inset:0;background:rgba(30,16,64,.55);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:1.05rem}
+.modal-close{background:var(--bg);border:none;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:.95rem}
+.sidebar{height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:10px}
+.sidebar-logo,.sidebar-foot{flex-shrink:0}
+.sidebar-foot{position:sticky;bottom:0;background:var(--side);z-index:2}
+.main,.topbar,.content,.card{min-width:0}
+.topbar-l{display:flex;align-items:center;gap:10px;min-width:0}
+.menu-btn{display:none;width:36px;height:36px;border-radius:9px;border:none;background:var(--pl);color:var(--p);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-backdrop{position:fixed;inset:0;background:rgba(30,16,64,.42);z-index:90;display:none}
+.sidebar-backdrop.open{display:block}
+.topbar-r{min-width:0;flex-wrap:wrap;justify-content:flex-end}
+.page-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uchip{min-width:0}.uchip>div:last-child{min-width:0}
+@media (max-width:1400px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.three-col{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1200px){
+  .sidebar{transform:translateX(-100%);transition:transform .22s ease;z-index:120;box-shadow:18px 0 50px rgba(30,16,64,.24)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .menu-btn{display:inline-flex}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}.full{grid-column:1}
+  .content{padding:16px}
+  .topbar{padding:0 14px}
+  .card{overflow-x:auto}
+  .tbl{min-width:680px}
+}
+@media (max-width:760px){
+  .sidebar{width:min(86vw,280px)}
+  .stats{grid-template-columns:1fr}
+  .topbar{height:auto;min-height:58px;padding:10px 12px;gap:10px;align-items:flex-start}
+  .role-badge{display:none}
+  .notif-panel{right:-8px;width:min(315px,calc(100vw - 24px))}
+  .login-box{width:92vw;padding:30px 20px;border-radius:16px}
+  .content{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg></div>
+      <h2>Super Admin Panel</h2>
+      <p>HRMS — Full System Access</p>
+    </div>
+    <div class="lerr" id="lerr">Invalid credentials.</div>
+    <label class="lbl">Email</label>
+    <input class="linput" id="lemail" placeholder="superadmin@company.com"/>
+    <label class="lbl">Password</label>
+    <input class="linput" id="lpass" type="password"/>
+    <button class="lbtn" onclick="doLogin()">Login as Super Admin →</button>
+    <div class="hint">Use your activated company account.</div>
+    
+  </div>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg></div>
+    <div class="logo-name">Super Admin</div>
+    <div class="logo-sub">Full Access</div>
+  </div>
+  <div class="snav-group">Overview</div>
+  <div class="snav on" onclick="show('dashboard',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Dashboard</div>
+  <div class="snav" onclick="show('master',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg></span> Master Dashboard <span id="saCriticalBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('company-policy',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span> Company Policy Settings</div>
+  <div class="snav" onclick="show('role-permissions',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span> Role Permissions</div>
+  <div class="snav" onclick="show('audit-logs',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> System Audit Logs <span id="saAuditBadge" style="background:var(--ol);color:var(--o);font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
+  <div class="snav" onclick="show('broadcast',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11v2a1 1 0 0 0 1 1h3l7 4V6l-7 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a5 5 0 0 1 0 6"/></svg></span> Broadcast Center</div>
+  <div class="snav-group">User Management</div>
+  <div class="snav" onclick="show('users',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> All Users & Roles</div>
+  <div class="snav" onclick="show('teams',this)"><span class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg></span> Team Management</div>
+  <div class="snav-group">System Data</div>
+  <div class="snav" onclick="show('employees',this)"><span class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Employees</div>
+  <div class="snav" onclick="show('attendance',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> All Attendance</div>
+  <div class="snav" onclick="show('payroll',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></span> All Payroll</div>
+  <div class="snav" onclick="show('whatsapp',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> WhatsApp Logs</div>
+  <div class="snav-group">Settings</div>
+  <div class="snav" onclick="show('settings',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span> System Settings</div>
+  <div class="sidebar-foot">
+    <div class="snav" onclick="logout()"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Logout</div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="topbar">
+    <div class="topbar-l"><button class="menu-btn" onclick="toggleSidebar()" title="Menu"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><div><div class="page-title" id="pageTitle">Dashboard</div><div style="font-size:.7rem;color:var(--muted)">Super Admin Panel</div></div></div>
+    <div class="topbar-r">
+      <div class="notif-wrap">
+        <button class="notif-btn" onclick="toggleSABell(event)"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-count" id="saBellCount"></span></button>
+        <div class="notif-panel" id="saBellPanel"></div>
+      </div>
+      <span class="role-badge"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg> SUPER ADMIN</span>
+      <div class="uchip"><div class="uav">SA</div><div><div style="font-size:.8rem;font-weight:700" id="saName">Super Admin</div></div></div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section on" id="sec-dashboard">
+      <div id="saOwnerLoop" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px"></div>
+      <div class="stats" id="saStats"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Users by Role</div></div>
+          <canvas id="roleChart" style="max-height:200px"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> System Overview</div></div>
+          <div id="sysOverview"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Recent Activity</div></div>
+        <div id="recentActivity"></div>
+      </div>
+    </div>
+
+    <!-- MASTER DASHBOARD -->
+    <div class="section" id="sec-master">
+      <div class="card" style="border-left:5px solid var(--p)">
+        <div class="card-hd"><div class="card-title">Strategic Accountability Health</div></div>
+        <div class="stats" id="ownerStrategicHealth" style="margin-bottom:0"></div>
+      </div>
+      <div class="stats" id="ownerStats"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg> Organization Command Summary</div></div>
+          <div id="ownerSummary"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Live Risk Queue</div></div>
+          <div id="ownerRiskQueue"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Overall Organization Summary</div></div>
+        <table class="tbl"><thead><tr><th>Area</th><th>Live Count</th><th>Owner Signal</th><th>Source</th></tr></thead><tbody id="ownerSummaryTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- COMPANY POLICY SETTINGS -->
+    <div class="section" id="sec-company-policy">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Company Settings & Policy Control</div></div>
+        <div class="three-col">
+          <div class="fg"><label>Company Name</label><input id="csCompanyName"/></div>
+          <div class="fg"><label>Company Logo URL</label><input id="csCompanyLogoUrl"/></div>
+          <div class="fg"><label>Timezone</label><input id="csTimezone"/></div>
+          <div class="fg"><label>Currency</label><input id="csCurrency"/></div>
+          <div class="fg"><label>Monthly Payroll Date</label><input id="csPayrollDate" type="number" min="1" max="31"/></div>
+          <div class="fg"><label>Default Annual Leave Days</label><input id="csLeaveDays" type="number" min="0"/></div>
+          <div class="fg"><label>Attendance Grace Minutes</label><input id="csGraceMinutes" type="number" min="0"/></div>
+          <div class="fg"><label>Work Week Pattern</label>
+            <select id="csWorkWeek">
+              <option>Monday to Friday</option>
+              <option>Monday to Saturday</option>
+              <option>Six day rotating week</option>
+              <option>Custom roster based</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveCompanyPolicySettings()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Save Policy Settings</button>
+      </div>
+    </div>
+
+    <!-- ROLE PERMISSIONS -->
+    <div class="section" id="sec-role-permissions">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Role Access Control Matrix</div><button class="btn btn-primary" onclick="saveRolePermissionMatrix()">Save Permissions</button></div>
+        <table class="tbl"><thead><tr><th>Role</th><th>Feature Permission</th><th>Access</th></tr></thead><tbody id="rolePermTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SYSTEM AUDIT LOGS -->
+    <div class="section" id="sec-audit-logs">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">System Audit Log Center</div><button class="btn btn-ghost btn-sm" onclick="DB.logAudit('super_admin','manual audit check','Audit center opened by super admin');renderAuditLogs();toast('Audit test entry generated')">Generate Test Log</button></div>
+        <table class="tbl"><thead><tr><th>Log ID</th><th>Date</th><th>User Role</th><th>Action</th><th>Description</th></tr></thead><tbody id="auditLogsTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- BROADCAST CENTER -->
+    <div class="section" id="sec-broadcast">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Organization Announcement Broadcast</div></div>
+          <div class="fg"><label>Notice Title</label><input id="bcTitle" placeholder="e.g. Holiday announcement"/></div>
+          <div class="fg"><label>Notice Message</label><textarea id="bcMessage" rows="6" placeholder="Message visible to all dashboards"></textarea></div>
+          <div class="fg"><label>Priority</label><select id="bcPriority"><option>Normal</option><option>Urgent</option></select></div>
+          <button class="btn btn-primary" onclick="publishBroadcastNotice()">Publish Notice</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Recent Broadcast Notices</div></div>
+          <div id="broadcastHistory"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS & ROLES -->
+    <div class="section" id="sec-users">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> All Users & Role Management</div>
+          <button class="btn btn-primary" onclick="openAddUser()">+ Add User</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <select id="roleFilter" onchange="renderUsers()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none">
+            <option value="all">All Roles</option>
+            <option value="super_admin">Super Admin</option>
+            <option value="admin">Admin</option>
+            <option value="hr">HR</option>
+            <option value="manager">Manager</option>
+            <option value="employee">Employee</option>
+          </select>
+          <input id="userSearch" placeholder="Search users..." onchange="renderUsers()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none"/>
+        </div>
+        <table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Linked Employee</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="usersTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- TEAMS -->
+    <div class="section" id="sec-teams">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg> Team Management</div>
+          <button class="btn btn-primary" onclick="openAddTeam()">+ Create Team</button>
+        </div>
+        <div id="teamsList"></div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div class="section" id="sec-employees">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> All Employees</div><button class="btn btn-ghost btn-sm" onclick="exportEmpCSV()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Export CSV</button></div>
+        <table class="tbl"><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Salary</th><th>Leave Bal</th></tr></thead>
+        <tbody id="saEmpTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="sec-attendance">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> All Attendance Records</div>
+          <input type="date" id="saAttDate" onchange="renderSAAttendance()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none"/>
+        </div>
+        <table class="tbl"><thead><tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
+        <tbody id="saAttTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PAYROLL -->
+    <div class="section" id="sec-payroll">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg> All Payroll Records</div><div id="payrollTotal" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;color:var(--p)"></div></div>
+        <table class="tbl"><thead><tr><th>Employee</th><th>Month</th><th>Gross</th><th>Deductions</th><th>Net Pay</th><th>Status</th></tr></thead>
+        <tbody id="saPayTbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- WHATSAPP -->
+    <div class="section" id="sec-whatsapp">
+      <div class="card">
+
+        <div style="text-align:center;padding:44px 24px 28px">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 6px 20px rgba(37,211,102,.3)">
+            <svg style="width:32px;height:32px;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem;margin-bottom:7px">WhatsApp Integration</div>
+          <div style="display:inline-block;background:#fef3c7;color:#92400e;font-size:.7rem;font-weight:800;padding:3px 13px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px">Coming Soon</div>
+          <div style="font-size:.86rem;color:var(--muted);max-width:440px;margin:0 auto 28px;line-height:1.7">
+            Connect Twilio or Meta Business API to send automated WhatsApp messages to employees for leave decisions, salary alerts, and custom announcements.
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center">
+            <button onclick="toast('WhatsApp integration coming soon')" class="btn btn-primary">Request Integration</button>
+          </div>
+        </div>
+
+        <div style="background:#f0fdf4;border-top:1px solid #bbf7d0;padding:12px 18px;border-radius:0 0 14px 14px;display:flex;align-items:center;gap:9px">
+          <svg style="width:15px;height:15px;color:#16a34a;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div style="font-size:.76rem;color:#166534">
+            <b>Simulation active:</b> Leave approve/reject events already log to WhatsApp history. Connect an API key in Settings to enable live delivery.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg> Company Settings</div></div>
+          <div class="fg"><label>Company Name</label><input id="setCompany" value="HRMS Company Pvt Ltd"/></div>
+          <div class="fg"><label>WhatsApp API Mode</label>
+            <select id="setWAMode">
+              <option value="simulation">Simulation (Non-production)</option>
+              <option value="twilio">Twilio API</option>
+              <option value="meta">Meta Business API</option>
+            </select>
+          </div>
+          <div class="fg" id="waApiKeyGroup" style="display:none"><label>API Key / Token</label><input id="setWAKey" placeholder="Enter API key…" type="password"/></div>
+          <button class="btn btn-primary" onclick="saveSettings()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Settings</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Database Actions</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-ghost" onclick="exportFullDB()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Export Full JSON Backup</button>
+            <button class="btn btn-outline" onclick="if(confirm('Reset ALL data?'))resetDB()"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Reset Database</button>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Reset will restore seed data. Use with caution.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-bg" id="addUserModal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-title" id="addUserTitle">+ Add New User</span><button class="modal-close" onclick="closeModal('addUserModal')">&times;</button></div>
+    <div class="fg"><label>Full Name *</label><input id="auName"/></div>
+    <div class="fg"><label>Email *</label><input id="auEmail" type="email"/></div>
+    <div class="fg" id="auPassGroup" style="display:none"><label>Legacy Password</label><input id="auPass" type="password" placeholder="disabled in invite mode"/></div>
+    <div class="fg" style="background:var(--pl);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.76rem;color:var(--muted)">
+      Account access is invite-based. No manual password is created.
+    </div>
+    <div class="fg"><label>Role *</label>
+      <select id="auRole" onchange="toggleEmpLink()">
+        <option value="super_admin"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg> Super Admin</option>
+        <option value="admin"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin</option>
+        <option value="hr"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> HR</option>
+        <option value="manager"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Manager</option>
+        <option value="employee"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Employee</option>
+      </select>
+    </div>
+    <div class="fg" id="auEmpGroup"><label>Link to Employee</label><select id="auEmpId"></select></div>
+    <div class="fg" style="gap:8px;flex-direction:row;align-items:center">
+      <input id="auSendInvite" type="checkbox" checked style="width:auto"/>
+      <label for="auSendInvite" style="margin:0;text-transform:none;letter-spacing:0;color:var(--text)">Send invite email after save</label>
+    </div>
+    <input type="hidden" id="auEditId"/>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+      <button class="btn btn-outline" onclick="closeModal('addUserModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Team Modal -->
+<div class="modal-bg" id="addTeamModal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-title"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg> Create / Edit Team</span><button class="modal-close" onclick="closeModal('addTeamModal')">&times;</button></div>
+    <div class="fg"><label>Team Name *</label><input id="tmName" placeholder="e.g. Engineering Team"/></div>
+    <div class="fg"><label>Department</label><input id="tmDept" placeholder="e.g. Engineering"/></div>
+    <div class="fg"><label>Manager</label><select id="tmManager"></select></div>
+    <div class="fg"><label>Members (hold Ctrl/Cmd to select multiple)</label>
+      <select id="tmMembers" multiple style="height:120px;padding:6px;border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-family:'DM Sans',sans-serif;outline:none"></select>
+    </div>
+    <input type="hidden" id="tmEditId"/>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary" onclick="saveTeam()">Save Team</button>
+      <button class="btn btn-outline" onclick="closeModal('addTeamModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+DB.init(); DB.migrate();
+if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
+const __saCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('super_admin') : null;
+if(!__saCurrent || __saCurrent.role!=='super_admin'){ location.replace('ArthHRMS.html'); }
+if(!sessionStorage.getItem('saUser')) sessionStorage.setItem('saUser', JSON.stringify(__saCurrent));
+let _saChart=null;
+
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pass=document.getElementById('lpass').value.trim();
+  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'super_admin') : null;
+  if(!res||res.user.role!=='super_admin'){document.getElementById('lerr').style.display='block';return;}
+  sessionStorage.setItem('saUser',JSON.stringify(res.user));
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('saName').textContent=res.user.name;
+  renderAll();
+  refreshSABell();
+}
+async function logout(){if(window.authService?.logout) await authService.logout(); else {sessionStorage.removeItem('saUser');sessionStorage.removeItem('currentUser');sessionStorage.removeItem('currentEmployee');}location.href='ArthHRMS.html';}
+function isCompactLayout(){return window.matchMedia('(max-width:1200px)').matches;}
+function toggleSidebar(forceOpen){
+  const sb=document.getElementById('sidebar');
+  const bd=document.getElementById('sidebarBackdrop');
+  if(!sb||!bd)return;
+  const next=typeof forceOpen==='boolean'?forceOpen:!sb.classList.contains('open');
+  sb.classList.toggle('open',next);
+  bd.classList.toggle('open',next);
+}
+function closeSidebar(){toggleSidebar(false);}
+window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=sessionStorage.getItem('saUser');
+  if(s){document.getElementById('loginScreen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('mainArea').style.display='flex';document.getElementById('saName').textContent=JSON.parse(s).name;renderAll();refreshSABell();}
+  const d=document.getElementById('saAttDate'); if(d) d.value=today();
+});
+
+function show(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  document.querySelectorAll('.snav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const titles={dashboard:'Dashboard',master:'Master Dashboard','company-policy':'Company Policy Settings','role-permissions':'Role Permissions','audit-logs':'System Audit Logs',broadcast:'Broadcast Center',users:'Users & Roles',teams:'Team Management',employees:'Employees',attendance:'Attendance',payroll:'Payroll',whatsapp:'WhatsApp',settings:'Settings'};
+  document.getElementById('pageTitle').textContent=titles[id]||id;
+  if(isCompactLayout())closeSidebar();
+  renderSection(id);
+  refreshSABell();
+}
+function renderAll(){renderSection('dashboard');}
+function renderSection(id){
+  if(id==='dashboard')renderSADash();
+  if(id==='master')renderMasterDashboard();
+  if(id==='company-policy')renderCompanyPolicySettings();
+  if(id==='role-permissions')renderRolePermissions();
+  if(id==='audit-logs')renderAuditLogs();
+  if(id==='broadcast')renderBroadcastCenter();
+  if(id==='users')renderUsers();
+  if(id==='teams')renderTeams();
+  if(id==='employees')renderSAEmployees();
+  if(id==='attendance')renderSAAttendance();
+  if(id==='payroll')renderSAPayroll();
+  if(id==='whatsapp')renderWhatsapp();
+  if(id==='settings')renderSASettings();
+}
+
+// DASHBOARD
+function saOwnerCard(tone,value,label,note,items){
+  const c={
+    red:['#dc2626','#fee2e2'],
+    yellow:['#d97706','#fef3c7'],
+    green:['#059669','#d1fae5'],
+    purple:['#7c3aed','#f5f3ff']
+  }[tone]||['#7c3aed','#f5f3ff'];
+  return `<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${c[0]};border-radius:12px;padding:13px 14px">
+    <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:.69rem;color:var(--muted);font-weight:800;text-transform:uppercase">${label}</div><div style="font-size:.72rem;color:var(--muted);margin-top:4px">${note}</div></div><div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem;color:${c[0]}">${value}</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${items.map(x=>`<span class="badge" style="background:${c[1]};color:${c[0]}">${x}</span>`).join('')}</div>
+  </div>`;
+}
+function saCompleteCollection(c){return !!(c&&c.photoSubmitted&&c.bankFormSubmitted&&c.idProofSubmitted&&c.educationProofSubmitted&&c.policySigned&&c.welcomeKitIssued);}
+function saLatestByEmp(rows){
+  const map=new Map();
+  (rows||[]).forEach(r=>{if(!map.has(r.empId))map.set(r.empId,r);});
+  return map;
+}
+function saOwnerLoopCounts(){
+  const d=DB.get();
+  const emps=DB.getEmployees();
+  const att=DB.getTodayAttendance();
+  const present=att.filter(a=>a.status==='Present'||a.status==='Late').length;
+  const attendancePct=emps.length?Math.round(present/emps.length*100):0;
+  const strategic=DB.getStrategicAnalytics?DB.getStrategicAnalytics():{delayed:0,accountabilityScore:100,highSalaryAtRisk:0};
+  const openHelp=(d.helpdeskTickets||[]).filter(t=>t.status!=='Resolved').length;
+  const pendingExpense=(d.expenseClaims||[]).filter(c=>!['Paid','Rejected by Manager','Rejected by HR'].includes(c.status)).length;
+  const pendingLeave=(d.leaveRequests||[]).filter(l=>['Pending','Approved'].includes(l.status)).length;
+  const pendingReg=(d.attendanceRegularizations||[]).filter(r=>r.status==='Pending').length;
+  const collections=saLatestByEmp(d.onboardingCollections||[]);
+  const pendingOnboard=emps.filter(e=>!saCompleteCollection(collections.get(e.id))).length+(d.onboardingTasks||[]).filter(t=>t.status!=='Completed'&&!t.completed).length;
+  const docFields=['aadhaarStatus','panStatus','bankStatus','educationStatus','joiningStatus'];
+  const docs=saLatestByEmp(d.documentVerifications||[]);
+  const pendingDocs=emps.filter(e=>{const v=docs.get(e.id);return !v||docFields.some(k=>v[k]!=='Verified');}).length;
+  const pendingReviews=(d.performanceGoals||[]).filter(g=>(g.selfRating||g.status==='Self Review Submitted')&&!g.managerRating).length+(d.appraisals||[]).filter(a=>!['Finalized','Completed','Closed'].includes(a.status||'Pending')).length;
+  const pendingCritical=openHelp+pendingExpense+pendingLeave+pendingReg+Number(strategic.delayed||0);
+  const unresolvedWorkflow=pendingCritical+pendingOnboard+pendingDocs+pendingReviews;
+  const highCostIds=new Set(emps.filter(e=>Number(e.salary||0)>=100000).map(e=>e.id));
+  const highCostAtRisk=(d.strategicDeliverables||[]).filter(x=>highCostIds.has(x.empId)&&!['Closed','Achieved','Completed'].includes(x.status||'Active')&&((x.dueDate&&x.dueDate<today())||['Critical','Delayed'].includes(x.lastRiskLevel||''))).length+Number(strategic.highSalaryAtRisk||0);
+  const delayedActions=Number(strategic.delayed||0)+openHelp+pendingReg;
+  const resolved=(d.helpdeskTickets||[]).filter(t=>t.status==='Resolved').length+(d.expenseClaims||[]).filter(c=>c.status==='Paid').length+(d.leaveRequests||[]).filter(l=>['Approved','Rejected'].includes(l.status)).length+(d.attendanceRegularizations||[]).filter(r=>r.status&&r.status!=='Pending').length;
+  const total=(d.helpdeskTickets||[]).length+(d.expenseClaims||[]).length+(d.leaveRequests||[]).length+(d.attendanceRegularizations||[]).length;
+  const resolution=total?Math.round(resolved/total*100):0;
+  const closure=resolution;
+  const accountability=emps.length?Number(strategic.accountabilityScore||0):0;
+  const health=Math.max(0,Math.round((attendancePct+accountability+closure)/3)-(unresolvedWorkflow>0?Math.min(20,unresolvedWorkflow):0));
+  const onboardingRequired=!String(d.companySettings?.companyName||'').trim()||emps.length===0;
+  return {health,pendingCritical,unresolvedWorkflow,highCostAtRisk,delayedActions,resolution,closure,attendancePct,openHelp,pendingExpense,pendingLeave,pendingDocs,pendingReviews,onboardingRequired};
+}
+function renderSAOwnerLoop(){
+  const q=saOwnerLoopCounts();
+  const box=document.getElementById('saOwnerLoop');
+  if(box){
+    const onboarding=q.onboardingRequired?`<div style="grid-column:1/-1;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--p)">Start organization onboarding</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px;line-height:1.6">Create Company, create Departments and Designations, configure Leave, Attendance, and Payroll policies, then import Employees and send invitations.</div>
+    </div>`:'';
+    box.innerHTML=onboarding+[
+      saOwnerCard(q.health>=80?'green':q.health>=60?'yellow':'red',q.health+'%','Organization Health Score','Attendance, accountability, and closure blended',[`Attendance ${q.attendancePct}%`,`Closure ${q.closure}%`]),
+      saOwnerCard(q.pendingCritical?'red':'green',q.pendingCritical,'Total Pending Critical Actions',q.pendingCritical?'Company queues need attention':'No critical queue',[`Leave ${q.pendingLeave}`,`Expense ${q.pendingExpense}`,`Helpdesk ${q.openHelp}`]),
+      saOwnerCard(q.highCostAtRisk?'red':'green',q.highCostAtRisk,'High Cost Employees Under Review',q.highCostAtRisk?'Salary-heavy commitments need visibility':'No high-cost risk signal',[`Under Review ${q.highCostAtRisk}`]),
+      saOwnerCard(q.unresolvedWorkflow?'yellow':'green',q.unresolvedWorkflow,'Unresolved Workflow Count',q.unresolvedWorkflow?'Open work exists across HR operations':'No unresolved workflow signal',[`Docs ${q.pendingDocs}`,`Reviews ${q.pendingReviews}`]),
+      saOwnerCard(q.closure<80?'yellow':'green',q.closure+'%','Monthly Closure %','How much operational work is closed',[`Closed ${q.closure}%`])
+    ].join('');
+  }
+  const crit=document.getElementById('saCriticalBadge'); if(crit){crit.textContent=q.pendingCritical||'';crit.style.display=q.pendingCritical>0?'inline-block':'none';}
+  const aud=document.getElementById('saAuditBadge'); if(aud){const todayLogs=(DB.getAuditLogs?DB.getAuditLogs():[]).filter(l=>(l.date||'').slice(0,10)===today()).length;aud.textContent=todayLogs||'';aud.style.display=todayLogs>0?'inline-block':'none';}
+}
+function renderSADash(){
+  const d=DB.get();
+  const users=d.users||[];
+  const emps=d.employees||[];
+  const att=DB.getTodayAttendance();
+  const present=att.filter(a=>a.status==='Present'||a.status==='Late').length;
+  renderSAOwnerLoop();
+  document.getElementById('saStats').innerHTML=`
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>','#7c3aed','#f5f3ff',users.length,'Total Users','All roles')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>','#059669','#d1fae5',emps.length,'Employees','Active')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#0891b2','#e0f2fe',present,'Present Today',Math.round(present/emps.length*100||0)+'%')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg>','#d97706','#fef3c7',(d.teams||[]).length,'Teams','Created')}
+  `;
+  // role chart
+  const roleCounts={super_admin:0,admin:0,hr:0,manager:0,employee:0};
+  users.forEach(u=>{ if(roleCounts[u.role]!==undefined) roleCounts[u.role]++; });
+  if(_saChart){_saChart.destroy();}
+  const ctx=document.getElementById('roleChart');
+  if(ctx){
+    _saChart=new Chart(ctx,{
+      type:'doughnut',
+      data:{labels:['Super Admin','Admin','HR','Manager','Employee'],datasets:[{data:Object.values(roleCounts),backgroundColor:['#7c3aed','#1d4ed8','#059669','#c2410c','#475569'],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+    });
+  }
+  // system overview
+  const waLogs=(d.whatsappLogs||[]).length;
+  const docs=(d.documents||[]).length;
+  const crs=(d.customReports||[]).length;
+  document.getElementById('sysOverview').innerHTML=[
+    ['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>','WhatsApp Logs',waLogs],['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>','Documents',docs],
+    ['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>','Custom Reports',crs],['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>','Shifts',(d.shifts||[]).length],
+    ['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>','Leave Requests',(d.leaveRequests||[]).length],['<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>','Payroll Records',(d.payroll||[]).length],
+  ].map(([ic,lb,vl])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span>${ic}</span><span style="font-size:.82rem">${lb}</span></div><span style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--p)">${vl}</span></div>`).join('');
+  // recent activity from audit logs, notifications, and WhatsApp logs
+  const saTxt=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const activity=[
+    ...((DB.getAuditLogs?DB.getAuditLogs():d.auditLogs||[]).slice(0,8).map(l=>({
+      ts:l.date||'',
+      label:(l.userRole||'system')+' - '+(l.action||l.actionType||'audit event'),
+      msg:l.description||l.module||'System activity recorded',
+      module:l.module||'Audit'
+    }))),
+    ...((d.notifications||[]).slice(0,8).map(n=>({
+      ts:n.createdAt||n.date||'',
+      label:n.title||'Notification',
+      msg:n.msg||n.message||'Notification sent',
+      module:n.module||'Notification'
+    }))),
+    ...((d.whatsappLogs||[]).slice(0,8).map(l=>({
+      ts:l.sent||'',
+      label:(l.empName||'Employee')+' - '+String(l.event||'message').replace(/_/g,' '),
+      msg:l.message||'WhatsApp message logged',
+      module:'WhatsApp'
+    })))
+  ].sort((a,b)=>String(b.ts).localeCompare(String(a.ts))).slice(0,5);
+  document.getElementById('recentActivity').innerHTML=activity.length
+    ?activity.map(a=>`<div style="padding:9px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><span style="font-size:1rem"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div><div style="font-size:.8rem;font-weight:600">${saTxt(a.label)}</div><div style="font-size:.72rem;color:var(--muted)">${saTxt(a.msg).slice(0,90)}</div><div style="font-size:.66rem;color:#aaa">${saTxt(a.module)} · ${saTxt(String(a.ts).slice(0,16))}</div></div></div>`).join('')
+    :'<div style="color:var(--muted);font-size:.8rem;padding:10px 0">No workflow activity recorded yet</div>';
+}
+
+// ENTERPRISE OWNER MODULES
+function ownerMetrics(){
+  DB.migrate();
+  const d=DB.get();
+  const users=d.users||[];
+  const employees=d.employees||[];
+  const payroll=(d.payroll||[]).reduce((sum,p)=>sum+(Number(p.net)||0),0);
+  const helpdesk=(d.helpdeskTickets||[]).filter(t=>t.status!=='Resolved').length;
+  const expenses=(d.expenseClaims||[]).filter(c=>!['Paid','Rejected by Manager','Rejected by HR'].includes(c.status)).length;
+  const perf=(d.performanceGoals||[]).filter(g=>!g.managerRating).length+(d.appraisals||[]).filter(a=>!['Finalized','Completed','Closed'].includes(a.status||'Pending')).length;
+  const jobs=(d.jobOpenings||[]).filter(j=>j.status==='Open'||j.status==='Active').length;
+  const resigned=(d.resignationRequests||[]).filter(r=>['Approved','Completed'].includes(r.status)||r.finalSettlementComplete).length;
+  return {
+    employees:employees.length,
+    activeHR:users.filter(u=>u.active!==false&&u.role==='hr').length,
+    payroll,
+    helpdesk,
+    expenses,
+    perf,
+    jobs,
+    resigned,
+    departments:[...new Set(employees.map(e=>e.dept).filter(Boolean))].length,
+    users:users.length
+  };
+}
+function renderMasterDashboard(){
+  const m=ownerMetrics();
+  const sm=DB.getStrategicAnalytics();
+  document.getElementById('ownerStrategicHealth').innerHTML=`
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg>','#7c3aed','#f5f3ff',sm.total,'Total Commitments','all tracked')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86z"/></svg>','#dc2626','#fee2e2',sm.delayed,'Delayed Commitments','owner risk')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>','#d97706','#fef3c7',sm.highSalaryAtRisk,'High Salary Employees At Risk','cost focus')}
+    ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#059669','#d1fae5',sm.quarterlyAchievementRatio+'%','Quarterly Achievement Ratio','progress')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>','#dc2626','#fee2e2',sm.failedCommitments,'Failed Commitments','closure risk')}
+  `;
+  document.getElementById('ownerStats').innerHTML=`
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>','#7c3aed','#f5f3ff',m.employees,'Total Employees','Live headcount')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>','#059669','#d1fae5',m.activeHR,'Active HR Staff','HR users')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>','#1d4ed8','#eff6ff','₹'+m.payroll.toLocaleString('en-IN'),'Monthly Payroll','Net payroll')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>','#d97706','#fef3c7',m.helpdesk,'Open Helpdesk','Needs ops')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>','#dc2626','#fee2e2',m.expenses,'Pending Expenses','Approval queue')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>','#7c3aed','#f5f3ff',m.perf,'Pending Reviews','Performance')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>','#0891b2','#e0f2fe',m.jobs,'Active Job Openings','Recruitment')}
+    ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5"/><polyline points="16 17 21 12 16 7"/></svg>','#c2410c','#fff7ed',m.resigned,'Resigned Employees','Exit pipeline')}
+  `;
+  document.getElementById('ownerSummary').innerHTML=[
+    ['Departments',m.departments],['System Users',m.users],['Open Helpdesk Tickets',m.helpdesk],['Pending Expense Claims',m.expenses],['Pending Performance Reviews',m.perf],['Active Job Openings',m.jobs]
+  ].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span style="font-size:.82rem">${k}</span><b style="color:var(--p)">${v}</b></div>`).join('');
+  document.getElementById('ownerRiskQueue').innerHTML=[
+    ['Helpdesk backlog',m.helpdesk,m.helpdesk?'Review admin support queue':'Clear'],
+    ['Expense liability',m.expenses,m.expenses?'Claims awaiting approval/payment':'Clear'],
+    ['Performance closure',m.perf,m.perf?'Reviews still pending':'Clear'],
+    ['Exit exposure',m.resigned,m.resigned?'Resignations/final settlements tracked':'No active signal']
+  ].map(([k,v,n])=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><b style="font-size:.82rem">${k}</b><span class="badge" style="background:${v?'var(--ol)':'var(--gl)'};color:${v?'var(--o)':'#047857'}">${v}</span></div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${n}</div></div>`).join('');
+  document.getElementById('ownerSummaryTbody').innerHTML=[
+    ['Headcount',m.employees,'Workforce size','employees'],
+    ['HR Capacity',m.activeHR,'Active HR staff users','users'],
+    ['Payroll Exposure','₹'+m.payroll.toLocaleString('en-IN'),'Total net payroll records','payroll'],
+    ['Helpdesk Backlog',m.helpdesk,'Open or in-progress tickets','helpdeskTickets'],
+    ['Expense Approval Queue',m.expenses,'Not paid or rejected','expenseClaims'],
+    ['Performance Review Queue',m.perf,'Unrated or open appraisals','performanceGoals/appraisals'],
+    ['Recruitment Demand',m.jobs,'Open jobs','jobOpenings'],
+    ['Exit Pipeline',m.resigned,'Approved/completed resignations','resignationRequests']
+  ].map(r=>`<tr><td style="font-weight:700">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td style="color:var(--muted)">${r[3]}</td></tr>`).join('');
+}
+function renderCompanyPolicySettings(){
+  const s=DB.getCompanySettings();
+  document.getElementById('csCompanyName').value=s.companyName||'';
+  document.getElementById('csCompanyLogoUrl').value=s.companyLogoUrl||'';
+  document.getElementById('csTimezone').value=s.timezone||'Asia/Kolkata';
+  document.getElementById('csCurrency').value=s.currency||'INR';
+  document.getElementById('csPayrollDate').value=s.monthlyPayrollDate||30;
+  document.getElementById('csLeaveDays').value=s.defaultAnnualLeaveDays||20;
+  document.getElementById('csGraceMinutes').value=s.attendanceGraceMinutes||15;
+  document.getElementById('csWorkWeek').value=s.workWeekPattern||'Monday to Friday';
+}
+function saveCompanyPolicySettings(){
+  DB.saveCompanySettings({
+    companyName:document.getElementById('csCompanyName').value.trim(),
+    companyLogoUrl:document.getElementById('csCompanyLogoUrl').value.trim(),
+    timezone:document.getElementById('csTimezone').value.trim(),
+    currency:document.getElementById('csCurrency').value.trim(),
+    monthlyPayrollDate:document.getElementById('csPayrollDate').value,
+    defaultAnnualLeaveDays:document.getElementById('csLeaveDays').value,
+    attendanceGraceMinutes:document.getElementById('csGraceMinutes').value,
+    workWeekPattern:document.getElementById('csWorkWeek').value
+  });
+  toast('Company policy settings saved');
+  renderCompanyPolicySettings();
+}
+const ROLE_PERMISSION_ROWS=[
+  ['adminHelpdesk','Admin','Can Admin Access Helpdesk'],
+  ['adminAttendanceRegularization','Admin','Can Admin Access Attendance Regularization'],
+  ['managerExpenseApprovals','Manager','Can Manager Access Expense Approvals'],
+  ['employeePayslips','Employee','Can Employee Access Payslips'],
+  ['hrRecruitment','HR','Can HR Access Recruitment'],
+  ['hrAppraisals','HR','Can HR Access Appraisals']
+];
+function renderRolePermissions(){
+  const p=DB.getRolePermissions();
+  document.getElementById('rolePermTbody').innerHTML=ROLE_PERMISSION_ROWS.map(([key,role,label])=>`<tr>
+    <td><span class="badge role-${role.toLowerCase()}">${role}</span></td>
+    <td style="font-weight:600">${label}</td>
+    <td><button id="perm_${key}" class="perm-toggle ${p[key]?'on':''}" onclick="togglePermission('${key}')"></button></td>
+  </tr>`).join('');
+}
+function togglePermission(key){
+  const el=document.getElementById('perm_'+key);
+  if(el) el.classList.toggle('on');
+}
+function saveRolePermissionMatrix(){
+  const next={};
+  ROLE_PERMISSION_ROWS.forEach(([key])=>{ next[key]=document.getElementById('perm_'+key)?.classList.contains('on')||false; });
+  DB.saveRolePermissions(next);
+  toast('Role permissions saved');
+  renderRolePermissions();
+}
+function saNotifRows(){ return DB.getNotificationsByRole ? DB.getNotificationsByRole('SUPER_ADMIN') : DB.getNotifs('SUPER_ADMIN'); }
+function saNotifUnread(n){ return !(n.readBy||[]).includes('SUPER_ADMIN'); }
+function refreshSABell(){
+  const rows=saNotifRows();
+  const unread=rows.filter(saNotifUnread).length;
+  const bell=document.getElementById('saBellCount');
+  if(bell){ bell.textContent=unread>9?'9+':unread; bell.style.display=unread>0?'flex':'none'; }
+  const panel=document.getElementById('saBellPanel');
+  if(panel) panel.innerHTML=rows.slice(0,6).map(n=>`<div class="notif-mini ${saNotifUnread(n)?'unread':''}" onclick="saMarkRead('${n.id}')"><div class="notif-mini-title">${n.title||'Notification'}</div><div class="notif-mini-msg">${n.msg||n.message||''}</div><div style="font-size:.66rem;color:var(--muted);margin-top:4px">${n.module||'General'} · ${n.date||''}</div></div>`).join('')||'<div style="padding:14px;text-align:center;color:var(--muted);font-size:.78rem">No notifications</div>';
+}
+function toggleSABell(ev){
+  if(ev) ev.stopPropagation();
+  refreshSABell();
+  document.getElementById('saBellPanel')?.classList.toggle('open');
+}
+document.addEventListener('click',()=>document.getElementById('saBellPanel')?.classList.remove('open'));
+function saMarkRead(id){ DB.markNotificationRead?DB.markNotificationRead(id,'SUPER_ADMIN'):DB.markRead(id,'SUPER_ADMIN'); refreshSABell(); }
+function renderAuditLogs(){
+  const logs=DB.getAuditLogs().slice(0,80);
+  document.getElementById('auditLogsTbody').innerHTML=logs.length?logs.map(l=>`<tr>
+    <td style="font-weight:800;color:var(--p)">${l.id||l.logId}</td>
+    <td style="font-size:.74rem;color:var(--muted)">${(l.date||'').replace('T',' ').slice(0,19)}</td>
+    <td><span class="badge role-${String(l.userRole||'system').replace('_','-')}">${l.userRole||'system'}</span></td>
+    <td style="font-weight:700">${l.action||''}</td>
+    <td>${l.description||''}</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:18px">No audit logs yet</td></tr>';
+}
+function publishBroadcastNotice(){
+  const title=document.getElementById('bcTitle').value.trim();
+  const msg=document.getElementById('bcMessage').value.trim();
+  const priority=document.getElementById('bcPriority').value;
+  if(!title||!msg){toast('Notice title and message are required','warn');return;}
+  DB.sendBroadcastNotice(title,msg,priority);
+  document.getElementById('bcTitle').value='';
+  document.getElementById('bcMessage').value='';
+  document.getElementById('bcPriority').value='Normal';
+  toast('Broadcast notice published');
+  refreshSABell();
+  renderBroadcastCenter();
+}
+function renderBroadcastCenter(){
+  const notices=(DB.get().notifications||[]).filter(n=>n.to==='ALL').slice(0,8);
+  document.getElementById('broadcastHistory').innerHTML=notices.length?notices.map(n=>`<div style="padding:11px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:.84rem">${n.title}</b><span class="badge" style="background:${n.priority==='Urgent'?'var(--rl)':'var(--pl)'};color:${n.priority==='Urgent'?'var(--r)':'var(--p)'}">${n.priority||'Normal'}</span></div>
+    <div style="font-size:.76rem;color:var(--muted);margin-top:4px">${n.msg}</div>
+    <div style="font-size:.68rem;color:#aaa;margin-top:4px">${n.date}</div>
+  </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:10px">No organization-wide notices yet.</div>';
+}
+
+// USERS
+function renderUsers(){
+  const filter=document.getElementById('roleFilter')?.value||'all';
+  const q=(document.getElementById('userSearch')?.value||'').toLowerCase();
+  let users=DB.getUsers().filter(u=>{
+    if(filter!=='all'&&u.role!==filter)return false;
+    return u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q);
+  });
+  document.getElementById('usersTbody').innerHTML=users.map(u=>{
+    const emp=u.empId?DB.getEmployee(u.empId):null;
+    const invite=emp&&window.authInviteService?authInviteService.getLatestInviteForEmployee(emp.id):null;
+    const inviteStatus=invite?.inviteStatus||u.inviteStatus||'Not Invited';
+    const activationStatus=u.activationStatus||emp?.activationStatus||invite?.activationStatus||'Not Activated';
+    return `<tr>
+      <td style="font-weight:600;font-size:.82rem">${u.name}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${u.email}</td>
+      <td><span class="badge role-${u.role}">${u.role.replace('_',' ').toUpperCase()}</span></td>
+      <td style="font-size:.78rem">${emp?emp.name+' ('+emp.dept+')':'—'}</td>
+      <td>
+        <span class="badge" style="background:${activationStatus==='Active'?'var(--gl)':inviteStatus==='Failed'?'var(--rl)':'var(--ol)'};color:${activationStatus==='Active'?'#047857':inviteStatus==='Failed'?'var(--r)':'var(--o)'}">${activationStatus}</span>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:4px">${inviteStatus}</div>
+      </td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-sm" style="background:var(--pl);color:var(--p);border:none" onclick="resendUserInvite('${u.id}')">Invite</button>
+        <button class="btn btn-sm" style="background:var(--ol);color:var(--o);border:none" onclick="toggleUserActive('${u.id}')">${u.active?'Disable':'Enable'}</button>
+        <button class="btn btn-sm" style="background:var(--rl);color:var(--r);border:none" onclick="deleteUser('${u.id}')">Suspend</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function openAddUser(){
+  document.getElementById('auName').value='';document.getElementById('auEmail').value='';
+  document.getElementById('auPass').value='';document.getElementById('auRole').value='employee';
+  document.getElementById('auEditId').value='';
+  const invite=document.getElementById('auSendInvite'); if(invite) invite.checked=true;
+  document.getElementById('addUserTitle').textContent='+ Add New User';
+  const sel=document.getElementById('auEmpId');
+  sel.innerHTML=DB.getEmployees().map(e=>`<option value="${e.id}">${e.name} (${e.dept})</option>`).join('');
+  toggleEmpLink();
+  document.getElementById('addUserModal').classList.add('open');
+}
+function toggleEmpLink(){
+  const role=document.getElementById('auRole').value;
+  const g=document.getElementById('auEmpGroup');
+  if(g) g.style.display=['manager','employee'].includes(role)?'flex':'none';
+}
+function editUser(id){
+  const u=DB.getUser(id);if(!u)return;
+  document.getElementById('auName').value=u.name;document.getElementById('auEmail').value=u.email;
+  document.getElementById('auPass').value='';document.getElementById('auRole').value=u.role;
+  document.getElementById('auEditId').value=id;
+  const invite=document.getElementById('auSendInvite'); if(invite) invite.checked=false;
+  document.getElementById('addUserTitle').textContent='<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit User';
+  const sel=document.getElementById('auEmpId');
+  sel.innerHTML=DB.getEmployees().map(e=>`<option value="${e.id}" ${u.empId===e.id?'selected':''}>${e.name} (${e.dept})</option>`).join('');
+  toggleEmpLink();
+  document.getElementById('addUserModal').classList.add('open');
+}
+async function saveUser(){
+  const name=document.getElementById('auName').value.trim();
+  const email=document.getElementById('auEmail').value.trim();
+  const pass=document.getElementById('auPass').value.trim();
+  const role=document.getElementById('auRole').value;
+  const editId=document.getElementById('auEditId').value;
+  const empId=['manager','employee'].includes(role)?document.getElementById('auEmpId').value:null;
+  if(!name||!email){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Name and email required','warn');return;}
+  const payload={name,email,password:pass||'',role,empId,active:!!pass,authStatus:pass?'Legacy Local':'Invite Required',inviteStatus:'Not Invited',activationStatus:pass?'Active':'Not Activated'};
+  if(editId){DB.updateUser(editId,payload);}
+  else{DB.addUser(payload);}
+  if(document.getElementById('auSendInvite')?.checked&&window.authInviteService){
+    const invite=await authInviteService.sendInvite({empId,email,role,name,invitedBy:__saCurrent?.id||'',invitedByRole:'super_admin'});
+    toast(invite.ok?'<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> User saved and invite queued: '+name:'Invite failed: '+(invite.error||invite.errors?.join(', ')||''),invite.ok?'ok':'warn');
+  } else {
+    toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> User saved: '+name);
+  }
+  closeModal('addUserModal');renderUsers();
+}
+async function resendUserInvite(userId){
+  const u=DB.getUser(userId);if(!u)return;
+  const invite=await authInviteService.sendInvite({empId:u.empId||'',email:u.email,role:u.role,name:u.name,invitedBy:__saCurrent?.id||'',invitedByRole:'super_admin'});
+  toast(invite.ok?'Invite queued for '+u.email:'Invite failed: '+(invite.error||invite.errors?.join(', ')||''),invite.ok?'ok':'warn');
+  renderUsers();
+}
+function toggleUserActive(id){
+  const u=DB.getUser(id);if(!u)return;
+  DB.updateUser(id,{active:!u.active});
+  toast(u.active?'<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> User disabled':'<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> User enabled');renderUsers();
+}
+function deleteUser(id){
+  const u=DB.getUser(id);if(!u||!confirm('Suspend user "'+u.name+'"? Access is disabled but the audit record is retained.'))return;
+  DB.deleteUser(id);toast('User suspended');renderUsers();
+}
+
+// TEAMS
+function renderTeams(){
+  const teams=DB.getTeams();
+  const emps=DB.getEmployees();
+  if(!teams.length){document.getElementById('teamsList').innerHTML='<div style="color:var(--muted);font-size:.84rem;padding:8px">No teams yet. Click "Create Team".</div>';return;}
+  document.getElementById('teamsList').innerHTML=teams.map(t=>{
+    const mgr=emps.find(e=>e.id===t.managerId);
+    const members=t.memberIds.map(id=>emps.find(e=>e.id===id)).filter(Boolean);
+    return `<div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:12px;border:1.5px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-weight:800;font-size:.92rem">${t.name}</div><div style="font-size:.72rem;color:var(--muted)">${t.dept||''} · Created ${t.createdOn}</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editTeam('${t.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+          <button class="btn btn-sm" style="background:var(--rl);color:var(--r);border:none" onclick="deleteTeam('${t.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div><div style="font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase">Manager</div><div style="font-size:.8rem;font-weight:600;margin-top:2px">${mgr?mgr.name:'—'}</div></div>
+        <div><div style="font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase">Members (${members.length})</div><div style="font-size:.78rem;margin-top:2px">${members.map(m=>m.name).join(', ')||'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openAddTeam(){
+  const emps=DB.getEmployees();
+  document.getElementById('tmName').value='';document.getElementById('tmDept').value='';
+  document.getElementById('tmEditId').value='';
+  document.getElementById('tmManager').innerHTML=emps.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  const mm=document.getElementById('tmMembers');
+  mm.innerHTML=emps.map(e=>`<option value="${e.id}">${e.name} (${e.dept})</option>`).join('');
+  document.getElementById('addTeamModal').classList.add('open');
+}
+function editTeam(id){
+  const t=DB.getTeam(id);if(!t)return;
+  const emps=DB.getEmployees();
+  document.getElementById('tmName').value=t.name;document.getElementById('tmDept').value=t.dept||'';
+  document.getElementById('tmEditId').value=id;
+  document.getElementById('tmManager').innerHTML=emps.map(e=>`<option value="${e.id}" ${t.managerId===e.id?'selected':''}>${e.name}</option>`).join('');
+  const mm=document.getElementById('tmMembers');
+  mm.innerHTML=emps.map(e=>`<option value="${e.id}" ${t.memberIds.includes(e.id)?'selected':''}>${e.name} (${e.dept})</option>`).join('');
+  document.getElementById('addTeamModal').classList.add('open');
+}
+function saveTeam(){
+  const name=document.getElementById('tmName').value.trim();
+  const dept=document.getElementById('tmDept').value.trim();
+  const managerId=document.getElementById('tmManager').value;
+  const memberIds=[...document.getElementById('tmMembers').selectedOptions].map(o=>o.value);
+  const editId=document.getElementById('tmEditId').value;
+  if(!name){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Team name required','warn');return;}
+  if(editId){DB.updateTeam(editId,{name,dept,managerId,memberIds});}
+  else{DB.addTeam({name,dept,managerId,memberIds});}
+  toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Team saved: '+name);closeModal('addTeamModal');renderTeams();
+}
+function deleteTeam(id){
+  const t=DB.getTeam(id);if(!t||!confirm('Delete team "'+t.name+'"?'))return;
+  DB.deleteTeam(id);toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg> Team deleted');renderTeams();
+}
+
+// EMPLOYEES
+function renderSAEmployees(){
+  const employees=DB.getEmployees();
+  if(!employees.length){
+    document.getElementById('saEmpTbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:22px">No Employees Found. Import your first employees to begin.</td></tr>';
+    return;
+  }
+  document.getElementById('saEmpTbody').innerHTML=employees.map(e=>`
+    <tr><td style="font-size:.76rem;color:var(--muted)">${e.id}</td>
+    <td style="font-weight:600;font-size:.82rem">${e.name}</td>
+    <td style="font-size:.78rem">${e.dept}</td>
+    <td style="font-size:.78rem">${e.desig}</td>
+    <td style="font-weight:700">₹${e.salary.toLocaleString('en-IN')}</td>
+    <td><span class="badge" style="background:var(--gl);color:#047857">${e.leaveBalance} d</span></td></tr>`).join('');
+}
+function exportEmpCSV(){ downloadCSV('employees.csv',DB.getEmployees().map(e=>({ID:e.id,Name:e.name,Dept:e.dept,Desig:e.desig,Salary:e.salary}))); toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading…'); }
+
+// ATTENDANCE
+function renderSAAttendance(){
+  const date=document.getElementById('saAttDate')?.value||today();
+  const recs=DB.get().attendance.filter(a=>a.date===date);
+  if(!recs.length){
+    document.getElementById('saAttTbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:22px">No Attendance Records</td></tr>';
+    return;
+  }
+  document.getElementById('saAttTbody').innerHTML=recs.map(a=>{const e=DB.getEmployee(a.empId)||{};return`<tr><td style="font-size:.8rem;font-weight:600">${e.name||a.empId}</td><td>${a.date}</td><td style="color:#059669;font-weight:600">${a.checkIn||'—'}</td><td style="color:#dc2626;font-weight:600">${a.checkOut||'—'}</td><td style="font-weight:700;color:var(--p)">${a.workingHours||'—'}</td><td><span class="badge" style="background:${a.status==='Present'?'var(--gl)':a.status==='Late'?'var(--ol)':'var(--rl)'};color:${a.status==='Present'?'#047857':a.status==='Late'?'var(--o)':'var(--r)'}">${a.status}</span></td></tr>`;}).join('');
+}
+
+// PAYROLL
+function renderSAPayroll(){
+  const pays=DB.getPayroll();
+  let total=0;
+  if(!pays.length){
+    document.getElementById('saPayTbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:22px">No Payroll Generated</td></tr>';
+    document.getElementById('payrollTotal').textContent='Total: 0';
+    return;
+  }
+  document.getElementById('saPayTbody').innerHTML=pays.map(p=>{const e=DB.getEmployee(p.empId)||{};const ded=p.pf+p.esic+p.pt+p.tds;total+=p.net;return`<tr><td style="font-weight:600;font-size:.82rem">${e.name||p.empId}</td><td style="font-size:.78rem">${p.month}</td><td>₹${p.gross.toLocaleString('en-IN')}</td><td style="color:var(--r)">-₹${ded.toLocaleString('en-IN')}</td><td style="font-weight:800;color:var(--p)">₹${p.net.toLocaleString('en-IN')}</td><td><span class="badge" style="background:${p.status==='Paid'?'var(--gl)':'var(--ol)'};color:${p.status==='Paid'?'#047857':'var(--o)'}">${p.status}</span></td></tr>`;}).join('');
+  document.getElementById('payrollTotal').textContent='Total: ₹'+total.toLocaleString('en-IN');
+}
+
+// WHATSAPP
+function renderWhatsapp(){
+  const emps=DB.getEmployees();
+  const waEmp=document.getElementById('waEmp');
+  if(waEmp) waEmp.innerHTML=emps.map(e=>`<option value="${e.id}">${e.name} — +91${e.mobile}</option>`).join('');
+  const logs=DB.getWhatsappLogs();
+  document.getElementById('waLogs').innerHTML=logs.length
+    ?`<table class="tbl"><thead><tr><th>To</th><th>Event</th><th>Message</th><th>Status</th><th>Sent At</th></tr></thead><tbody>${logs.map(l=>`<tr><td style="font-size:.78rem;font-weight:600">${l.empName}<br><span style="color:var(--muted);font-size:.7rem">${l.mobile}</span></td><td><span class="badge role-hr">${l.event.replace(/_/g,' ')}</span></td><td style="font-size:.76rem;max-width:220px">${l.message}</td><td><span class="badge" style="background:var(--gl);color:#047857">Simulated</span></td><td style="font-size:.7rem;color:var(--muted)">${(l.sent||'').slice(0,16)}</td></tr>`).join('')}</tbody></table>`
+    :'<div style="color:var(--muted);font-size:.82rem;padding:10px">No messages sent yet.</div>';
+}
+function sendWA(){
+  const empId=document.getElementById('waEmp').value;
+  const event=document.getElementById('waEvent').value;
+  const details=document.getElementById('waDetails').value.trim();
+  const emp=DB.getEmployee(empId);
+  if(!emp){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Select employee','warn');return;}
+  if(!details&&event==='custom'){toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Enter message details','warn');return;}
+  const log=DB.sendWhatsApp(emp.mobile,emp.name,event,details||'—');
+  toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Simulated: sent to '+emp.name+' (+91'+emp.mobile+')');
+  document.getElementById('waDetails').value='';
+  renderWhatsapp();
+}
+
+// SETTINGS
+function renderSASettings(){
+  const s=DB.getCompanySettings();
+  const company=document.getElementById('setCompany');
+  if(company) company.value=s.companyName||'';
+}
+function saveSettings(){
+  const name=document.getElementById('setCompany')?.value.trim()||'';
+  DB.saveCompanySettings({companyName:name});
+  toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Settings saved');
+}
+function exportFullDB(){ downloadJSON('hrms-full-backup.json',DB.get()); toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Full backup downloading…'); }
+if(window.exportService){
+  window.exportFullDB = function(){
+    exportService.exportBackupSnapshot({ filename:'hrms-full-backup.json', exportedBy:__sa?.id||'super_admin' });
+    toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Full backup downloading...');
+  };
+}
+async function resetDB(){DB.reset({clean:true});DB.migrate();await DB.whenPersistenceIdle();toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Database reset');renderAll();}
+document.getElementById('setWAMode')?.addEventListener('change',function(){
+  document.getElementById('waApiKeyGroup').style.display=this.value==='simulation'?'none':'flex';
+});
+
+// HELPERS
+function sc(ic,cl,bg,n,l,s){return`<div class="sc"><div class="sc-icon" style="background:${bg}">${ic}</div><div><div class="sc-n" style="color:${cl}">${n}</div><div class="sc-l">${l}</div><div style="font-size:.66rem;color:${cl};margin-top:2px">${s}</div></div></div>`;}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+let _tt;function toast(msg,t='ok'){if(window.__suppressNextToast&&/download|export|backup|csv|json/i.test(String(msg))){window.__suppressNextToast=false;return;}window.__suppressNextToast=false;const el=document.getElementById('toast');el.innerHTML=msg;el.style.transform='translateY(0)';el.style.opacity='1';el.style.borderLeftColor=t==='warn'?'#d97706':'#7c3aed';clearTimeout(_tt);_tt=setTimeout(()=>{el.style.transform='translateY(60px)';el.style.opacity='0';},2600);}
+</script>
+</body>
+</html>

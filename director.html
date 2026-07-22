@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Director Strategic Intelligence - ArthHRMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="db.js"></script>
+<script src="services/workflowTelemetryService.js"></script>
+<script src="services/workflowTraceStore.js"></script>
+<script src="services/orchestrationMetricsService.js"></script>
+<script src="services/auditService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+    <script src="services/validationRegistryService.js"></script>
+    <script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/eventReplayService.js"></script>
+<script src="services/deliverableGovernanceService.js"></script>
+<script src="services/escalationPolicyService.js"></script>
+<script src="services/strategicReviewService.js"></script>
+<script src="services/strategicIntelligenceService.js"></script>
+<link rel="stylesheet" href="styles/mobileResponsiveness.css">
+<style>
+:root{
+  --bg:#07111f;--panel:#0d1b2d;--panel2:#11243a;--card:#0f2236;--text:#e6f0ff;--muted:#8ea4bd;
+  --border:#20364d;--cyan:#2dd4bf;--blue:#38bdf8;--green:#34d399;--amber:#f59e0b;--red:#fb7185;
+  --shadow:0 20px 50px rgba(0,0,0,.28);--rad:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{background:#081422;border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh}
+.brand{padding:8px 8px 18px;border-bottom:1px solid var(--border)}
+.brand-mark{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;color:#06101d;font-weight:900}
+.brand h1{font-family:'Nunito',sans-serif;font-size:1rem;margin-top:10px}
+.brand p{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:1.2px;margin-top:2px}
+.nav-title{color:#5d7692;font-size:.64rem;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;margin:22px 8px 8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;color:#b8cbe0;font-size:.84rem;font-weight:700;margin:3px 0}
+.nav-item.on,.nav-item:hover{background:rgba(45,212,191,.12);color:#fff}
+.main{min-width:0}
+.top{height:62px;background:rgba(13,27,45,.92);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.top h2{font-family:'Nunito',sans-serif;font-size:1rem}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{border:1px solid var(--border);background:#0a1728;color:var(--muted);padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:800}
+.btn{border:1px solid var(--border);background:#10243a;color:#dceaff;border-radius:8px;padding:8px 12px;font-weight:800;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn:hover{border-color:var(--cyan);color:#fff}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04111f;border:none}
+.content{padding:22px;max-width:1500px}
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);gap:18px;margin-bottom:18px}
+.hero-card{background:linear-gradient(135deg,#10243a,#0d1b2d);border:1px solid var(--border);border-radius:var(--rad);padding:20px;box-shadow:var(--shadow)}
+.hero-card h3{font-family:'Nunito',sans-serif;font-size:1.35rem;margin-bottom:8px}
+.hero-card p{color:var(--muted);font-size:.88rem;line-height:1.55;max-width:760px}
+.status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.status-item{background:#0a1728;border:1px solid var(--border);border-radius:8px;padding:12px}
+.status-label{color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px}
+.status-value{font-size:1.35rem;font-weight:900;margin-top:5px;font-family:'Nunito',sans-serif}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:14px;min-height:108px}
+.kpi .label{color:var(--muted);font-size:.67rem;text-transform:uppercase;font-weight:900;letter-spacing:.75px}
+.kpi .value{font-family:'Nunito',sans-serif;font-size:1.62rem;font-weight:900;margin:7px 0}
+.kpi .hint{font-size:.72rem;color:#9db0c4;line-height:1.35}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--rad);box-shadow:var(--shadow);padding:16px;min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+.card-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:.98rem}
+.mini{font-size:.7rem;color:var(--muted);font-weight:800}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th{text-align:left;color:#7f96ad;font-size:.66rem;text-transform:uppercase;letter-spacing:.8px;padding:0 8px 9px;font-weight:900}
+td{border-top:1px solid var(--border);padding:10px 8px;font-size:.8rem;color:#dce8f5;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:.3px}
+.b-info{background:rgba(56,189,248,.12);color:#7dd3fc}.b-warning{background:rgba(245,158,11,.15);color:#fbbf24}.b-high{background:rgba(251,113,133,.14);color:#fb7185}.b-critical{background:rgba(251,113,133,.22);color:#fecdd3}
+.bar{height:8px;background:#07111f;border:1px solid var(--border);border-radius:999px;overflow:hidden;min-width:86px}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:999px}
+.empty{border:1px dashed var(--border);border-radius:8px;padding:18px;color:var(--muted);text-align:center;font-size:.82rem}
+#toast{position:fixed;right:18px;bottom:18px;background:#0a1728;border:1px solid var(--cyan);color:#fff;border-radius:8px;padding:10px 14px;box-shadow:var(--shadow);opacity:0;transform:translateY(20px);transition:.2s;font-size:.8rem;font-weight:700;z-index:20}
+#toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1100px){.shell{grid-template-columns:1fr}.side{position:static;height:auto}.hero,.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.top{height:auto;align-items:flex-start;flex-direction:column;padding:14px}.content{padding:14px}.kpis,.status-grid{grid-template-columns:1fr}table{min-width:540px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">DI</div>
+      <h1>ArthHRMS</h1>
+      <p>Director Oversight</p>
+    </div>
+    <div class="nav-title">Strategic Board</div>
+    <div class="nav-item on">Strategic Health</div>
+    <div class="nav-item">Risk Board</div>
+    <div class="nav-item">Review Backlog</div>
+    <div class="nav-item">KPI Trends</div>
+    <div class="nav-title">Access</div>
+    <div class="nav-item">Read-only Oversight</div>
+    <div class="nav-item">Reviewer Workflow Preserved</div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <h2>Director Strategic Intelligence Board</h2>
+      <div class="top-actions">
+        <span class="pill" id="sessionRole">Role: DIRECTOR</span>
+        <span class="pill" id="lastUpdated">Not loaded</span>
+        <button class="btn btn-primary" onclick="renderDirectorBoard()">Refresh Board</button>
+      </div>
+    </header>
+    <div class="content">
+      <section class="hero">
+        <div class="hero-card">
+          <h3>Organization Risk and Accountability Visibility</h3>
+          <p>This board summarizes strategic deliverables, pending reviews, escalation concentration, department execution health, and KPI risk. It is intentionally read-only: contributor updates still require reviewer approval and Directors cannot bypass review governance.</p>
+        </div>
+        <div class="hero-card">
+          <div class="status-grid">
+            <div class="status-item"><div class="status-label">Scope</div><div class="status-value" id="boardScope">-</div></div>
+            <div class="status-item"><div class="status-label">Mode</div><div class="status-value" id="boardMode">-</div></div>
+            <div class="status-item"><div class="status-label">Risks</div><div class="status-value" id="riskCount">0</div></div>
+            <div class="status-item"><div class="status-label">Backlog</div><div class="status-value" id="backlogCount">0</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpis" id="kpiGrid"></section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card-h"><div class="card-title">Organization Risk Board</div><div class="mini">Director acknowledgement only</div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Risk</th><th>Department</th><th>Severity</th><th>Reason</th><th>Action</th></tr></thead>
+            <tbody id="riskBody"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-title">Department Execution Health</div><div class="mini">Organization-wide</div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Department</th><th>Health</th><th>Delayed</th><th>Escalated</th><th>Pending Reviews</th></tr></thead>
+            <tbody id="departmentBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card-h"><div class="card-title">Review Backlog Intelligence</div><div class="mini">No auto-approval</div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Review</th><th>Deliverable</th><th>Reviewer</th><th>Status</th><th>Age</th></tr></thead>
+            <tbody id="reviewBody"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-title">Escalation Concentration</div><div class="mini">Department clustering</div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Department</th><th>Escalations</th><th>Share</th></tr></thead>
+            <tbody id="escalationBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><div class="card-title">Quarterly KPI Trend</div><div class="mini">Read-only trend visibility</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Quarter</th><th>Total</th><th>Completed</th><th>Delayed</th><th>Completion</th></tr></thead>
+          <tbody id="trendBody"></tbody>
+        </table></div>
+      </section>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+<script>
+let latestDirectorBoard = null;
+
+function safeText(value, fallback){
+  const text = value === undefined || value === null ? fallback : String(value);
+  return text.replace(/[&<>"']/g, function(ch){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);
+  });
+}
+
+function readCurrentDirectorContext(){
+  const user = authService.getCurrentUser() || {};
+  return {
+    role: user.role || 'UNAUTHENTICATED',
+    empId: user.empId || user.employeeId || user.id || '',
+    actorId: user.id || user.empId || '',
+    name: user.name || user.email || ''
+  };
+}
+
+function toast(message){
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+
+function kpiCard(label, value, hint, tone){
+  return `<div class="kpi"><div class="label">${safeText(label,'')}</div><div class="value" style="color:${tone || 'var(--text)'}">${safeText(value,'0')}</div><div class="hint">${safeText(hint,'')}</div></div>`;
+}
+
+function severityBadge(severity){
+  const s = String(severity || 'INFO').toUpperCase();
+  const cls = s === 'CRITICAL' ? 'b-critical' : s === 'HIGH' ? 'b-high' : s === 'WARNING' ? 'b-warning' : 'b-info';
+  return `<span class="badge ${cls}">${safeText(s,'INFO')}</span>`;
+}
+
+function renderEmpty(targetId, colspan, message){
+  document.getElementById(targetId).innerHTML = `<tr><td colspan="${colspan}"><div class="empty">${safeText(message,'No records')}</div></td></tr>`;
+}
+
+function ageDays(dateValue){
+  if (!dateValue) return 0;
+  const start = new Date(String(dateValue).slice(0,10) + 'T00:00:00');
+  if (!Number.isFinite(start.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
+}
+
+function renderKpis(board){
+  const k = board.executiveKpis || {};
+  document.getElementById('kpiGrid').innerHTML = [
+    kpiCard('Completion Rate', (k.strategicCompletionRate || 0) + '%', 'Closed strategic accountability items', 'var(--green)'),
+    kpiCard('Overdue %', (k.overdueDeliverablePercent || 0) + '%', 'Active deliverables past due date', 'var(--amber)'),
+    kpiCard('Escalation Density', (k.escalationDensity || 0) + '%', 'Escalation signals per deliverable', 'var(--red)'),
+    kpiCard('Dept Health', (k.departmentExecutionHealth || 0) + '%', 'Average department execution score', 'var(--cyan)'),
+    kpiCard('Reviewer Bottleneck', k.reviewerBottleneckScore || 0, 'Backlog pressure score', 'var(--amber)'),
+    kpiCard('Contributor Blockage', (k.contributorBlockageRate || 0) + '%', 'Blocked contributor review signals', 'var(--blue)')
+  ].join('');
+}
+
+function renderRiskBoard(board){
+  const rows = board.organizationRiskBoard || [];
+  if (!rows.length) return renderEmpty('riskBody', 5, 'No organization-level strategic risks detected.');
+  document.getElementById('riskBody').innerHTML = rows.map(function(risk){
+    return `<tr>
+      <td><strong>${safeText(risk.title,risk.category)}</strong><br><span class="mini">${safeText(risk.category,'')}</span></td>
+      <td>${safeText(risk.department,'Unassigned')}</td>
+      <td>${severityBadge(risk.severity)}</td>
+      <td>${safeText(risk.reason,'')}</td>
+      <td><button class="btn" onclick="acknowledgeStrategicRisk('${safeText(risk.riskId,'')}')">Acknowledge</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDepartments(board){
+  const rows = board.departmentHealth || [];
+  if (!rows.length) return renderEmpty('departmentBody', 5, 'No strategic deliverables available by department.');
+  document.getElementById('departmentBody').innerHTML = rows.map(function(row){
+    const score = Math.max(0, Math.min(100, Number(row.healthScore || 0)));
+    return `<tr>
+      <td><strong>${safeText(row.department,'Unassigned')}</strong></td>
+      <td><div class="bar"><span style="width:${score}%"></span></div><span class="mini">${score}%</span></td>
+      <td>${safeText(row.delayedDeliverables,0)}</td>
+      <td>${safeText(row.escalatedDeliverables,0)}</td>
+      <td>${safeText(row.pendingReviews,0)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderReviews(board){
+  const rows = (board.reviewBacklog && board.reviewBacklog.queue) || [];
+  if (!rows.length) return renderEmpty('reviewBody', 5, 'No pending strategic review backlog.');
+  document.getElementById('reviewBody').innerHTML = rows.slice(0, 12).map(function(row){
+    const submitted = row.submitted_at || row.reviewDate || '';
+    return `<tr>
+      <td>${safeText(row.review_id,'')}</td>
+      <td><strong>${safeText(row.deliverable_title || row.deliverable_id,'')}</strong><br><span class="mini">${safeText(row.deliverable_id,'')}</span></td>
+      <td>${safeText(row.reviewer_id,'Unassigned')}</td>
+      <td>${severityBadge(row.calculatedRisk || row.risk_level || 'INFO')}</td>
+      <td>${ageDays(submitted)}d</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEscalations(board){
+  const rows = (board.escalationIntelligence && board.escalationIntelligence.concentration) || [];
+  if (!rows.length) return renderEmpty('escalationBody', 3, 'No escalation concentration detected.');
+  document.getElementById('escalationBody').innerHTML = rows.map(function(row){
+    return `<tr><td>${safeText(row.department,'Unassigned')}</td><td>${safeText(row.escalationCount,0)}</td><td>${safeText(row.percentOfEscalations,0)}%</td></tr>`;
+  }).join('');
+}
+
+function renderTrends(board){
+  const rows = (board.executiveKpis && board.executiveKpis.quarterlyCompletionTrend) || [];
+  if (!rows.length) return renderEmpty('trendBody', 5, 'No quarterly trend data available.');
+  document.getElementById('trendBody').innerHTML = rows.map(function(row){
+    return `<tr><td>${safeText(row.quarter,'')}</td><td>${safeText(row.total,0)}</td><td>${safeText(row.completed,0)}</td><td>${safeText(row.delayed,0)}</td><td>${safeText(row.completionRate,0)}%</td></tr>`;
+  }).join('');
+}
+
+function renderDirectorBoard(){
+  try {
+    if (window.DB && DB.migrate) DB.migrate();
+    const ctx = readCurrentDirectorContext();
+    document.getElementById('sessionRole').textContent = 'Role: ' + String(ctx.role || 'director').toUpperCase();
+    if (!window.StrategicIntelligenceService || !StrategicIntelligenceService.generateStrategicIntelligenceBoard) {
+      toast('Strategic intelligence service unavailable');
+      return;
+    }
+    latestDirectorBoard = StrategicIntelligenceService.generateStrategicIntelligenceBoard(ctx);
+    document.getElementById('boardScope').textContent = latestDirectorBoard.scope || 'ORGANIZATION';
+    document.getElementById('boardMode').textContent = latestDirectorBoard.directorMode || 'READ_ONLY';
+    document.getElementById('riskCount').textContent = String((latestDirectorBoard.organizationRiskBoard || []).length);
+    document.getElementById('backlogCount').textContent = String(latestDirectorBoard.reviewBacklog?.totalPending || 0);
+    document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+    renderKpis(latestDirectorBoard);
+    renderRiskBoard(latestDirectorBoard);
+    renderDepartments(latestDirectorBoard);
+    renderReviews(latestDirectorBoard);
+    renderEscalations(latestDirectorBoard);
+    renderTrends(latestDirectorBoard);
+  } catch (err) {
+    toast('Director board failed safely');
+  }
+}
+
+function acknowledgeStrategicRisk(riskId){
+  try {
+    const ctx = readCurrentDirectorContext();
+    const result = window.StrategicIntelligenceService?.acknowledgeStrategicRisk
+      ? StrategicIntelligenceService.acknowledgeStrategicRisk(riskId, { actorRole: ctx.role || 'director', actorId: ctx.actorId || ctx.empId || '', remark: 'Acknowledged from Director Strategic Intelligence Board' })
+      : { success:false };
+    toast(result.success ? 'Risk acknowledgement recorded' : 'Risk acknowledgement failed safely');
+  } catch (err) {
+    toast('Risk acknowledgement failed safely');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderDirectorBoard);
+</script>
+</body>
+</html>

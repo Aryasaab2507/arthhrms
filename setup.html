@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+    <script src="services/authGuard.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARTHHRMS First-Time Setup</title>
+    <script src="db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="services/supabaseClient.js"></script>
+    <script src="services/authService.js"></script>
+<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
+<script src="services/validationRegistryService.js"></script>
+<script src="services/workflowRecoveryService.js"></script>
+<script src="services/backupIntegrityVerificationService.js"></script>
+<script src="services/enterpriseRedisCacheService.js"></script>
+<script src="services/enterpriseAssetDeliveryService.js"></script>
+<script src="services/distributedQueueService.js"></script>
+<script src="services/apiGatewayGovernanceService.js"></script>
+<script src="services/horizontalScalabilityService.js"></script>
+<script src="services/infrastructureObservabilityService.js"></script>
+<script src="services/enterpriseLoggingPipelineService.js"></script>
+<script src="services/multiRegionArchitectureService.js"></script>
+<script src="services/tenantScopedRagService.js"></script>
+<script src="services/aiHrAssistantGovernanceService.js"></script>
+<script src="services/aiOperationsCopilotService.js"></script>
+<script src="services/softDeleteRestoreGovernanceService.js"></script>
+<script src="services/disasterRecoverySimulationService.js"></script>
+<script src="services/notificationDeliveryTrackingService.js"></script>
+<script src="services/inviteAcceptanceTrackingService.js"></script>
+<script src="services/employeeStatusLifecycleService.js"></script>
+    <script src="services/tenantProvisioningService.js"></script>
+    <script src="services/organizationSetupService.js"></script>
+    <script src="services/organizationInitializationWizardService.js"></script>
+    <script src="services/enterpriseOrganizationSetupWizardService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--p:#1a56db;--p2:#0ea5e9;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#d9e2ef;--r:#dc2626;--g:#047857;--o:#b45309}
+        body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:#edf3fb;min-height:100vh;color:var(--ink);display:grid;place-items:center;padding:22px}
+        .wizard{width:min(1180px,100%);background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,.12);overflow:hidden;display:grid;grid-template-columns:300px 1fr}
+        .rail{background:#111827;color:#e5e7eb;padding:24px}
+        .logo{width:44px;height:44px;border-radius:10px;background:#2563eb;display:grid;place-items:center;font-weight:900;margin-bottom:18px}
+        h1{font-size:1.16rem;line-height:1.25}.rail p{color:#9ca3af;font-size:.82rem;line-height:1.5;margin-top:10px}
+        .progress-shell{height:8px;background:rgba(255,255,255,.12);border-radius:999px;margin-top:18px;overflow:hidden}.progress-bar{height:100%;width:10%;background:#38bdf8;border-radius:999px;transition:width .2s ease}
+        .steps{margin-top:18px;display:grid;gap:7px}.step-dot{padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.06);font-size:.73rem;font-weight:800;color:#cbd5e1;border:1px solid transparent}.step-dot.on{background:rgba(37,99,235,.3);border-color:rgba(147,197,253,.5);color:#fff}.step-dot.done{color:#bfdbfe}
+        .main{padding:28px;min-width:0}.head{margin-bottom:18px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.head h2{font-size:1.25rem}.head p{color:var(--muted);font-size:.84rem;margin-top:5px;line-height:1.45}.badge{border:1px solid var(--border);background:#f8fafc;border-radius:999px;padding:8px 10px;font-size:.72rem;font-weight:900;color:#334155;white-space:nowrap}
+        .panel{display:none}.panel.on{display:block}
+        .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.fg label{display:block;font-size:.7rem;font-weight:900;color:var(--muted);text-transform:uppercase}.fg input,.fg select,.fg textarea{width:100%;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.88rem;background:#fff}.fg textarea{min-height:96px;resize:vertical}.full{grid-column:1/-1}.span2{grid-column:span 2}
+        .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.check{border:1px solid var(--border);border-radius:8px;padding:9px;font-size:.76rem;font-weight:800;background:#f8fafc}.check input{margin-right:7px}
+        .actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px;align-items:center}.action-left,.action-right{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:8px;padding:11px 14px;font-weight:900;cursor:pointer;background:var(--p);color:#fff}.btn.alt{background:#e2e8f0;color:#0f172a}.btn.good{background:var(--g)}.btn.warn{background:var(--o)}
+        .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:10px;padding:12px;font-size:.8rem;font-weight:700;line-height:1.45;margin-top:14px}.err{display:none;border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;font-size:.8rem;font-weight:800;margin-top:12px;white-space:pre-line}
+        .summary{display:grid;gap:10px}.summary div{border:1px solid var(--border);border-radius:9px;padding:10px;background:#f8fafc}.summary b{display:block;font-size:.8rem}.summary span{font-size:.78rem;color:var(--muted);line-height:1.45}
+        .status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.metric{border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff}.metric b{font-size:1.25rem}.metric span{display:block;color:var(--muted);font-size:.72rem;font-weight:900;text-transform:uppercase;margin-top:3px}
+        @media(max-width:940px){.wizard{grid-template-columns:1fr}.rail{padding:20px}.grid{grid-template-columns:1fr}.full,.span2{grid-column:auto}.checks{grid-template-columns:1fr 1fr}.head{display:block}.badge{display:inline-block;margin-top:10px}.status-grid{grid-template-columns:1fr 1fr}}
+        @media(max-width:560px){body{padding:12px}.main{padding:20px}.checks,.status-grid{grid-template-columns:1fr}.actions{display:grid}.action-left,.action-right{display:grid}.btn{width:100%}}
+    </style>
+</head>
+<body>
+<div class="wizard">
+    <aside class="rail">
+        <div class="logo">A</div>
+        <h1>Enterprise Organization Setup Wizard</h1>
+        <p>Configure company identity, structure, work rules, security, notifications, and tenant provisioning from one validated flow.</p>
+        <div class="progress-shell"><div class="progress-bar" id="setupProgress"></div></div>
+        <div class="steps" id="setupStepper">
+            <div class="step-dot on" id="dot1">1. Organization Info</div>
+            <div class="step-dot" id="dot2">2. Structure</div>
+            <div class="step-dot" id="dot3">3. Working Config</div>
+            <div class="step-dot" id="dot4">4. Leave</div>
+            <div class="step-dot" id="dot5">5. Payroll</div>
+            <div class="step-dot" id="dot6">6. Identity</div>
+            <div class="step-dot" id="dot7">7. Notifications</div>
+            <div class="step-dot" id="dot8">8. Administrator</div>
+            <div class="step-dot" id="dot9">9. Review</div>
+            <div class="step-dot" id="dot10">10. Provision</div>
+        </div>
+    </aside>
+    <main class="main">
+        <div class="head">
+            <div>
+                <h2 id="stepTitle">Organization Information</h2>
+                <p id="stepHelp">Capture the legal and operating identity used for tenant provisioning.</p>
+            </div>
+            <div class="badge" id="draftBadge">Draft not saved</div>
+        </div>
+        <div class="panel on" id="step1">
+            <div class="grid">
+                <div class="fg"><label>Company Name *</label><input id="companyName" autocomplete="organization"></div>
+                <div class="fg"><label>Legal Name *</label><input id="legalName"></div>
+                <div class="fg"><label>Organization Code *</label><input id="organizationCode" placeholder="TABSONS"></div>
+                <div class="fg"><label>Industry *</label><input id="industry" value="Manufacturing"></div>
+                <div class="fg"><label>Company Size *</label><select id="companySize"><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select></div>
+                <div class="fg"><label>Website *</label><input id="website" placeholder="https://example.com"></div>
+                <div class="fg"><label>Registration Number</label><input id="registrationNumber"></div>
+                <div class="fg"><label>Tax ID</label><input id="taxId"></div>
+                <div class="fg"><label>Time Zone *</label><select id="timezone"><option>Asia/Kolkata</option><option>UTC</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></div>
+                <div class="fg"><label>Currency *</label><select id="currency"><option>INR</option><option>USD</option><option>AED</option><option>GBP</option><option>EUR</option></select></div>
+                <div class="fg"><label>Language *</label><select id="language"><option value="en">English</option><option value="hi">Hindi</option><option value="ar">Arabic</option></select></div>
+                <div class="fg"><label>Fiscal Year Start *</label><input id="fiscalYearStart" value="04-01" placeholder="MM-DD"></div>
+                <div class="fg full"><label>Logo Upload Reference</label><input id="logoUpload" placeholder="logo.png or https://..."></div>
+            </div>
+        </div>
+        <div class="panel" id="step2">
+            <div class="grid">
+                <div class="fg"><label>Head Office *</label><input id="headOffice" placeholder="Mumbai HQ"></div>
+                <div class="fg"><label>Head Office Code</label><input id="headOfficeCode" value="HQ"></div>
+                <div class="fg"><label>Default Location</label><input id="defaultLocation" value="Mumbai"></div>
+                <div class="fg span2"><label>Branches</label><textarea id="branches" placeholder="Pune Branch,PUN"></textarea></div>
+                <div class="fg"><label>Business Units</label><textarea id="businessUnits" placeholder="Manufacturing,MFG"></textarea></div>
+                <div class="fg span2"><label>Departments *</label><textarea id="departments">HR,HR
+Operations,OPS
+Finance,FIN
+Engineering,ENG
+Management,MGT</textarea></div>
+                <div class="fg"><label>Cost Centers</label><textarea id="costCenters" placeholder="Factory,FACT"></textarea></div>
+                <div class="fg span2"><label>Locations</label><textarea id="locations">Mumbai,MUM</textarea></div>
+                <div class="fg full"><label>Excel Import Paste Area</label><textarea id="structureImport" placeholder="Type,Name,Code&#10;Department,Quality,QA&#10;Branch,Delhi,DEL"></textarea></div>
+            </div>
+            <div class="notice">Import rows are parsed locally and de-duplicated before being written to tenant-scoped setup metadata.</div>
+        </div>
+        <div class="panel" id="step3">
+            <div class="grid">
+                <div class="fg full">
+                    <label>Work Week *</label>
+                    <div class="checks" id="workWeek">
+                        <label class="check"><input type="checkbox" value="MON" checked>Monday</label>
+                        <label class="check"><input type="checkbox" value="TUE" checked>Tuesday</label>
+                        <label class="check"><input type="checkbox" value="WED" checked>Wednesday</label>
+                        <label class="check"><input type="checkbox" value="THU" checked>Thursday</label>
+                        <label class="check"><input type="checkbox" value="FRI" checked>Friday</label>
+                        <label class="check"><input type="checkbox" value="SAT">Saturday</label>
+                    </div>
+                </div>
+                <div class="fg"><label>Office Start *</label><input id="officeStart" type="time" value="09:30"></div>
+                <div class="fg"><label>Office End *</label><input id="officeEnd" type="time" value="18:30"></div>
+                <div class="fg"><label>Setup Time Zone *</label><select id="workingTimezone"><option>Asia/Kolkata</option><option>UTC</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></div>
+                <div class="fg"><label>Shift Strategy *</label><select id="shiftStrategy"><option>STANDARD</option><option>FLEXIBLE</option><option>MULTI_SHIFT</option><option>ROSTER_BASED</option></select></div>
+                <div class="fg"><label>Attendance Mode *</label><select id="attendanceMode"><option>WEB_MOBILE</option><option>BIOMETRIC</option><option>GEO_FENCED</option><option>MANUAL_APPROVAL</option></select></div>
+                <div class="fg"><label>Weekend Rule</label><select id="weekendRule"><option value="SAT_SUN_OFF">Saturday and Sunday off</option><option value="SUN_OFF">Sunday off</option><option value="CUSTOM">Custom</option></select></div>
+                <div class="fg full"><label>Public Holidays</label><textarea id="publicHolidays" placeholder="Republic Day,2026-01-26"></textarea></div>
+            </div>
+        </div>
+        <div class="panel" id="step4">
+            <div class="grid">
+                <div class="fg full"><label>Leave Types *</label><textarea id="leaveTypes">Casual Leave,CL,12
+Sick Leave,SL,12
+Earned Leave,EL,18</textarea></div>
+                <div class="fg"><label>Accrual Rule</label><select id="accrualRule"><option>MONTHLY</option><option>QUARTERLY</option><option>ANNUAL</option><option>NONE</option></select></div>
+                <div class="fg"><label>Carry Forward</label><select id="carryForward"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+                <div class="fg"><label>Encashment</label><select id="encashment"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
+                <div class="fg full"><label>Approval Rules *</label><textarea id="leaveApprovalRules">MANAGER
+HR</textarea></div>
+            </div>
+        </div>
+        <div class="panel" id="step5">
+            <div class="grid">
+                <div class="fg"><label>Payroll Frequency *</label><select id="payrollFrequency"><option>MONTHLY</option><option>BI_WEEKLY</option><option>WEEKLY</option></select></div>
+                <div class="fg"><label>Salary Structure *</label><select id="salaryStructure"><option>STANDARD</option><option>CTC_BASED</option><option>HOURLY</option><option>CUSTOM</option></select></div>
+                <div class="fg"><label>Payment Day</label><input id="paymentDay" type="number" min="1" max="31" value="30"></div>
+                <div class="fg full"><label>Salary Components *</label><textarea id="salaryComponents">Basic,EARNING
+HRA,EARNING
+PF,DEDUCTION</textarea></div>
+                <div class="fg full"><label>Tax Configuration</label><textarea id="taxConfiguration">India old/new regime readiness</textarea></div>
+            </div>
+        </div>
+        <div class="panel" id="step6">
+            <div class="grid">
+                <div class="fg"><label>Authentication Method *</label><select id="authenticationMethod"><option>LOCAL_AND_SSO</option><option>LOCAL_ONLY</option><option>SSO_ONLY</option></select></div>
+                <div class="fg"><label>Password Minimum Length</label><input id="passwordMinLength" type="number" min="8" value="10"></div>
+                <div class="fg"><label>Session Timeout Minutes *</label><input id="sessionTimeoutMinutes" type="number" min="5" value="30"></div>
+                <div class="fg"><label>MFA</label><select id="mfa"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+                <div class="fg"><label>SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
+                <div class="fg"><label>SSO Provider</label><input id="ssoProvider" placeholder="Microsoft Entra ID"></div>
+                <div class="fg"><label>Authenticated Platform Owner</label><input id="ownerName" autocomplete="name" readonly></div>
+                <div class="fg"><label>Verified Owner Email</label><input id="ownerEmail" type="email" autocomplete="email" readonly></div>
+            </div>
+            <div class="notice">Platform Owner identity is supplied by secure authentication. Tenant administrators remain invite-pending until the server-side onboarding flow completes.</div>
+        </div>
+        <div class="panel" id="step7">
+            <div class="grid">
+                <div class="fg"><label>Email</label><select id="emailEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+                <div class="fg"><label>SMS</label><select id="smsEnabled"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
+                <div class="fg"><label>Push Notifications</label><select id="pushEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+                <div class="fg full"><label>Reminder Rules</label><textarea id="reminderRules">LEAVE_APPROVAL,24
+PROFILE_COMPLETION,48</textarea></div>
+            </div>
+        </div>
+        <div class="panel" id="step8">
+            <div class="grid">
+                <div class="fg"><label>Administrator Name *</label><input id="adminName" autocomplete="name"></div>
+                <div class="fg"><label>Administrator Email *</label><input id="adminEmail" type="email" autocomplete="email"></div>
+                <div class="fg"><label>Phone</label><input id="adminPhone" placeholder="+91 90000 00000"></div>
+                <div class="fg"><label>Role *</label><select id="adminRole"><option value="super_admin">Super Admin</option><option value="admin">Admin</option><option value="hr">HR</option></select></div>
+                <div class="fg"><label>MFA</label><select id="adminMfa"><option value="true">Required</option><option value="false">Optional</option></select></div>
+            </div>
+            <div class="notice">The administrator is scoped to the new tenant and does not become a platform owner.</div>
+        </div>
+        <div class="panel" id="step9">
+            <div class="status-grid" id="readinessMetrics"></div>
+            <div class="summary" id="setupSummary"></div>
+            <div class="notice">Review highlights missing required fields, validation errors, and warnings before tenant provisioning.</div>
+        </div>
+        <div class="panel" id="step10">
+            <div class="status-grid" id="provisionMetrics"></div>
+            <div class="summary" id="provisionSummary"></div>
+            <div class="notice">Provisioning creates tenant metadata, default organization configuration, invite-pending administrator access, and audit logs.</div>
+        </div>
+        <div class="err" id="setupError"></div>
+        <div class="actions">
+            <div class="action-left">
+                <button class="btn alt" id="backBtn" onclick="backStep()" style="visibility:hidden">Back</button>
+                <button class="btn alt" onclick="saveDraft()">Save & Resume</button>
+            </div>
+            <div class="action-right">
+                <button class="btn" id="nextBtn" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+let step=1;
+const titles={
+    1:['Company Details','Start with the organization identity. You can refine branding later from Platform Control Center.'],
+    2:['Create Governance Owner','This root account controls feature governance and installation state.'],
+    3:['Create Initial HR/Admin','Create the first operating user or leave it invite-pending.'],
+    4:['Initialize Organization','Configure tenant-scoped departments, roles, policies, features, and pilot readiness.'],
+    5:['Complete Setup','Review and finish installation.']
+};
+if(!DB.isSetupRequired || !DB.isSetupRequired()){
+    location.replace('ArthHRMS.html');
+}
+function val(id){return document.getElementById(id).value.trim();}
+function showError(msg){const e=document.getElementById('setupError');e.textContent=msg;e.style.display='block';}
+function clearError(){document.getElementById('setupError').style.display='none';}
+function setupSvc(){return window.OrganizationSetupService||window.organizationSetupService;}
+function normalizeSlug(value){
+    if(window.TenantProvisioningService?.normalizeTenantSlug) return TenantProvisioningService.normalizeTenantSlug(value);
+    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+function parseList(value){return String(value||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);}
+function selectedChecks(containerId){
+    return Array.from(document.querySelectorAll('#'+containerId+' input[type="checkbox"]')).filter(x=>x.checked).map(x=>x.value);
+}
+function parseManagerStructure(){
+    return parseList(val('setupManagers')).map(line=>{
+        const parts=line.split(/>|,|:/).map(x=>x.trim()).filter(Boolean);
+        return {employee_id:parts[0]||'',manager_id:parts[1]||'',tenant_slug:normalizeSlug(val('tenantSlug')||val('companyName'))};
+    }).filter(row=>row.employee_id||row.manager_id);
+}
+function collectOrganizationSetupPayload(){
+    return {
+        tenant_slug:normalizeSlug(val('tenantSlug')||val('companyName')),
+        company_profile:{
+            company_name:val('companyName'),
+            company_logo:val('logoUrl'),
+            company_email:val('companyEmail'),
+            company_phone:val('companyPhone'),
+            timezone:val('timezone'),
+            country:val('country'),
+            working_days:parseList(val('workingDays')),
+            fiscal_year:val('fiscalYear'),
+            default_currency:val('currency')
+        },
+        departments:parseList(val('setupDepartments')),
+        role_matrix:selectedChecks('setupRoles'),
+        manager_structure:parseManagerStructure(),
+        policies:{
+            leave_policy:val('leavePolicy'),
+            attendance_policy:val('attendancePolicy'),
+            holiday_policy:'standard',
+            working_hours:val('workingHours'),
+            onboarding_defaults:'invite_required'
+        },
+        features:['attendance','payroll','strategic_deliverables','expense_management','onboarding_workflows'].reduce((acc,key)=>{acc[key]=selectedChecks('setupFeatures').includes(key);return acc;},{}),
+        pilot:{
+            pilot_employee_count:Number(val('pilotEmployeeCount')||0),
+            pilot_departments:parseList(val('pilotDepartments')),
+            staged_onboarding:true,
+            activation_stage:'pilot_group'
+        }
+    };
+}
+function validateOrganizationSetupStep(){
+    const svc=setupSvc();
+    if(!svc?.validateOrganizationSetup) return {passed:true,warnings:[],failures:[],readiness:'ACTIVATION_READY'};
+    return svc.validateOrganizationSetup(collectOrganizationSetupPayload(),{
+        actor:{role:document.getElementById('opsRole').value||'super_admin',tenantSlug:normalizeSlug(val('tenantSlug')||val('companyName'))}
+    });
+}
+function renderStep(){
+    clearError();
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    document.getElementById('step'+step).classList.add('on');
+    document.querySelectorAll('.step-dot').forEach((d,i)=>d.classList.toggle('on',i+1===step));
+    document.getElementById('stepTitle').textContent=titles[step][0];
+    document.getElementById('stepHelp').textContent=titles[step][1];
+    document.getElementById('backBtn').style.visibility=step===1?'hidden':'visible';
+    document.getElementById('nextBtn').textContent=step===5?'Complete Setup':'Next';
+    if(step===5) renderEnterpriseSummary();
+}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+function authenticatedOwner(){const u=window.authService?.getCurrentUser?.();return u?.source==='supabase'&&u?.role==='platform_owner'&&u?.roleTrusted?u:null;}
+function validateStep(){
+    if(step===1 && !val('companyName')) return 'Company name is required.';
+    if(step===1 && !normalizeSlug(val('tenantSlug')||val('companyName'))) return 'Tenant slug is required.';
+    if(step===1 && val('companyEmail') && !validEmail(val('companyEmail'))) return 'Company email is invalid.';
+    if(step===2 && !authenticatedOwner()) return 'A validated Platform Owner session is required.';
+    if(step===3){
+        if((val('opsName')||val('opsEmail')) && (!val('opsName')||!val('opsEmail'))) return 'Initial HR/Admin needs both name and email.';
+        if(val('opsEmail') && !validEmail(val('opsEmail'))) return 'Initial HR/Admin email is invalid.';
+    }
+    if(step===4){
+        const setup=validateOrganizationSetupStep();
+        if(!setup.passed) return setup.failures?.[0]?.message||'Organization setup has activation blockers.';
+    }
+    return '';
+}
+function renderSummary(){
+    document.getElementById('setupSummary').innerHTML=[
+        ['Company',val('companyName')+' · '+val('timezone')+' · '+val('currency')],
+        ['Platform Owner',val('ownerName')+' · '+val('ownerEmail')],
+        ['Initial Operations User',val('opsEmail')?val('opsName')+' · '+val('opsEmail')+' · '+document.getElementById('opsRole').value:'Skipped for now'],
+        ['Environment',DB.isProductionMode()?'Production mode':'Development/local mode']
+    ].map(([k,v])=>`<div><b>${k}</b><span>${v}</span></div>`).join('');
+}
+function renderEnterpriseSummary(){
+    const setup=validateOrganizationSetupStep();
+    document.getElementById('setupSummary').innerHTML=[
+        ['Company',val('companyName')+' - '+normalizeSlug(val('tenantSlug')||val('companyName'))+' - '+val('timezone')+' - '+val('currency')],
+        ['Governance Owner',val('ownerName')+' - '+val('ownerEmail')],
+        ['Initial Operations User',val('opsEmail')?val('opsName')+' - '+val('opsEmail')+' - '+document.getElementById('opsRole').value:'Skipped for now'],
+        ['Organization Setup',setup.readiness||'ACTIVATION_READY'],
+        ['Environment',DB.isProductionMode()?'Production mode':'Development/local mode']
+    ].map(([k,v])=>`<div><b>${k}</b><span>${v}</span></div>`).join('');
+}
+function nextStep(){
+    const err=validateStep();
+    if(err){showError(err);return;}
+    if(step<5){step++;renderStep();return;}
+    const result=DB.completeInitialSetup({
+        company:{companyName:val('companyName'),companyEmail:val('companyEmail'),timezone:val('timezone'),currency:val('currency'),logoUrl:val('logoUrl')},
+        platformOwner:authenticatedOwner(),
+        initialUser:{name:val('opsName'),email:val('opsEmail'),role:document.getElementById('opsRole').value}
+    });
+    if(!result.ok){showError(result.error||'Setup could not be completed.');return;}
+    const svc=setupSvc();
+    if(svc?.saveOrganizationSetup){
+        svc.saveOrganizationSetup(collectOrganizationSetupPayload(),{
+            actor:{role:'platform_owner',id:result.ownerUser?.id||authenticatedOwner()?.id||'',tenantSlug:normalizeSlug(val('tenantSlug')||val('companyName'))}
+        });
+    }
+    location.href='platform-control.html';
+}
+function backStep(){if(step>1){step--;renderStep();}}
+renderStep();
+</script>
+<script>
+(function(){
+let enterpriseStep=1;
+let wizardDraftId=sessionStorage.getItem('arthhrms_enterprise_setup_draft_id')||'';
+const keys=['organizationInformation','organizationStructure','workingConfiguration','leaveConfiguration','payrollConfiguration','identitySecurity','notifications','administrator','review','provisionTenant'];
+const titles={
+1:['Organization Information','Capture the legal and operating identity used for tenant provisioning.'],
+2:['Organization Structure','Define head office, branches, business units, departments, cost centers, and locations.'],
+3:['Working Configuration','Configure work week, office hours, attendance mode, shifts, weekends, and holidays.'],
+4:['Leave Configuration','Set leave types, accrual, carry forward, encashment, and approvals.'],
+5:['Payroll Configuration','Define payroll frequency, salary components, tax readiness, and payment cycle.'],
+6:['Identity & Security','Configure authentication, security policy, MFA, SSO readiness, and verify the authenticated owner.'],
+7:['Notifications','Enable communication channels and reminder governance.'],
+8:['Administrator','Create the first tenant administrator as invite-pending and MFA-ready.'],
+9:['Review','Validate the complete setup before tenant provisioning.'],
+10:['Provision Tenant','Create tenant metadata, seed configuration, administrator invite, and audit records.']
+};
+function node(id){return document.getElementById(id);}
+function value(id){const n=node(id);return n?String(n.value||'').trim():'';}
+function setValue(id,next){const n=node(id);if(n)n.value=next??'';}
+function boolValue(id){return value(id)==='true';}
+function service(){return window.EnterpriseOrganizationSetupWizardService||window.enterpriseOrganizationSetupWizardService;}
+function slug(value){
+    if(window.TenantProvisioningService&&TenantProvisioningService.normalizeTenantSlug) return TenantProvisioningService.normalizeTenantSlug(value);
+    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+function html(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function lines(text){return String(text||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);}
+function nameCodeRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim()).filter(Boolean);return{name:p[0]||'',code:p[1]||p[0]||''};}).filter(x=>x.name||x.code);}
+function rowsToText(rows){return (rows||[]).map(x=>[x.name||'',x.code||''].filter(Boolean).join(',')).join('\n');}
+function importRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());if(/^type$/i.test(p[0]||''))return null;return{Type:p[0]||'',Name:p[1]||'',Code:p[2]||''};}).filter(Boolean);}
+function checkedValues(containerId){return Array.from(document.querySelectorAll('#'+containerId+' input[type="checkbox"]')).filter(x=>x.checked).map(x=>x.value);}
+function setCheckedValues(containerId,values){const set=new Set(values||[]);document.querySelectorAll('#'+containerId+' input[type="checkbox"]').forEach(x=>{x.checked=set.has(x.value);});}
+function parseHolidayRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',date:p[1]||''};}).filter(x=>x.name||x.date);}
+function holidaysToText(rows){return (rows||[]).map(x=>[x.name||'',x.date||''].filter(Boolean).join(',')).join('\n');}
+function parseLeaveTypes(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',code:p[1]||p[0]||'',annualAllowance:Number(p[2]||0)};}).filter(x=>x.name);}
+function leaveTypesToText(rows){return (rows||[]).map(x=>[x.name||'',x.code||'',x.annualAllowance||0].join(',')).join('\n');}
+function parseComponents(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',type:(p[1]||'EARNING').toUpperCase()};}).filter(x=>x.name);}
+function componentsToText(rows){return (rows||[]).map(x=>[x.name||'',x.type||'EARNING'].join(',')).join('\n');}
+function parseReminders(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{event:p[0]||'',hoursBefore:Number(p[1]||24)};}).filter(x=>x.event);}
+function remindersToText(rows){return (rows||[]).map(x=>[x.event||'',x.hoursBefore||24].join(',')).join('\n');}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+function orgCode(){return value('organizationCode')||slug(value('companyName')).toUpperCase();}
+function draftId(){if(!wizardDraftId){wizardDraftId='DRAFT-'+slug(orgCode()||value('companyName')||Date.now());sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);}return wizardDraftId;}
+function collectStructure(){
+    const structure={headOffice:{name:value('headOffice'),locationCode:value('headOfficeCode')},branches:nameCodeRows(value('branches')),businessUnits:nameCodeRows(value('businessUnits')),departments:nameCodeRows(value('departments')),costCenters:nameCodeRows(value('costCenters')),locations:nameCodeRows(value('locations')||value('defaultLocation'))};
+    const imported=importRows(value('structureImport'));
+    if(imported.length&&service()?.OrganizationStructureImporter?.importFromRows){
+        const result=service().OrganizationStructureImporter.importFromRows(imported,{tenantSlug:slug(orgCode())});
+        if(result.success&&result.structure){
+            ['branches','businessUnits','departments','costCenters','locations'].forEach(key=>{structure[key]=structure[key].concat(result.structure[key]||[]);});
+            if(result.structure.headOffice&&result.structure.headOffice.name) structure.headOffice=result.structure.headOffice;
+        }
+    }
+    return structure;
+}
+function collectDraft(){
+    return{draftId:draftId(),organizationInformation:{companyName:value('companyName'),legalName:value('legalName'),organizationCode:orgCode(),industry:value('industry'),companySize:value('companySize'),registrationNumber:value('registrationNumber'),taxId:value('taxId'),website:value('website'),timeZone:value('timezone'),currency:value('currency'),language:value('language'),fiscalYearStart:value('fiscalYearStart'),logoUpload:{name:value('logoUpload'),url:value('logoUpload')}},organizationStructure:collectStructure(),workingConfiguration:{workWeek:checkedValues('workWeek'),officeHours:{start:value('officeStart'),end:value('officeEnd')},timeZone:value('workingTimezone')||value('timezone'),shiftStrategy:value('shiftStrategy'),attendanceMode:value('attendanceMode'),weekendRules:{rule:value('weekendRule')},publicHolidays:parseHolidayRows(value('publicHolidays'))},leaveConfiguration:{leaveTypes:parseLeaveTypes(value('leaveTypes')),accrualRules:{frequency:value('accrualRule')},carryForward:{enabled:boolValue('carryForward'),maxDays:12},encashment:{enabled:boolValue('encashment')},approvalRules:{approvers:lines(value('leaveApprovalRules'))}},payrollConfiguration:{payrollFrequency:value('payrollFrequency'),salaryStructure:value('salaryStructure'),components:parseComponents(value('salaryComponents')),taxConfiguration:{summary:value('taxConfiguration')},paymentCycle:{day:Number(value('paymentDay')||30)}},identitySecurity:{authenticationMethod:value('authenticationMethod'),passwordPolicy:{minLength:Number(value('passwordMinLength')||10),requireUppercase:true,requireLowercase:true,requireNumber:true,requireSymbol:true},mfa:boolValue('mfa'),sessionTimeoutMinutes:Number(value('sessionTimeoutMinutes')||30),sso:{enabled:boolValue('ssoEnabled'),provider:value('ssoProvider')}},notifications:{email:{enabled:boolValue('emailEnabled')},sms:{enabled:boolValue('smsEnabled')},pushNotifications:{enabled:boolValue('pushEnabled')},reminderRules:parseReminders(value('reminderRules'))},administrator:{name:value('adminName'),email:value('adminEmail'),phone:value('adminPhone'),role:value('adminRole'),mfa:boolValue('adminMfa')},createDefaultDepartments:true,enabledModules:['employees','attendance','leave','payroll','notifications','reports']};
+}
+function applyDraft(draft){
+    if(!draft)return;
+    const info=draft.organizationInformation||{};
+    setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('organizationCode',info.organizationCode);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('registrationNumber',info.registrationNumber);setValue('taxId',info.taxId);setValue('website',info.website);setValue('timezone',info.timeZone);setValue('currency',info.currency);setValue('language',info.language);setValue('fiscalYearStart',info.fiscalYearStart);setValue('logoUpload',info.logoUpload?.url||info.logoUpload?.name||'');
+    const st=draft.organizationStructure||{};setValue('headOffice',st.headOffice?.name||'');setValue('headOfficeCode',st.headOffice?.locationCode||st.headOffice?.code||'HQ');setValue('branches',rowsToText(st.branches));setValue('businessUnits',rowsToText(st.businessUnits));setValue('departments',rowsToText(st.departments));setValue('costCenters',rowsToText(st.costCenters));setValue('locations',rowsToText(st.locations));
+    const work=draft.workingConfiguration||{};setCheckedValues('workWeek',work.workWeek||[]);setValue('officeStart',work.officeHours?.start||'09:30');setValue('officeEnd',work.officeHours?.end||'18:30');setValue('workingTimezone',work.timeZone||info.timeZone||'Asia/Kolkata');setValue('shiftStrategy',work.shiftStrategy||'STANDARD');setValue('attendanceMode',work.attendanceMode||'WEB_MOBILE');setValue('weekendRule',work.weekendRules?.rule||'SAT_SUN_OFF');setValue('publicHolidays',holidaysToText(work.publicHolidays));
+    const leave=draft.leaveConfiguration||{};setValue('leaveTypes',leaveTypesToText(leave.leaveTypes));setValue('accrualRule',leave.accrualRules?.frequency||'MONTHLY');setValue('carryForward',String(!!leave.carryForward?.enabled));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovalRules',(leave.approvalRules?.approvers||[]).join('\n'));
+    const pay=draft.payrollConfiguration||{};setValue('payrollFrequency',pay.payrollFrequency||'MONTHLY');setValue('salaryStructure',pay.salaryStructure||'STANDARD');setValue('paymentDay',pay.paymentCycle?.day||30);setValue('salaryComponents',componentsToText(pay.components));setValue('taxConfiguration',pay.taxConfiguration?.summary||'');
+    const ident=draft.identitySecurity||{};setValue('authenticationMethod',ident.authenticationMethod||'LOCAL_AND_SSO');setValue('passwordMinLength',ident.passwordPolicy?.minLength||10);setValue('sessionTimeoutMinutes',ident.sessionTimeoutMinutes||30);setValue('mfa',String(!!ident.mfa));setValue('ssoEnabled',String(!!ident.sso?.enabled));setValue('ssoProvider',ident.sso?.provider||'');
+    const note=draft.notifications||{};setValue('emailEnabled',String(!!note.email?.enabled));setValue('smsEnabled',String(!!note.sms?.enabled));setValue('pushEnabled',String(!!note.pushNotifications?.enabled));setValue('reminderRules',remindersToText(note.reminderRules));
+    const admin=draft.administrator||{};setValue('adminName',admin.name);setValue('adminEmail',admin.email);setValue('adminPhone',admin.phone);setValue('adminRole',admin.role||'super_admin');setValue('adminMfa',String(admin.mfa!==false));
+}
+function show(msg){const e=node('setupError');e.textContent=msg;e.style.display='block';}
+function clear(){node('setupError').style.display='none';}
+function validationText(result){return Object.values(result?.inlineErrors||{}).concat((result?.failures||[]).map(x=>x.message||x.code||x.failureCode)).filter(Boolean).join('\n');}
+function ownerError(){if(enterpriseStep!==6)return'';const owner=authenticatedOwner();if(!owner)return'A validated Platform Owner session is required.';if(!validEmail(owner.email))return'The authenticated Platform Owner email is invalid.';return'';}
+function validateCurrent(){
+    const owner=ownerError();if(owner)return owner;
+    if(enterpriseStep===9){const review=service().generateReviewSummary(collectDraft(),{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});return review.readyToProvision?'':validationText({failures:review.validationErrors})||'Review has unresolved validation errors.';}
+    if(enterpriseStep>=10)return'';
+    const key=keys[enterpriseStep-1];const draft=collectDraft();const result=service().validateStep({stepKey:key,values:draft[key]},{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});
+    return result.valid?'':validationText(result);
+}
+function metrics(id,items){node(id).innerHTML=items.map(x=>`<div class="metric"><b>${html(x.value)}</b><span>${html(x.label)}</span></div>`).join('');}
+function renderReview(){
+    const draft=collectDraft();const review=service().generateReviewSummary(draft,{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});const ready=service().calculateSetupReadiness(draft,{actor:{role:'platform_owner',id:value('ownerEmail')}});
+    metrics('readinessMetrics',[{label:'Readiness',value:(ready.setupReadinessScore||0)+'%'},{label:'Scale Ready',value:(ready.scaleReadinessScore||0)+'%'},{label:'Errors',value:String((review.validationErrors||[]).length)},{label:'Warnings',value:String((review.warnings||[]).length)}]);
+    const rows=(review.configurationSummary||[]).map(x=>[x.label,x.status+' - '+x.errorCount+' errors - '+x.warningCount+' warnings']).concat((review.missingRequiredFields||[]).map(x=>[x.stepKey,x.field+': '+x.message]));
+    node('setupSummary').innerHTML=(rows.length?rows:[['Ready','No validation blockers found.']]).map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
+}
+function renderProvisionPreview(){
+    const draft=collectDraft();
+    metrics('provisionMetrics',[{label:'Tenant',value:slug(draft.organizationInformation.organizationCode)},{label:'Departments',value:String((draft.organizationStructure.departments||[]).length)},{label:'Admin MFA',value:draft.administrator.mfa?'On':'Off'},{label:'Workflow Impact',value:'None'}]);
+    node('provisionSummary').innerHTML=[['Tenant Creation','Creates tenant metadata and routing-safe organization code.'],['Configuration Seeding','Stores working, leave, payroll, identity, notification, and structure setup by tenant.'],['Administrator','Creates invite-pending tenant administrator without changing employee records.'],['Audit','Writes setup, provisioning, and security audit entries.']].map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
+}
+function renderEnterpriseStep(){
+    clear();document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));node('step'+enterpriseStep).classList.add('on');
+    document.querySelectorAll('.step-dot').forEach((d,i)=>{d.classList.toggle('on',i+1===enterpriseStep);d.classList.toggle('done',i+1<enterpriseStep);});
+    node('stepTitle').textContent=titles[enterpriseStep][0];node('stepHelp').textContent=titles[enterpriseStep][1];node('backBtn').style.visibility=enterpriseStep===1?'hidden':'visible';node('nextBtn').textContent=enterpriseStep===10?'Provision Tenant':(enterpriseStep===9?'Continue to Provision':'Next');node('nextBtn').className=enterpriseStep===10?'btn good':'btn';node('setupProgress').style.width=(enterpriseStep*10)+'%';node('draftBadge').textContent=wizardDraftId?'Draft '+wizardDraftId:'Draft not saved';
+    if(enterpriseStep===9)renderReview();if(enterpriseStep===10)renderProvisionPreview();
+}
+window.saveDraft=function(){
+    const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';const draft=collectDraft();const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},{actor:{role:'platform_owner',id:value('ownerEmail')}});
+    if(!result.success){show(validationText(result)||'Draft could not be saved.');return false;}
+    wizardDraftId=result.draft.draftId;sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);node('draftBadge').textContent='Draft saved - '+wizardDraftId;return true;
+};
+window.nextStep=function(){
+    const err=validateCurrent();if(err){show(err);return;}
+    if(enterpriseStep<10){if(!window.saveDraft())return;enterpriseStep++;renderEnterpriseStep();return;}
+    const draft=collectDraft();let setupResult={ok:true,ownerUser:null};
+    if(DB.isSetupRequired&&DB.isSetupRequired()){setupResult=DB.completeInitialSetup({company:{companyName:draft.organizationInformation.companyName,companyEmail:draft.administrator.email,timezone:draft.organizationInformation.timeZone,currency:draft.organizationInformation.currency,logoUrl:draft.organizationInformation.logoUpload.url},platformOwner:authenticatedOwner(),initialUser:{name:draft.administrator.name,email:draft.administrator.email,role:draft.administrator.role}});if(!setupResult.ok){show(setupResult.error||'Initial setup could not be completed.');return;}}
+    const result=service().provisionTenant(draft,{actor:{role:'platform_owner',id:setupResult.ownerUser?.id||value('ownerEmail'),email:value('ownerEmail')}});
+    if(!result.success){show(validationText(result)||'Tenant provisioning could not be completed.');return;}
+    sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');location.href='platform-control.html';
+};
+window.backStep=function(){if(enterpriseStep>1){enterpriseStep--;renderEnterpriseStep();}};
+function syncAuthenticatedOwner(){const owner=authenticatedOwner();if(!owner)return;setValue('ownerName',owner.name||owner.email);setValue('ownerEmail',owner.email);}
+globalThis.addEventListener?.('arthhrms:auth-ready',syncAuthenticatedOwner);
+syncAuthenticatedOwner();
+if(wizardDraftId&&service()?.resumeDraft){const resumed=service().resumeDraft({draftId:wizardDraftId},{actor:{role:'platform_owner',id:'setup-resume'}});if(resumed.success)applyDraft(resumed.draft);syncAuthenticatedOwner();}
+renderEnterpriseStep();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="../services/frontendSecurityService.js"></script>
+<title>Frontend Security Browser Harness</title>
+</head>
+<body>
+<main>
+  <h1>Frontend Security Browser Harness</h1>
+  <p id="status">NOT RUN</p>
+  <div id="target"></div>
+</main>
+<script>
+(function runSecurityHarness() {
+  var status = document.getElementById('status');
+  try {
+    window.__ARTHHRMS_XSS_PROBE__ = 0;
+    var target = document.getElementById('target');
+    target.innerHTML = '<img src="invalid" onerror="window.__ARTHHRMS_XSS_PROBE__=1"><a href="javascript:alert(1)">unsafe</a><script>window.__ARTHHRMS_XSS_PROBE__=2<\/script><span id="safeContent">safe content</span>';
+    var passed = !!window.FrontendSecurityService &&
+      window.__ARTHHRMS_XSS_PROBE__ === 0 &&
+      !target.querySelector('script') &&
+      !target.querySelector('[onerror]') &&
+      !target.querySelector('[href^="javascript:"]') &&
+      !!target.querySelector('#safeContent');
+    status.textContent = passed ? 'PASS' : 'FAIL';
+  } catch (error) {
+    status.textContent = 'FAIL: ' + error.name;
+  }
+})();
+</script>
+</body>
+</html>
