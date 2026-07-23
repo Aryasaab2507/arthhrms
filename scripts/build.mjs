@@ -6,6 +6,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'dist');
 const SUPABASE_JS_VERSION = '2.110.8';
 const runtimeConfigTag = '<script src="/runtime-config.js"></script>';
+const authGuardTag = '<script src="services/authGuard.js"></script>';
+const rbacTag = '<script src="services/rbacEnforcementService.js"></script>';
+const persistenceTag = '<script src="services/supabasePersistenceService.js"></script>';
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
@@ -24,6 +27,15 @@ for (const file of htmlFiles) {
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
     `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${SUPABASE_JS_VERSION}`
   );
+  if (html.includes(authGuardTag)) {
+    const authBoundary = [
+      html.includes('runtime-config.js') ? '' : runtimeConfigTag,
+      html.includes('services/rbacEnforcementService.js') ? '' : rbacTag,
+      html.includes('services/supabasePersistenceService.js') ? '' : persistenceTag,
+      authGuardTag
+    ].filter(Boolean).join('\n');
+    html = html.replace(authGuardTag, authBoundary);
+  }
   if (!html.includes('runtime-config.js')) {
     const supabaseScript = /<script\s+src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@[^\"]+"><\/script>/i;
     html = supabaseScript.test(html)

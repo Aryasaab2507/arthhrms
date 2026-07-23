@@ -93,7 +93,7 @@ begin
     end if;
 
     if has_function_privilege('anon', 'public.arth_persistence_tenant_allowed(text)', 'EXECUTE')
-       or has_function_privilege('anon', 'public.arth_persistence_is_manager_of(text,text)', 'EXECUTE') then
+       or has_function_privilege('anon', 'arth_private.arth_persistence_is_manager_of(text,text)', 'EXECUTE') then
         raise exception 'Anonymous execution remains on authorization helpers.';
     end if;
 end

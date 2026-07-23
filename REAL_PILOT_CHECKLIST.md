@@ -6,7 +6,8 @@ Use this checklist before onboarding the first real company dataset. Pilot rollo
 
 - Set environment to `PILOT` from Platform Control Center.
 - Confirm `DEMO_MODE=false`.
-- Confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` are configured for the pilot project.
+- Record the exact HTTPS application origin as `APP_ORIGIN`; do not use wildcards or preview hosts.
+- Confirm `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are configured for the pilot project.
 - Execute SQL in the documented order from `SUPABASE_EXECUTION_ORDER.md`.
 - Verify core tables before activation: employees, attendance, leave requests, expense claims, payroll, notifications/workflow, import batches, staging tables, auth invitations, platform governance, storage policies, RLS hardening, security tests.
 
@@ -18,11 +19,21 @@ Use this checklist before onboarding the first real company dataset. Pilot rollo
 
 ## 3. Auth And Invite Setup
 
+- Run `npm run pilot:configure -- --env-file <ignored-operator-env> --apply`.
+- Verify Supabase Auth Site URL equals `APP_ORIGIN`.
+- Verify the only production invite callback is `${APP_ORIGIN}/auth-callback.html`.
+- Verify hosted Edge Function `ALLOWED_ORIGINS` equals the exact `APP_ORIGIN`.
+- Run `npm run pilot:onboard-owner -- --env-file <ignored-operator-env> --apply`.
+- Confirm the Platform Owner invitation was accepted and its role is present only in trusted `app_metadata`.
+- Run `npm run pilot:onboard-admin -- --env-file <ignored-operator-env> --apply`.
+- Confirm the first Super Admin has exact `tenant_id` and `organization_id` claims in trusted `app_metadata`.
 - Configure `INVITE_USER_ENDPOINT`.
 - Configure `AUTH_INVITE_REDIRECT_URL` to the deployed `auth-callback.html`.
 - Confirm `USE_SUPABASE_AUTH=true` and `USE_SUPABASE_INVITES=true`.
 - Confirm role and employee authorization uses app metadata, not user-editable metadata.
 - Confirm platform owner and at least one HR/Admin operator are active.
+- Remove `SUPABASE_SERVICE_ROLE_KEY` and onboarding identity variables from the operator shell after onboarding.
+- Retain the generated identity and audit records as release evidence.
 
 ## 4. Employee Master Import Order
 
@@ -69,6 +80,10 @@ Use this checklist before onboarding the first real company dataset. Pilot rollo
 
 ## 9. QA And Monitoring
 
+- Confirm the hosted page is HTTPS and the browser session uses PKCE (`flowType=pkce`) with no tokens in the callback fragment.
+- Run authenticated create/read/update/delete validation for employee, attendance, leave, payroll, report, and document records.
+- Confirm every temporary validation record and validation identity is removed after the run.
+- Confirm a second tenant cannot read or mutate the pilot tenant validation records.
 - Run `qa-validation.html`.
 - Run Enterprise Test Lab small or medium suite.
 - Open `operations-monitoring.html` and run Health Check.

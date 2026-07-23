@@ -76,12 +76,21 @@
             element.src = source;
             element.async = false;
             element.onload = () => { element.dataset.loaded = 'true'; resolve(); };
-            element.onerror = () => reject(new Error('Authentication dependency failed to load.'));
+            element.onerror = () => {
+                let dependency = 'unknown';
+                try { dependency = new URL(source, global.location?.href).pathname; } catch (_error) {}
+                reject(new Error(`Authentication dependency failed to load: ${dependency}`));
+            };
             if (!existing) (global.document.head || global.document.documentElement).appendChild(element);
         });
     }
 
     async function ensureRuntime() {
+        if (!global.ARTHHRMS_CONFIG) {
+            if (!applicationRoot) throw new Error('Application root is unavailable.');
+            await loadScript(new URL('runtime-config.js', applicationRoot).href);
+        }
+        if (!global.ARTHHRMS_CONFIG) throw new Error('Runtime configuration is unavailable.');
         if (!global.supabase) {
             await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
         }

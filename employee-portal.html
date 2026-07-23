@@ -1283,7 +1283,8 @@ async function renderLeave(){
     </div>`;
   }).join('') : '<p style="color:var(--muted);font-size:.82rem">No leave applications yet.</p>';
 }
-let _lvDocData = null; // base64 of attached document
+let _lvDocData = null;
+let _lvDocFile = null;
 
 function handleLvDocDrop(ev){
   ev.preventDefault();
@@ -1297,6 +1298,7 @@ function handleLvDocFile(ev){
 async function loadLvDocFile(file){
   const result=await FrontendSecurityService.readFileAsDataURL(file,'leaveDocument',{maxBytes:5*1024*1024});
   if(!result.success){ toast(result.validation?.errors?.[0]||result.error||'File could not be validated.','warn'); return; }
+  _lvDocFile = file;
   _lvDocData = result.dataUrl;
   document.getElementById('lvDocLabel').textContent = '';
   const prev = document.getElementById('lvDocPreview');
@@ -1306,6 +1308,7 @@ async function loadLvDocFile(file){
 }
 function clearLvDoc(){
   _lvDocData = null;
+  _lvDocFile = null;
   document.getElementById('lvDocInput').value = '';
   document.getElementById('lvDocPreview').style.display = 'none';
   document.getElementById('lvDocLabel').innerHTML = 'Click or drag file here to attach document';
@@ -1330,16 +1333,30 @@ async function applyLeave(){
   if(days > emp.leaveBalance){ toast('Not enough leave balance (' + emp.leaveBalance + ' days left)','warn'); return; }
 
   try{
+    let leaveDocument = _lvDocData || null;
+    if(_lvDocFile && window.storageService?.isStorageEnabled?.()){
+      const bucket = window.storageService.BUCKETS.EMPLOYEE_DOCS;
+      const path = window.storageService.buildPath(ME.id, _lvDocFile.name, 'leave/' + Date.now());
+      const upload = await window.storageService.uploadFile(bucket, path, _lvDocFile);
+      if(!upload?.ok) throw new Error(upload?.error || upload?.errors?.[0] || 'Leave document upload failed');
+      leaveDocument = {
+        storageBucket: bucket,
+        storagePath: upload.path,
+        fileName: _lvDocFile.name,
+        mimeType: _lvDocFile.type,
+        size: _lvDocFile.size
+      };
+    }
     const result = window.leaveService?.applyLeave ? await window.leaveService.applyLeave({
       empId    : ME.id,
       type     : document.getElementById('lvType').value,
       from, to, reason,
-      document : _lvDocData || null,
+      document : leaveDocument,
     }) : DB.applyLeave({
       empId    : ME.id,
       type     : document.getElementById('lvType').value,
       from, to, reason,
-      document : _lvDocData || null,
+      document : leaveDocument,
     });
     if(result?.error) throw new Error(result.error);
   }catch(err){
@@ -1920,7 +1937,7 @@ function docCard(doc, canDelete){
       </div>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0">
-      ${doc.fileData
+      ${doc.fileData || window.storageService?.hasStoredFile?.(doc)
         ? `<button class="btn btn-primary btn-sm" onclick="empDownloadDoc('${doc.id}')">Download</button>`
         : `<span style="font-size:.72rem;color:var(--muted)">No file</span>`}
       ${canDelete
@@ -1931,9 +1948,16 @@ function docCard(doc, canDelete){
   `;
 }
 
-function empDownloadDoc(id){
+async function empDownloadDoc(id){
   const doc = DB.getDocuments().find(d => d.id === id);
-  if(!doc || !doc.fileData){ toast('File not available','warn'); return; }
+  if(!doc){ toast('File not available','warn'); return; }
+  if(window.storageService?.hasStoredFile?.(doc)){
+    const result = await window.storageService.downloadFile(doc.storageBucket, doc.storagePath, doc.fileName||doc.name);
+    if(!result?.ok){ toast(result?.error || result?.reason || 'File download failed','warn'); return; }
+    toast('Downloading: ' + doc.name);
+    return;
+  }
+  if(!doc.fileData){ toast('File not available','warn'); return; }
   if(!FrontendSecurityService.downloadDataUrl(doc.fileData,doc.fileName||doc.name)){
     toast('Unsafe or invalid document download was blocked.','warn');
     return;
@@ -1941,15 +1965,20 @@ function empDownloadDoc(id){
   toast('Downloading: ' + doc.name);
 }
 
-function deleteMyDoc(id){
+async function deleteMyDoc(id){
   if(!confirm('Delete this document? This cannot be undone.')) return;
+  const doc = DB.getDocuments().find(d => d.id === id);
+  if(window.storageService?.hasStoredFile?.(doc)){
+    const result = await window.storageService.removeFile(doc.storageBucket, doc.storagePath);
+    if(!result?.ok){ toast(result?.error || 'File deletion failed','warn'); return; }
+  }
   DB.deleteDocument(id);
   toast('Document deleted');
   renderMyUploadedDocs();
 }
 
 // ── Upload form logic ──────────────────────────────────────────────
-let _myDocData = null, _myDocFileName = '', _myDocMime = '', _myDocSize = '';
+let _myDocData = null, _myDocFile = null, _myDocFileName = '', _myDocMime = '', _myDocSize = '';
 
 function toggleEmpDocForm(){
   const form = document.getElementById('empDocUploadForm');
@@ -1973,6 +2002,7 @@ async function loadMyDocFile(file){
   _myDocFileName = result.validation.fileName;
   _myDocMime     = result.validation.mimeType || 'application/octet-stream';
   _myDocSize     = (file.size/1024).toFixed(1) + ' KB';
+  _myDocFile = file;
   _myDocData = result.dataUrl;
   document.getElementById('myDocZoneLabel').textContent = '';
   const prev = document.getElementById('myDocPreview');
@@ -1981,7 +2011,7 @@ async function loadMyDocFile(file){
   document.getElementById('myDocZone').style.borderColor = 'var(--g)';
 }
 function clearMyDoc(){
-  _myDocData = null; _myDocFileName = ''; _myDocMime = ''; _myDocSize = '';
+  _myDocData = null; _myDocFile = null; _myDocFileName = ''; _myDocMime = ''; _myDocSize = '';
   document.getElementById('myDocInput').value = '';
   document.getElementById('myDocPreview').style.display = 'none';
   document.getElementById('myDocZoneLabel').textContent = 'Click or drag file here';
@@ -1993,7 +2023,7 @@ function resetMyDocForm(){
   document.getElementById('myDocType').value = 'id_proof';
   clearMyDoc();
 }
-function submitMyDoc(){
+async function submitMyDoc(){
   if(!ME){ toast('Not logged in','warn'); return; }
   const name = document.getElementById('myDocName').value.trim();
   const type = document.getElementById('myDocType').value;
@@ -2001,11 +2031,20 @@ function submitMyDoc(){
   if(!name)     { toast('Document name is required','warn'); return; }
   if(!_myDocData){ toast('Please select a file to upload','warn'); return; }
 
+  let storedFile = null;
+  if(window.storageService?.isStorageEnabled?.()){
+    const bucket = window.storageService.BUCKETS.EMPLOYEE_DOCS;
+    const path = window.storageService.buildPath(ME.id, _myDocFileName, 'documents/' + Date.now());
+    const upload = await window.storageService.uploadFile(bucket, path, _myDocFile);
+    if(!upload?.ok){ toast(upload?.error || upload?.errors?.[0] || 'Document upload failed','warn'); return; }
+    storedFile = { storageBucket: bucket, storagePath: upload.path };
+  }
+
   DB.addDocument({
     name,
     type,
     description : desc,
-    fileData    : _myDocData,
+    fileData    : storedFile ? null : _myDocData,
     fileName    : _myDocFileName,
     mimeType    : _myDocMime,
     size        : _myDocSize,
@@ -2013,6 +2052,7 @@ function submitMyDoc(){
     assignedTo  : ME.id,
     assignedToAll: false,
     source      : 'employee',   // marks as employee-uploaded
+    ...(storedFile || {}),
   });
 
   toast('Document saved: ' + name);

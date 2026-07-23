@@ -111,6 +111,46 @@
         return { ok: true, url: result.data?.signedUrl || '' };
     }
 
+    async function downloadFile(bucket, path, fileName, expiresIn = 60) {
+        const signed = await createSignedUrl(bucket, path, expiresIn);
+        if (!signed.ok || !signed.url) return signed;
+        if (!global.document?.createElement) return signed;
+
+        const anchor = global.document.createElement('a');
+        const safeAttribute = global.FrontendSecurityService?.setSafeAttribute;
+        const safeUrl = safeAttribute
+            ? safeAttribute(anchor, 'href', signed.url)
+            : /^https:\/\//i.test(signed.url) && (anchor.href = signed.url);
+        if (!safeUrl) return { ok: false, error: 'Unsafe download URL was blocked.' };
+
+        anchor.download = safeFileName(fileName);
+        anchor.rel = 'noopener noreferrer';
+        anchor.style.display = 'none';
+        global.document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        return signed;
+    }
+
+    async function removeFile(bucket, path) {
+        const scopedPath = tenantScopedPath(path);
+        requireStorageAccess('delete', scopedPath);
+        if (!isStorageEnabled()) return { ok: true, mode: 'local-placeholder', bucket, path: scopedPath };
+        const operation = client().storage.from(bucket).remove([scopedPath]);
+        const result = await global.errorService?.safeAsync?.(operation, {
+            label: 'Storage delete',
+            module: 'storage',
+            action: 'removeFile',
+            message: 'File deletion failed. Please retry.'
+        }) || await operation;
+        if (result?.error) return { ok: false, error: result.error.message || String(result.error) };
+        return { ok: true, bucket, path: scopedPath, data: result.data };
+    }
+
+    function hasStoredFile(record) {
+        return !!(record?.storageBucket && record?.storagePath);
+    }
+
     function getStoragePlan() {
         return Object.entries(BUCKETS).map(([key, bucket]) => ({
             key,
@@ -130,6 +170,9 @@
         validateFile,
         uploadFile,
         createSignedUrl,
+        downloadFile,
+        removeFile,
+        hasStoredFile,
         getStoragePlan
     };
 })(typeof window !== 'undefined' ? window : globalThis);

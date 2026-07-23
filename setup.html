@@ -221,7 +221,8 @@ PROFILE_COMPLETION,48</textarea></div>
         </div>
     </main>
 </div>
-<script>
+<script type="application/x-arthhrms-retired">
+/* Retained only for source-history compatibility. The enterprise wizard below is authoritative. */
 let step=1;
 const titles={
     1:['Company Details','Start with the organization identity. You can refine branding later from Platform Control Center.'],
@@ -376,6 +377,7 @@ const titles={
 10:['Provision Tenant','Create tenant metadata, seed configuration, administrator invite, and audit records.']
 };
 function node(id){return document.getElementById(id);}
+function authenticatedOwner(){const u=window.authService?.getCurrentUser?.();return u?.source==='supabase'&&u?.role==='platform_owner'&&u?.roleTrusted?u:null;}
 function value(id){const n=node(id);return n?String(n.value||'').trim():'';}
 function setValue(id,next){const n=node(id);if(n)n.value=next??'';}
 function boolValue(id){return value(id)==='true';}

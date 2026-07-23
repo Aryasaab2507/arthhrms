@@ -1,9 +1,26 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { loadEnvFile } from 'node:process';
+import { parseArgs } from 'node:util';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const output = path.resolve(root, process.argv[2] || 'dist/runtime-config.js');
+const { values, positionals } = parseArgs({
+  args: process.argv.slice(2),
+  allowPositionals: true,
+  options: {
+    mode: { type: 'string', default: 'production' },
+    'env-file': { type: 'string' }
+  }
+});
+const mode = String(values.mode || 'production').trim().toLowerCase();
+if (!['local', 'production'].includes(mode)) {
+  throw new Error('Runtime config mode must be local or production.');
+}
+if (values['env-file']) {
+  loadEnvFile(path.resolve(root, values['env-file']));
+}
+const output = path.resolve(root, positionals[0] || (mode === 'local' ? 'runtime-config.js' : 'dist/runtime-config.js'));
 const env = process.env;
 
 function boolean(name, fallback = false) {
@@ -23,7 +40,6 @@ function required(name) {
 const appEnvironment = String(env.APP_ENV || 'production').trim().toLowerCase();
 const publicKey = String(env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim();
 const supabaseUrl = required('SUPABASE_URL');
-if (appEnvironment !== 'production') throw new Error('APP_ENV must be production for a production runtime config.');
 if (!/^https:\/\//i.test(supabaseUrl)) throw new Error('SUPABASE_URL must use HTTPS.');
 if (!publicKey) throw new Error('SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY is required.');
 if (publicKey === String(env.SUPABASE_SERVICE_ROLE_KEY || '').trim()) {
@@ -48,16 +64,26 @@ const productionFlags = {
   DEVELOPMENT_MODE: boolean('DEVELOPMENT_MODE'),
   DEMO_MODE: boolean('DEMO_MODE')
 };
-if (!productionFlags.PRODUCTION_MODE || productionFlags.PILOT_MODE || productionFlags.DEVELOPMENT_MODE || productionFlags.DEMO_MODE) {
-  throw new Error('Production mode must be enabled and pilot, development, and demo modes must be disabled.');
-}
-if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE || !flags.USE_SUPABASE_INVITES) {
-  throw new Error('Supabase auth, persistence, storage, and invites must be enabled in production.');
+if (mode === 'production') {
+  if (appEnvironment !== 'production') throw new Error('APP_ENV must be production for a production runtime config.');
+  if (!productionFlags.PRODUCTION_MODE || productionFlags.PILOT_MODE || productionFlags.DEVELOPMENT_MODE || productionFlags.DEMO_MODE) {
+    throw new Error('Production mode must be enabled and pilot, development, and demo modes must be disabled.');
+  }
+  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE || !flags.USE_SUPABASE_INVITES) {
+    throw new Error('Supabase auth, persistence, storage, and invites must be enabled in production.');
+  }
+} else {
+  if (productionFlags.PRODUCTION_MODE) throw new Error('Local runtime config cannot enable production mode.');
+  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE) {
+    throw new Error('Supabase auth, persistence, and storage must be enabled for local application integration.');
+  }
 }
 for (const legacyFlag of ['USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE', 'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_IMPORTS']) {
   if (flags[legacyFlag]) throw new Error(`${legacyFlag} must remain disabled when canonical persistence is enabled.`);
 }
 
+const inviteUserEndpoint = flags.USE_SUPABASE_INVITES ? required('INVITE_USER_ENDPOINT') : '';
+const authInviteRedirectUrl = flags.USE_SUPABASE_INVITES ? required('AUTH_INVITE_REDIRECT_URL') : '';
 const config = {
   APP_ENV: appEnvironment,
   ...productionFlags,
@@ -65,8 +91,8 @@ const config = {
   SUPABASE_ANON_KEY: publicKey,
   SUPABASE_PUBLISHABLE_KEY: publicKey,
   SUPABASE_TIMEOUT_MS: Number(env.SUPABASE_TIMEOUT_MS || 10000),
-  INVITE_USER_ENDPOINT: required('INVITE_USER_ENDPOINT'),
-  AUTH_INVITE_REDIRECT_URL: required('AUTH_INVITE_REDIRECT_URL'),
+  INVITE_USER_ENDPOINT: inviteUserEndpoint,
+  AUTH_INVITE_REDIRECT_URL: authInviteRedirectUrl,
   REQUIRE_APP_METADATA_ROLE: boolean('REQUIRE_APP_METADATA_ROLE', true),
   REQUIRE_EMAIL_VERIFIED: boolean('REQUIRE_EMAIL_VERIFIED', true),
   flags
@@ -78,4 +104,4 @@ if (!Number.isFinite(config.SUPABASE_TIMEOUT_MS) || config.SUPABASE_TIMEOUT_MS <
 const serialized = JSON.stringify(config, null, 2).replaceAll('<', '\\u003c');
 await mkdir(path.dirname(output), { recursive: true });
 await writeFile(output, `window.ARTHHRMS_CONFIG = Object.freeze(${serialized});\n`, { encoding: 'utf8', mode: 0o600 });
-console.log(`Production runtime config written to ${path.relative(root, output)} without server secrets.`);
+console.log(`${mode === 'production' ? 'Production' : 'Local'} runtime config written to ${path.relative(root, output)} without server secrets.`);

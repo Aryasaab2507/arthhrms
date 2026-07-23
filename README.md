@@ -161,13 +161,19 @@ Replace every placeholder locally. Do not commit populated environment files, se
 
 ### Run Locally
 
+Generate the ignored browser runtime configuration from `.env.local`:
+
+```bash
+npm run config:local
+```
+
 Serve the repository root for local development:
 
 ```bash
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000/ArthHRMS.html`. Protected pages require a valid Supabase Auth session and configured runtime values.
+Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a different local port, run the static server on that port or update the ignored local value and the Edge Function origin allowlist together. Protected pages require a valid Supabase Auth session and configured runtime values.
 
 ## Environment Variables
 
@@ -247,7 +253,7 @@ Run the complete automated suite:
 npm test
 ```
 
-At the time this README was prepared, the automated runner contained **165 tests**, covering domain services, authentication hardening, RBAC, tenant isolation, persistence behavior, governance, imports, analytics, and deployment controls.
+At the time this README was prepared, the automated runner contained **167 tests**, covering domain services, authentication hardening, RBAC, tenant isolation, persistence behavior, governance, imports, analytics, and deployment controls.
 
 Run the deterministic build and deployment verifier:
 

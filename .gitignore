@@ -13,6 +13,7 @@ out/
 .env
 .env.*
 !.env.example
+/runtime-config.js
 
 # Logs and runtime output
 logs/

@@ -146,6 +146,12 @@ async function main() {
   legacy.assets = [{ id: 'AST-1', empId: 'EMP-1', name: 'Laptop' }];
   legacy.notifications = [{ id: 'NOT-1', to: 'EMP-1', title: 'Welcome' }];
   legacy.customReports = [{ id: 'REP-1', name: 'Headcount' }];
+  legacy.attendancePolicyDefinitions = [{ id: 'AP-1', policyCode: 'STANDARD' }];
+  legacy.leavePolicyDefinitions = [{ id: 'LP-1', policyCode: 'ANNUAL' }];
+  legacy.payrollConfigurations = [{ id: 'PC-1', payrollCode: 'MONTHLY' }];
+  legacy.companyProfileConfigurations = {
+    'tenant-a': { tenantSlug: 'tenant-a', companyProfile: { companyName: 'Tenant A' } }
+  };
   global.localStorage.setItem('arthhrms_db', JSON.stringify(legacy));
 
   require(path.join(root, 'services', 'supabasePersistenceService.js'));
@@ -162,14 +168,47 @@ async function main() {
 
   const requiredDomains = [
     'employees', 'attendance', 'leave', 'payroll', 'departments', 'designations', 'recruitment',
-    'training', 'performance', 'documents', 'assets', 'notifications', 'reports', 'settings'
+    'training', 'performance', 'documents', 'assets', 'notifications', 'reports', 'settings', 'company'
   ];
   const domains = new Set(service.ENTITY_DEFINITIONS.map(definition => definition.domain));
   requiredDomains.forEach(domain => assert.ok(domains.has(domain), `${domain} persistence mapping is required`));
 
+  const declaredServiceStores = new Set();
+  fs.readdirSync(path.join(root, 'services')).filter(name => name.endsWith('.js')).forEach(name => {
+    const source = fs.readFileSync(path.join(root, 'services', name), 'utf8');
+    for (const match of source.matchAll(/(?:var|const)\s+[A-Z0-9_]*(?:TABLE|STORE)[A-Z0-9_]*\s*=\s*'([^']+)'/g)) {
+      declaredServiceStores.add(match[1]);
+    }
+  });
+  const mappedStateKeys = new Set(service.ENTITY_DEFINITIONS.map(definition => definition.stateKey));
+  declaredServiceStores.forEach(stateKey => {
+    assert.ok(mappedStateKeys.has(stateKey), `${stateKey} service store must have a Supabase projection`);
+  });
+
   service.ENTITY_DEFINITIONS.forEach(definition => {
     const rows = database.get(definition.table) || [];
     rows.forEach(row => assert.equal(row.tenant_id, 'tenant-a', `${definition.table} row crossed tenant scope`));
+  });
+
+  const requiredProjectionTargets = {
+    employees: 'hrms_employees',
+    attendance: 'hrms_attendance',
+    attendancePolicyDefinitions: 'hrms_settings',
+    leaveRequests: 'hrms_leave_requests',
+    leavePolicyDefinitions: 'hrms_settings',
+    payroll: 'hrms_payroll_records',
+    payrollConfigurations: 'hrms_payroll_records',
+    customReports: 'hrms_reports',
+    documents: 'hrms_documents',
+    companyProfileConfigurations: 'hrms_settings'
+  };
+  Object.entries(requiredProjectionTargets).forEach(([stateKey, table]) => {
+    const definition = service.ENTITY_DEFINITIONS.find(row => row.stateKey === stateKey);
+    assert.equal(definition?.table, table, `${stateKey} must use ${table}`);
+    assert.ok(
+      (database.get(table) || []).some(row => row.record_type === stateKey),
+      `${stateKey} must be written to ${table}`
+    );
   });
 
   const next = global.DB.get();

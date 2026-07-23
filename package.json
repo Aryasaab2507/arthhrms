@@ -5,7 +5,11 @@
   "description": "Enterprise HRMS static frontend with authenticated Supabase persistence",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "config:local": "node scripts/generate-runtime-config.mjs runtime-config.js --mode=local --env-file=.env.local",
     "config:production": "node scripts/generate-runtime-config.mjs",
+    "pilot:configure": "node scripts/configure-pilot.mjs",
+    "pilot:onboard-owner": "node scripts/pilot-onboarding.mjs --role platform_owner",
+    "pilot:onboard-admin": "node scripts/pilot-onboarding.mjs --role super_admin",
     "test": "node scripts/run-tests.mjs",
     "verify:deployment": "node scripts/verify-deployment.mjs",
     "ci": "npm run test && npm run build && npm run verify:deployment"

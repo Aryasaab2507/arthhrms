@@ -12,6 +12,7 @@ const requiredFiles = [
   'README.md', 'LICENSE', '_headers', 'deploy/nginx.conf',
   '.github/workflows/ci.yml', '.github/workflows/release.yml',
   'context/DEPLOYMENT_CHECKLIST.md', 'context/ROLLBACK_RUNBOOK.md',
+  'scripts/configure-pilot.mjs', 'scripts/pilot-onboarding.mjs',
   'supabase/functions/invite-user/deno.lock',
   'dist/health.json', 'dist/runtime-config.js'
 ];
@@ -28,13 +29,48 @@ for (const page of sourcePages) {
   check(built.includes('/runtime-config.js'), `${page} build lacks runtime configuration injection.`);
   check(!built.includes('@supabase/supabase-js@2"'), `${page} build contains an unpinned Supabase client.`);
   check(built.indexOf('/runtime-config.js') < built.indexOf('@supabase/supabase-js@'), `${page} loads Supabase before runtime configuration.`);
+  if (!publicPages.has(page)) {
+    check(built.includes('services/rbacEnforcementService.js'), `${page} build lacks the RBAC enforcement boundary.`);
+    check(built.includes('services/supabasePersistenceService.js'), `${page} build lacks authenticated persistence.`);
+    check(built.indexOf('/runtime-config.js') < built.indexOf('services/authGuard.js'), `${page} runs its guard before runtime configuration.`);
+    check(built.indexOf('services/rbacEnforcementService.js') < built.indexOf('services/authGuard.js'), `${page} runs its guard before RBAC is available.`);
+    check(built.indexOf('services/supabasePersistenceService.js') < built.indexOf('services/authGuard.js'), `${page} runs its guard before persistence is available.`);
+  }
 }
 
 const migrations = (await readdir(path.join(root, 'supabase', 'migrations'))).filter((name) => name.endsWith('.sql')).sort();
-check(migrations.length === 2, 'Exactly two canonical Supabase migrations are required.');
-if (migrations.length === 2) {
-  check(await read(path.join('supabase', 'migrations', migrations[0])) === await read('context/sql/authenticated_business_persistence.sql'), 'Persistence migration differs from its reviewed canonical SQL.');
-  check(await read(path.join('supabase', 'migrations', migrations[1])) === await read('context/sql/storage_policies.sql'), 'Storage migration differs from its reviewed canonical SQL.');
+const persistenceMigration = migrations.find(name => name.endsWith('_authenticated_business_persistence.sql'));
+const storageMigration = migrations.find(name => name.endsWith('_storage_policies.sql'));
+const integrationMigration = migrations.find(name => name.endsWith('_harden_application_integration.sql'));
+const documentStorageMigration = migrations.find(name => name.endsWith('_integrate_document_storage.sql'));
+const employeeDocumentDeleteMigration = migrations.find(name => name.endsWith('_allow_employee_document_delete.sql'));
+check(!!persistenceMigration, 'Canonical persistence migration is missing.');
+check(!!storageMigration, 'Canonical Storage migration is missing.');
+check(!!integrationMigration, 'Application integration hardening migration is missing.');
+check(!!documentStorageMigration, 'Document Storage integration migration is missing.');
+check(!!employeeDocumentDeleteMigration, 'Employee document delete policy migration is missing.');
+if (persistenceMigration) {
+  check(await read(path.join('supabase', 'migrations', persistenceMigration)) === await read('context/sql/authenticated_business_persistence.sql'), 'Persistence migration differs from its reviewed canonical SQL.');
+}
+if (storageMigration) {
+  check(await read(path.join('supabase', 'migrations', storageMigration)) === await read('context/sql/storage_policies.sql'), 'Storage migration differs from its reviewed canonical SQL.');
+}
+if (integrationMigration) {
+  const integrationSql = await read(path.join('supabase', 'migrations', integrationMigration));
+  check(/set schema arth_private/i.test(integrationSql), 'Manager RLS helper remains in the exposed public schema.');
+  check(/revoke all on function public\.rls_auto_enable\(\) from public, anon, authenticated/i.test(integrationSql), 'RLS event trigger function remains client executable.');
+  check(/allowed_mime_types/i.test(integrationSql) && /file_size_limit/i.test(integrationSql), 'Storage boundary limits are missing.');
+}
+if (documentStorageMigration) {
+  const documentStorageSql = await read(path.join('supabase', 'migrations', documentStorageMigration));
+  check(/foldername\(name\)\)\[2\]\s*=\s*'shared'/i.test(documentStorageSql), 'Shared employee document access is not tenant-scoped in the migration.');
+  check(/arth_storage_is_own_path\(name\)/i.test(documentStorageSql), 'Employee-owned document access is missing from the migration.');
+}
+if (employeeDocumentDeleteMigration) {
+  const deleteSql = await read(path.join('supabase', 'migrations', employeeDocumentDeleteMigration));
+  check(/hrms_documents_self_delete/i.test(deleteSql), 'Employee document metadata delete policy is missing.');
+  check(/subject_id\s*=\s*public\.arth_persistence_emp_id\(\)/i.test(deleteSql), 'Employee document delete is not restricted to the authenticated subject.');
+  check(/payload\s*->>\s*'source'[\s\S]*'employee'/i.test(deleteSql), 'Employee document delete is not restricted to employee uploads.');
 }
 
 const persistenceSql = await read('context/sql/authenticated_business_persistence.sql');
@@ -68,6 +104,8 @@ for (const [name, workflow] of [['CI', ciWorkflow], ['release', releaseWorkflow]
   check(workflow.includes('deno check --frozen') && workflow.includes('deno lint'), `${name} workflow must validate locked Supabase Edge Functions.`);
 }
 check(releaseWorkflow.includes('environment: production'), 'Release workflow lacks the protected production environment.');
+check(releaseWorkflow.includes('vars.PRODUCTION_APP_ORIGIN'), 'Release workflow lacks the protected hosted application origin.');
+check(releaseWorkflow.includes('node scripts/configure-pilot.mjs --apply'), 'Release workflow does not configure hosted Auth and CORS.');
 check(releaseWorkflow.indexOf('Build immutable release image') < releaseWorkflow.indexOf('Apply database migrations'), 'Release image must build before production migrations are applied.');
 check(releaseWorkflow.indexOf('Apply database migrations') < releaseWorkflow.indexOf('Publish immutable release image'), 'Migration and image publication order is invalid.');
 check(releaseWorkflow.includes('RepoDigests'), 'Release workflow must record the published image digest.');
@@ -91,6 +129,15 @@ for (const expected of [
   check(productionEnv.includes(expected), `Production environment template lacks ${expected}.`);
 }
 check(!productionEnv.includes('SUPABASE_SERVICE_ROLE_KEY='), 'Browser-safe production environment template exposes a service-role variable.');
+
+const pilotOnboarding = await read('scripts/pilot-onboarding.mjs');
+check(pilotOnboarding.includes('/auth/v1/invite'), 'Privileged onboarding must use invitation-based account creation.');
+check(!/password\s*:/i.test(pilotOnboarding), 'Privileged onboarding must not create bootstrap passwords.');
+check(pilotOnboarding.includes('app_metadata'), 'Privileged onboarding must write trusted app metadata.');
+check(pilotOnboarding.includes('compensating rollback'), 'Privileged onboarding lacks partial-failure rollback.');
+const hostedConfig = await read('scripts/configure-pilot.mjs');
+check(hostedConfig.includes('site_url') && hostedConfig.includes('uri_allow_list'), 'Hosted Auth callback configuration is incomplete.');
+check(hostedConfig.includes('ALLOWED_ORIGINS='), 'Hosted Edge Function origin configuration is incomplete.');
 
 const services = await readdir(path.join(root, 'services'));
 for (const service of services.filter((name) => name.endsWith('.js'))) {

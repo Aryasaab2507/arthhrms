@@ -1548,6 +1548,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   const attDateEl = document.getElementById('attDate');
   if(attDateEl) attDateEl.value=today();
 });
+window.addEventListener('arthhrms:persistence-ready',()=>{
+  const activeSection = document.querySelector('.section.on')?.id?.replace(/^sec-/, '') || 'dashboard';
+  renderSection(activeSection);
+  refreshHRBell();
+});
 
 // ─── NAV ──────────────────────────────────────────────
 function show(id, el){
@@ -4166,7 +4171,8 @@ function deleteCR(id){
 // ══════════════════════════════════════════════════════
 //  DOCUMENT MANAGEMENT MODULE
 // ══════════════════════════════════════════════════════
-let _docFileData = null;   // base64 string
+let _docFileData = null;
+let _docFile = null;
 let _docFileName = '';
 let _docMimeType = '';
 let _docFileSize = '';
@@ -4195,6 +4201,7 @@ async function loadDocFile(file){
   _docMimeType=result.validation.mimeType||'application/octet-stream';
   _docFileName=result.validation.fileName;
   _docFileSize=formatBytes(file.size);
+  _docFile=file;
   _docFileData=result.dataUrl;
   const label=document.getElementById('docFileLabel');
   label.textContent=_docFileName+' ('+_docFileSize+')';
@@ -4202,7 +4209,7 @@ async function loadDocFile(file){
   label.style.fontWeight='700';
 }
 
-function uploadDocument(){
+async function uploadDocument(){
   const name=document.getElementById('docName').value.trim();
   const type=document.getElementById('docType').value;
   const assignVal=document.getElementById('docAssign').value;
@@ -4211,14 +4218,26 @@ function uploadDocument(){
   if(!_docFileData){ toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Please upload a file first','warn'); return; }
   const assignedToAll=(assignVal==='ALL');
   const assignedTo=assignedToAll?'ALL':document.getElementById('docEmpId')?.value||'ALL';
+  const actor=window.authService?.getCurrentUser?.();
+  const uploadedBy=actor?.empId||actor?.employeeId||actor?.id;
+  if(!uploadedBy){ toast('A valid authenticated session is required','warn'); return; }
+  let storedFile=null;
+  if(window.storageService?.isStorageEnabled?.()){
+    const bucket=window.storageService.BUCKETS.EMPLOYEE_DOCS;
+    const path=window.storageService.buildPath(assignedToAll?'shared':assignedTo,_docFileName,'documents/'+Date.now());
+    const upload=await window.storageService.uploadFile(bucket,path,_docFile);
+    if(!upload?.ok){ toast(upload?.error||upload?.errors?.[0]||'Document upload failed','warn'); return; }
+    storedFile={storageBucket:bucket,storagePath:upload.path};
+  }
   const doc={
     name, type, description:desc,
-    fileData:_docFileData,
+    fileData:storedFile?null:_docFileData,
     fileName:_docFileName,
     mimeType:_docMimeType,
     size:_docFileSize,
-    uploadedBy:'HR001',
-    assignedTo, assignedToAll
+    uploadedBy,
+    assignedTo, assignedToAll,
+    ...(storedFile||{})
   };
   DB.addDocument(doc);
   toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Document uploaded: '+name);
@@ -4227,7 +4246,7 @@ function uploadDocument(){
   document.getElementById('docDesc').value='';
   document.getElementById('docFileLabel').innerHTML='<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Drop file here or click to browse · PDF, PNG, JPG, DOC';
   document.getElementById('docFileInput').value='';
-  _docFileData=null; _docFileName=''; _docMimeType=''; _docFileSize='';
+  _docFileData=null; _docFile=null; _docFileName=''; _docMimeType=''; _docFileSize='';
   renderDocuments();
 }
 
@@ -4272,16 +4291,23 @@ function renderDocuments(){
         <div style="margin-top:5px">${assignLabel}</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        ${doc.fileData?`<button class="btn btn-ghost btn-sm" onclick="downloadDoc('${doc.id}')"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Download</button>`:''}
+        ${doc.fileData||window.storageService?.hasStoredFile?.(doc)?`<button class="btn btn-ghost btn-sm" onclick="downloadDoc('${doc.id}')"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Download</button>`:''}
         <button class="btn btn-sm" style="background:var(--rl);color:var(--r);border:none" onclick="deleteDoc('${doc.id}')"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>
       </div>
     </div>`;
   }).join('');
 }
 
-function downloadDoc(id){
+async function downloadDoc(id){
   const doc=DB.getDocuments().find(d=>d.id===id);
-  if(!doc||!doc.fileData){ toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> File not available','warn'); return; }
+  if(!doc){ toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> File not available','warn'); return; }
+  if(window.storageService?.hasStoredFile?.(doc)){
+    const result=await window.storageService.downloadFile(doc.storageBucket,doc.storagePath,doc.fileName||doc.name);
+    if(!result?.ok){ toast(result?.error||result?.reason||'File download failed','warn'); return; }
+    toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading: '+doc.name);
+    return;
+  }
+  if(!doc.fileData){ toast('File not available','warn'); return; }
   if(!FrontendSecurityService.downloadDataUrl(doc.fileData,doc.fileName||doc.name)){
     toast('Unsafe or invalid document download was blocked.','warn');
     return;
@@ -4289,9 +4315,13 @@ function downloadDoc(id){
   toast('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"/></svg> Downloading: '+doc.name);
 }
 
-function deleteDoc(id){
+async function deleteDoc(id){
   const doc=DB.getDocuments().find(d=>d.id===id);
   if(!doc||!confirm('Delete document "'+doc.name+'"?')) return;
+  if(window.storageService?.hasStoredFile?.(doc)){
+    const result=await window.storageService.removeFile(doc.storageBucket,doc.storagePath);
+    if(!result?.ok){ toast(result?.error||'File deletion failed','warn'); return; }
+  }
   DB.deleteDocument(id);
   toast('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg> Document deleted');
   renderDocuments();

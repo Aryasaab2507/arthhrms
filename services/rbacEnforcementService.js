@@ -20,7 +20,7 @@
         leave: Object.freeze({ admin: ['read'], hr: ['read', 'create', 'update', 'delete', 'import', 'export', 'approve'], hr_head: ['read', 'create', 'update', 'delete', 'import', 'export', 'approve'], director: ['read'], manager: ['read', 'approve'], employee: ['read', 'create', 'update'] }),
         payroll: Object.freeze({ hr: ['read', 'create', 'update', 'delete', 'import', 'export', 'approve'], hr_head: ['read', 'create', 'update', 'delete', 'import', 'export', 'approve'], director: ['read', 'approve'], employee: ['read'] }),
         expenses: Object.freeze({ hr: ['read', 'update', 'export', 'approve'], hr_head: ['read', 'update', 'export', 'approve'], director: ['read', 'approve'], manager: ['read', 'approve'], employee: ['read', 'create', 'update'] }),
-        documents: Object.freeze({ admin: ['read'], hr: ['read', 'create', 'update', 'delete', 'export'], hr_head: ['read', 'create', 'update', 'delete', 'export'], manager: ['read'], employee: ['read', 'create', 'update'] }),
+        documents: Object.freeze({ admin: ['read'], hr: ['read', 'create', 'update', 'delete', 'export'], hr_head: ['read', 'create', 'update', 'delete', 'export'], manager: ['read'], employee: ['read', 'create', 'update', 'delete'] }),
         imports: Object.freeze({ admin: ['read', 'create', 'update', 'execute'], hr: ['read', 'create', 'update', 'execute'], hr_head: ['read', 'create', 'update', 'execute'] }),
         reports: Object.freeze({ hr: ['read', 'create', 'export'], hr_head: ['read', 'create', 'export'], director: ['read', 'export'], manager: ['read', 'export'], employee: ['read'] }),
         governance_reports: Object.freeze({ super_admin: ['read', 'export'], admin: ['read'], hr_head: ['read'], director: ['read'] }),
@@ -32,7 +32,7 @@
         developer_api: Object.freeze({ super_admin: ['read', 'create', 'update', 'delete', 'manage'], admin: ['read', 'create', 'update', 'delete', 'manage'], hr_head: ['read'], director: ['read'] }),
         audit: Object.freeze({ super_admin: ['read', 'export'], admin: ['read'], hr: ['read'], hr_head: ['read', 'export'], director: ['read'] }),
         backups: Object.freeze({ super_admin: ['read', 'create', 'execute', 'export', 'manage'], admin: ['read'] }),
-        storage: Object.freeze({ admin: ['read'], hr: ['read', 'create', 'update', 'delete'], hr_head: ['read', 'create', 'update', 'delete'], manager: ['read'], employee: ['read', 'create', 'update'] })
+        storage: Object.freeze({ admin: ['read'], hr: ['read', 'create', 'update', 'delete'], hr_head: ['read', 'create', 'update', 'delete'], manager: ['read'], employee: ['read', 'create', 'update', 'delete'] })
     });
 
     class AuthorizationError extends Error {
