@@ -9,7 +9,7 @@ const read = (file) => readFile(path.join(root, file), 'utf8');
 
 const requiredFiles = [
   'package.json', 'package-lock.json', 'Dockerfile', '.dockerignore', '.gitignore',
-  'README.md', 'LICENSE', '_headers', 'deploy/nginx.conf',
+  'README.md', 'LICENSE', '_headers', 'vercel.json', 'deploy/nginx.conf',
   '.github/workflows/ci.yml', '.github/workflows/release.yml',
   'context/DEPLOYMENT_CHECKLIST.md', 'context/ROLLBACK_RUNBOOK.md',
   'scripts/configure-pilot.mjs', 'scripts/pilot-onboarding.mjs',
@@ -21,7 +21,7 @@ for (const file of requiredFiles) {
 }
 
 const sourcePages = (await readdir(root)).filter((name) => name.endsWith('.html')).sort();
-const publicPages = new Set(['ArthHRMS.html', 'auth-callback.html', '403.html']);
+const publicPages = new Set(['ArthHRMS.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
 for (const page of sourcePages) {
   const source = await read(page);
   const built = await read(path.join('dist', page));
@@ -80,6 +80,15 @@ check(/revoke all on public\.%I from anon/i.test(persistenceSql), 'Canonical per
 
 const runtimeConfig = await read('dist/runtime-config.js');
 check(!runtimeConfig.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Built runtime config references the service role key.');
+const authServiceSource = await read('services/authService.js');
+const recoveryPage = await read('password-recovery.html');
+const companyLoginPage = await read('ArthHRMS.html');
+check(authServiceSource.includes('resetPasswordForEmail'), 'Auth service lacks the Supabase password recovery request API.');
+const disabledRecoveryPlaceholder = ['Password recovery is unavailable.', 'Contact your administrator.'].join(' ');
+check(!authServiceSource.includes(disabledRecoveryPlaceholder), 'Auth service retains the disabled recovery placeholder.');
+check(recoveryPage.includes('services/passwordRecoveryUI.js'), 'Password recovery page does not load the reusable recovery component.');
+check(recoveryPage.includes('PasswordRecoveryUI.mountRequest'), 'Password recovery request component is not mounted.');
+check(companyLoginPage.includes('href="password-recovery.html?source=company"'), 'Company login does not open the password recovery page.');
 const dockerfile = await read('Dockerfile');
 check((dockerfile.match(/@sha256:/g) || []).length === 2, 'Docker base images must be digest pinned.');
 check(/USER nginx/.test(dockerfile), 'Production container must run as the unprivileged nginx user.');
@@ -123,12 +132,18 @@ check(denoLock.specifiers?.['jsr:@supabase/supabase-js@2.110.8'] === '2.110.8', 
 const productionEnv = await read('deploy/production.env.example');
 for (const expected of [
   'APP_ENV=production', 'PRODUCTION_MODE=true', 'DEMO_MODE=false',
-  'USE_SUPABASE_AUTH=true', 'USE_SUPABASE_STORAGE=true',
+  'USE_SUPABASE_AUTH=true', 'USE_SUPABASE_PASSWORD_RECOVERY=true', 'USE_SUPABASE_STORAGE=true',
   'USE_SUPABASE_INVITES=true', 'USE_SUPABASE_PERSISTENCE=true'
 ]) {
   check(productionEnv.includes(expected), `Production environment template lacks ${expected}.`);
 }
 check(!productionEnv.includes('SUPABASE_SERVICE_ROLE_KEY='), 'Browser-safe production environment template exposes a service-role variable.');
+const vercelConfig = JSON.parse(await read('vercel.json'));
+check(vercelConfig.outputDirectory === 'dist', 'Vercel must deploy the reviewed dist output.');
+check(
+  String(vercelConfig.buildCommand || '').includes('npm run config:production'),
+  'Vercel build must replace the unconfigured runtime placeholder from hosted environment variables.'
+);
 
 const pilotOnboarding = await read('scripts/pilot-onboarding.mjs');
 check(pilotOnboarding.includes('/auth/v1/invite'), 'Privileged onboarding must use invitation-based account creation.');

@@ -8,6 +8,9 @@
     const OFFICIAL_ROLES = Object.freeze([
         'employee', 'manager', 'admin', 'hr', 'hr_head', 'director', 'super_admin', 'platform_owner'
     ]);
+    const TENANT_ROLES = Object.freeze([
+        'employee', 'manager', 'admin', 'hr', 'hr_head', 'director', 'super_admin'
+    ]);
     const ROLE_REDIRECTS = Object.freeze({
         employee: 'employee-portal.html',
         manager: 'manager.html',
@@ -44,6 +47,10 @@
         return OFFICIAL_ROLES.includes(normalizeRole(role));
     }
 
+    function isTenantRole(role) {
+        return TENANT_ROLES.includes(normalizeRole(role));
+    }
+
     function flagEnabled(flagName, fallback = false) {
         const service = global.supabaseClientService;
         if (!service || typeof service.readConfig !== 'function') return fallback;
@@ -55,6 +62,9 @@
     function isPilotMode() { return !isProductionMode() && flagEnabled('PILOT_MODE', false); }
     function isDevelopmentMode() { return flagEnabled('DEVELOPMENT_MODE', false); }
     function isDemoMode() { return flagEnabled('DEMO_MODE', false); }
+    function isPasswordRecoveryEnabled() {
+        return supabaseAuthReady() && flagEnabled('USE_SUPABASE_PASSWORD_RECOVERY', true);
+    }
     function requireAppMetadataRole() { return flagEnabled('REQUIRE_APP_METADATA_ROLE', true); }
     function requireEmailVerified() { return flagEnabled('REQUIRE_EMAIL_VERIFIED', true); }
 
@@ -258,6 +268,24 @@
         return !['archived', 'disabled', 'inactive', 'suspended', 'terminated'].includes(user.accountStatus);
     }
 
+    function passwordRecoveryRedirectUrl() {
+        const configured = String(
+            global.supabaseClientService?.readConfig?.()?.AUTH_INVITE_REDIRECT_URL || ''
+        ).trim();
+        const origin = String(global.location?.origin || '').replace(/\/+$/, '');
+        const fallback = origin ? `${origin}/auth-callback.html` : 'auth-callback.html';
+        if (!configured) return fallback;
+        try {
+            const url = new URL(configured, fallback);
+            if ((origin && url.origin !== origin) || !/\/auth-callback\.html$/i.test(url.pathname)) return fallback;
+            url.search = '';
+            url.hash = '';
+            return url.href;
+        } catch (_error) {
+            return fallback;
+        }
+    }
+
     async function invalidateSupabaseSession() {
         const authClient = client();
         try {
@@ -269,7 +297,12 @@
     const authService = {
         normalizeRole,
         isOfficialRole,
+        isTenantRole,
         getRoleRedirect(role) { return ROLE_REDIRECTS[normalizeRole(role)] || 'ArthHRMS.html'; },
+        getTenantRoleRedirect(role) {
+            const normalized = normalizeRole(role);
+            return isTenantRole(normalized) ? ROLE_REDIRECTS[normalized] : null;
+        },
         redirectForRole(role) {
             const target = this.getRoleRedirect(role);
             if (global.location && target) global.location.replace(target);
@@ -280,6 +313,7 @@
         isPilotMode,
         isDevelopmentMode,
         isDemoMode,
+        isPasswordRecoveryEnabled,
         isLocalDemoLoginAllowed() { return false; },
         isSetupRequired() { return db()?.isSetupRequired ? db().isSetupRequired() : false; },
         getInstallHealth() { return db()?.getInstallHealth ? db().getInstallHealth() : null; },
@@ -397,7 +431,7 @@
             }
             return { ...validation, authorized: true, status: 200, code: 'AUTHORIZED' };
         },
-        async loginWithSupabase(email, password, expectedRole = '') {
+        async loginWithSupabase(email, password, expectedRole = '', options = {}) {
             if (!supabaseAuthReady()) throw new Error('Enterprise authentication is not configured.');
             if (isLoginLocked(email, expectedRole)) return null;
             clearLocalSession();
@@ -423,11 +457,79 @@
                 recordLoginSecurity(email, expectedRole, 'FAILED', { failureReason: 'ROLE_OR_SESSION_REJECTED' });
                 return null;
             }
+            const surface = String(options.surface || '').trim().toLowerCase();
+            const trustedRole = normalizeRole(validation.user?.role);
+            const surfaceAllowed = (
+                (!surface || surface === 'any') ||
+                (surface === 'tenant' && isTenantRole(trustedRole)) ||
+                (surface === 'platform' && trustedRole === 'platform_owner')
+            );
+            if (!surfaceAllowed) {
+                await invalidateSupabaseSession();
+                recordLoginSecurity(email, trustedRole, 'FAILED', { failureReason: 'LOGIN_SURFACE_ROLE_REJECTED' });
+                return null;
+            }
             recordLoginSecurity(email, validation.user.role, 'SUCCESS', {
                 userId: validation.user.id,
                 employeeId: validation.user.empId || ''
             });
-            return { session: validation.session, user: validation.user, emp: validation.emp || null, source: 'supabase' };
+            return {
+                session: validation.session,
+                user: validation.user,
+                emp: validation.emp || null,
+                source: 'supabase',
+                redirectTo: this.getRoleRedirect(validation.user.role)
+            };
+        },
+        async loginTenantWithSupabase(email, password) {
+            return this.loginWithSupabase(email, password, '', { surface: 'tenant' });
+        },
+        async loginPlatformOwnerWithSupabase(email, password) {
+            return this.loginWithSupabase(email, password, 'platform_owner', { surface: 'platform' });
+        },
+        async requestPasswordRecovery(email) {
+            if (!isPasswordRecoveryEnabled()) {
+                return {
+                    ok: false,
+                    code: 'RECOVERY_CONFIGURATION_REQUIRED',
+                    message: 'Secure password recovery could not start because authentication configuration did not load. Refresh the page and try again.'
+                };
+            }
+            if (typeof client()?.auth?.resetPasswordForEmail !== 'function') {
+                return {
+                    ok: false,
+                    code: 'RECOVERY_API_UNAVAILABLE',
+                    message: 'Secure password recovery could not start. Refresh the page and try again.'
+                };
+            }
+            const normalizedEmail = String(email || '').trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+                return {
+                    ok: false,
+                    code: 'RECOVERY_EMAIL_INVALID',
+                    message: 'Enter a valid email address.'
+                };
+            }
+            try {
+                const result = await withAuthTimeout(
+                    client().auth.resetPasswordForEmail(normalizedEmail, {
+                        redirectTo: passwordRecoveryRedirectUrl()
+                    }),
+                    'Password recovery request'
+                );
+                if (result.error) throw result.error;
+                return {
+                    ok: true,
+                    code: 'RECOVERY_REQUEST_ACCEPTED',
+                    message: 'If an account exists for this email, a password recovery link has been sent.'
+                };
+            } catch (_error) {
+                return {
+                    ok: false,
+                    code: 'RECOVERY_REQUEST_FAILED',
+                    message: 'Unable to send a recovery email right now. Please try again later.'
+                };
+            }
         },
         async getCurrentSession() { return this.validateCurrentSession(); },
         async getSupabaseSession() {
@@ -443,13 +545,55 @@
             const validation = await this.validateCurrentSession();
             return validation.authenticated ? validation : null;
         },
-        async handleAuthCallback(input = {}) {
-            if (!global.authInviteService?.handleInviteCallback) return { ok: false, error: 'Invite callback handler is not loaded' };
-            const result = await global.authInviteService.handleInviteCallback(input);
-            if (!result?.ok) return result;
+        async restoreTenantSessionFromSupabase() {
             const validation = await this.validateCurrentSession();
-            if (!validation.authenticated) return { ok: false, error: 'The authenticated invite session could not be validated.' };
+            if (!validation.authenticated) return null;
+            if (!isTenantRole(validation.user?.role)) {
+                await invalidateSupabaseSession();
+                return null;
+            }
+            return validation;
+        },
+        async restorePlatformSessionFromSupabase() {
+            const validation = await this.validateCurrentSession();
+            if (!validation.authenticated) return null;
+            if (normalizeRole(validation.user?.role) !== 'platform_owner') {
+                await invalidateSupabaseSession();
+                return null;
+            }
+            return validation;
+        },
+        async handleAuthCallback(input = {}) {
+            if (!global.authInviteService?.dispatchAuthCallback) {
+                return { ok: false, error: 'Authentication callback handler is not loaded' };
+            }
+            const result = await global.authInviteService.dispatchAuthCallback(input);
+            if (!result?.ok) return result;
+            if (result.type === global.authInviteService.CALLBACK_TYPES?.RECOVERY) {
+                clearLocalSession();
+                return result;
+            }
+            const validation = await this.validateCurrentSession();
+            if (!validation.authenticated) {
+                return {
+                    ok: false,
+                    type: result.type || '',
+                    code: validation.code || 'AUTH_CALLBACK_SESSION_INVALID',
+                    error: 'The authenticated session could not be validated.'
+                };
+            }
             return { ...result, user: validation.user, redirectTo: this.getRoleRedirect(validation.user.role) };
+        },
+        async updateRecoveredPassword(password) {
+            if (!global.authInviteService?.completePasswordRecovery) {
+                return {
+                    ok: false,
+                    type: 'recovery',
+                    code: 'RECOVERY_HANDLER_UNAVAILABLE',
+                    error: 'Password recovery is unavailable. Try again later.'
+                };
+            }
+            return global.authInviteService.completePasswordRecovery(password);
         },
         startAuthStateTracking() {
             if (!supabaseAuthReady() || authTrackingStarted) return false;

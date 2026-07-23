@@ -55,6 +55,7 @@
 
     var FLAG_KEYS = Object.freeze([
         'USE_SUPABASE_AUTH',
+        'USE_SUPABASE_PASSWORD_RECOVERY',
         'USE_SUPABASE_INVITES',
         'USE_SUPABASE_EMPLOYEES',
         'USE_SUPABASE_ATTENDANCE',

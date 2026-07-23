@@ -63,6 +63,7 @@
 
     const SUPPORTED_FLAGS = deepFreeze([
         'USE_SUPABASE_AUTH',
+        'USE_SUPABASE_PASSWORD_RECOVERY',
         'USE_SUPABASE_INVITES',
         'USE_SUPABASE_EMPLOYEES',
         'USE_SUPABASE_ATTENDANCE',
@@ -97,6 +98,7 @@
         PILOT: {
             ...EMPTY_FLAGS,
             USE_SUPABASE_AUTH: true,
+            USE_SUPABASE_PASSWORD_RECOVERY: true,
             USE_SUPABASE_INVITES: true,
             USE_SUPABASE_EMPLOYEES: true,
             USE_SUPABASE_ATTENDANCE: true,
@@ -110,6 +112,7 @@
         PRODUCTION: {
             ...EMPTY_FLAGS,
             USE_SUPABASE_AUTH: true,
+            USE_SUPABASE_PASSWORD_RECOVERY: true,
             USE_SUPABASE_INVITES: true,
             USE_SUPABASE_EMPLOYEES: true,
             PRODUCTION_MODE: true,

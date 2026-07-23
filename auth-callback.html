@@ -5,9 +5,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
 <meta name="referrer" content="no-referrer">
 <script src="services/frontendSecurityService.js"></script>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Activating Account - ARTHHRMS</title>
+<title>Complete Authentication - ARTHHRMS</title>
 <script src="db.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="services/supabaseClient.js"></script>
@@ -18,6 +17,7 @@
 <script src="services/authService.js"></script>
 <script src="services/loginAttemptSecurityService.js"></script>
 <script src="services/authInviteService.js"></script>
+<script src="services/passwordRecoveryUI.js"></script>
 <script src="services/notificationService.js"></script>
 <script src="services/workflowEngine.js"></script>
 <script src="services/workflowRecoveryService.js"></script>
@@ -43,52 +43,115 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--p:#1a56db;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#e2e8f0;--r:#dc2626;--g:#059669}
 body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#eef2ff,#f8fafc);min-height:100vh;color:var(--ink);display:grid;place-items:center;padding:22px}
-.card{width:min(520px,100%);background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.12);padding:28px;text-align:center}
+.card{width:min(520px,100%);background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.12);padding:28px}
+.intro{text-align:center}
 .mark{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--p),#0ea5e9);color:#fff;display:grid;place-items:center;font-weight:900;margin:0 auto 16px}
 h1{font-size:1.35rem;margin-bottom:6px}p{font-size:.88rem;color:var(--muted);line-height:1.55}
-.status{margin-top:16px;border-radius:12px;padding:12px;font-size:.84rem;font-weight:800;background:#eff6ff;color:#1d4ed8}.status.err{background:#fee2e2;color:#991b1b}.status.ok{background:#dcfce7;color:#166534}
-.btn{display:inline-block;margin-top:16px;border:0;border-radius:9px;padding:10px 14px;background:var(--p);color:#fff;font-weight:900;text-decoration:none}
+.status{margin-top:16px;border-radius:12px;padding:12px;font-size:.84rem;font-weight:800;background:#eff6ff;color:#1d4ed8;text-align:center}.status.err{background:#fee2e2;color:#991b1b}.status.ok{background:#dcfce7;color:#166534}
+.btn{display:inline-block;margin-top:16px;border:0;border-radius:9px;padding:10px 14px;background:var(--p);color:#fff;font-weight:900;text-decoration:none;cursor:pointer}.btn:disabled{cursor:not-allowed;opacity:.55}
+.fallback-wrap{text-align:center}
+.recovery-mount{margin-top:20px}.recovery-form{display:grid;gap:14px;text-align:left}.field{display:grid;gap:6px}.field label{font-size:.82rem;font-weight:800}.input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:11px 12px;font:inherit;color:var(--ink);background:#fff}.input:focus{outline:3px solid rgba(26,86,219,.14);border-color:var(--p)}
+.strength{display:grid;gap:6px}.strength-head{display:flex;justify-content:space-between;gap:16px;font-size:.78rem;font-weight:800}.strength-value{color:var(--muted)}.strength-meter{width:100%;height:8px;accent-color:var(--g)}
+.requirements{display:grid;gap:6px;list-style:none;font-size:.78rem;color:var(--muted)}.requirement{display:flex;gap:8px;align-items:center}.requirement-state{min-width:56px;font-weight:800;color:#b45309}.requirement.met,.requirement.met .requirement-state{color:var(--g)}
+.match-message{font-size:.78rem;color:#b45309}.match-message.met{color:var(--g)}.form-feedback{min-height:20px;font-size:.8rem;font-weight:800}.form-feedback.err{color:#991b1b}.form-feedback.ok{color:#166534}.recovery-submit{width:100%;margin-top:0}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="mark">A</div>
-  <h1>Activating Your ARTHHRMS Account</h1>
-  <p>Please wait while we verify your invitation, link your employee profile, and prepare your dashboard session.</p>
-  <div class="status" id="statusBox">Checking invite session...</div>
-  <a class="btn" id="fallbackLink" href="ArthHRMS.html" style="display:none">Return to Login</a>
+  <div class="intro">
+    <div class="mark">A</div>
+    <h1 id="callbackTitle">Completing Secure Authentication</h1>
+    <p id="callbackDescription">Please wait while we validate this authentication link.</p>
+  </div>
+  <div class="status" id="statusBox" role="status" aria-live="polite">Validating secure session...</div>
+  <div class="recovery-mount" id="recoveryMount" hidden></div>
+  <div class="fallback-wrap">
+    <a class="btn" id="fallbackLink" href="ArthHRMS.html" hidden>Return to Login</a>
+  </div>
 </div>
 <script>
-async function activate(){
+(function(){
+function setStatus(message,state){
   const box=document.getElementById('statusBox');
-  const link=document.getElementById('fallbackLink');
+  box.textContent=message;
+  box.className='status'+(state?' '+state:'');
+}
+function showLoginLink(){
+  document.getElementById('fallbackLink').hidden=false;
+}
+function removeCallbackSecrets(){
   try{
-    const result=await authService.handleAuthCallback({url:location.href});
+    history.replaceState(null,document.title,location.pathname);
+  }catch(_error){}
+}
+function safeRedirect(candidate){
+  const fallback='ArthHRMS.html';
+  const sanitized=FrontendSecurityService.sanitizeURL(candidate||fallback);
+  try{
+    const resolved=new URL(sanitized||fallback,location.origin);
+    return resolved.origin===location.origin?resolved.href:fallback;
+  }catch(_error){
+    return fallback;
+  }
+}
+function redirectAfter(candidate,delay){
+  setTimeout(()=>location.replace(safeRedirect(candidate)),delay);
+}
+async function activate(){
+  const title=document.getElementById('callbackTitle');
+  const description=document.getElementById('callbackDescription');
+  const recoveryMount=document.getElementById('recoveryMount');
+  const callbackUrl=location.href;
+  try{
+    const result=await authService.handleAuthCallback({url:callbackUrl});
+    removeCallbackSecrets();
     if(!result.ok){
-      box.textContent=result.error||'Account activation failed.';
-      box.className='status err';
-      link.style.display='inline-block';
+      title.textContent=result.type==='recovery'?'Password Recovery':'Authentication Link';
+      description.textContent=result.type==='recovery'
+        ?'This recovery request could not be validated.'
+        :'This authentication request could not be completed.';
+      setStatus(result.error||'Authentication link is invalid or expired.','err');
+      showLoginLink();
       return;
     }
-    box.textContent='Account activated. Redirecting to your dashboard...';
-    box.className='status ok';
-    setTimeout(()=>{
-      const fallback='ArthHRMS.html';
-      const candidate=FrontendSecurityService.sanitizeURL(result.redirectTo||fallback);
-      let target=fallback;
-      try{
-        const resolved=new URL(candidate||fallback,location.origin);
-        if(resolved.origin===location.origin) target=resolved.href;
-      }catch(error){}
-      location.href=target;
-    },700);
+    if(result.type==='recovery'){
+      title.textContent='Reset Your Password';
+      description.textContent='Choose a strong password for your ARTHHRMS account.';
+      setStatus('Recovery session verified. Enter your new password.');
+      recoveryMount.hidden=false;
+      PasswordRecoveryUI.mount({
+        container:recoveryMount,
+        onSubmit:(password)=>authService.updateRecoveredPassword(password),
+        onSuccess:()=>{
+          title.textContent='Password Updated';
+          description.textContent='Your password has been changed securely.';
+          setStatus('Password updated successfully.','ok');
+          redirectAfter('ArthHRMS.html',2000);
+        }
+      });
+      return;
+    }
+    if(result.type==='invite'){
+      title.textContent='Account Activated';
+      description.textContent='Your invitation, employee profile, and dashboard session are ready.';
+      setStatus('Account activated. Redirecting to your dashboard...','ok');
+    }else{
+      title.textContent='Authentication Complete';
+      description.textContent='Your account and authenticated session have been verified.';
+      setStatus('Authentication completed. Redirecting...','ok');
+    }
+    redirectAfter(result.redirectTo||'ArthHRMS.html',700);
   }catch(err){
-    box.textContent=err.message||String(err);
-    box.className='status err';
-    link.style.display='inline-block';
+    removeCallbackSecrets();
+    title.textContent='Authentication Unavailable';
+    description.textContent='The authentication request could not be completed.';
+    setStatus('We could not connect to the authentication service. Check your connection and try again.','err');
+    showLoginLink();
   }
 }
 activate();
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArthHRMS Platform Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="services/frontendSecurityService.js"></script>
+    <script src="db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="services/supabaseClient.js"></script>
+    <script src="services/errorService.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/loginAttemptSecurityService.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            align-items: center;
+            background: #111827;
+            color: #0f172a;
+            display: flex;
+            font-family: 'DM Sans', sans-serif;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: #ffffff;
+            border: 1px solid #334155;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+            display: grid;
+            grid-template-columns: minmax(280px, 0.85fr) minmax(340px, 1fr);
+            max-width: 960px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .brand-section {
+            background: #0f172a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 56px 40px;
+        }
+
+        .brand {
+            font-family: 'Nunito', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 900;
+            margin-bottom: 18px;
+        }
+
+        .brand span {
+            color: #38bdf8;
+        }
+
+        .access-label {
+            color: #7dd3fc;
+            font-size: 0.78rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .brand-copy {
+            color: #cbd5e1;
+            line-height: 1.65;
+        }
+
+        .login-section {
+            padding: 56px 44px;
+        }
+
+        h1 {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #475569;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input {
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font: inherit;
+            padding: 12px 14px;
+            width: 100%;
+        }
+
+        input:focus {
+            border-color: #0369a1;
+            outline: 2px solid transparent;
+        }
+
+        .forgot-row {
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .forgot-link {
+            color: #075985;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover,
+        .forgot-link:focus-visible {
+            text-decoration: underline;
+        }
+
+        .forgot-link[aria-disabled="true"] {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        button {
+            background: #075985;
+            border: 0;
+            border-radius: 6px;
+            color: #ffffff;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+            padding: 13px 16px;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #0369a1;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .status {
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin-top: 16px;
+            padding: 10px 12px;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .status.success {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .security-note {
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            margin-top: 24px;
+            padding-top: 18px;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                align-items: flex-start;
+                padding: 12px;
+            }
+
+            .login-container {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-section,
+            .login-section {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-container">
+        <section class="brand-section" aria-label="ArthHRMS platform access">
+            <div class="brand">Arth<span>HRMS</span></div>
+            <div class="access-label">Restricted Platform Access</div>
+            <p class="brand-copy">Governance access for verified Platform Owners. Tenant and company accounts must use their organization login page.</p>
+        </section>
+
+        <section class="login-section">
+            <h1>Platform Owner Login</h1>
+            <p class="subtitle">Sign in with your securely onboarded platform account.</p>
+
+            <form id="platformLoginForm" novalidate>
+                <div class="form-group">
+                    <label for="platformEmail">Email</label>
+                    <input id="platformEmail" type="email" autocomplete="username" inputmode="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="platformPassword">Password</label>
+                    <input id="platformPassword" type="password" autocomplete="current-password" required>
+                    <div class="forgot-row">
+                        <a class="forgot-link" id="forgotPasswordLink" href="password-recovery.html?source=platform">Forgot Password?</a>
+                    </div>
+                </div>
+                <button id="platformLoginButton" type="submit">Sign In</button>
+                <p class="status" id="platformLoginStatus" role="status" aria-live="polite" hidden></p>
+            </form>
+
+            <p class="security-note">Access is authorized from trusted account metadata and revalidated before the control center opens.</p>
+        </section>
+    </main>
+
+    <script>
+        DB.init();
+        DB.migrate();
+
+        const loginForm = document.getElementById('platformLoginForm');
+        const emailInput = document.getElementById('platformEmail');
+        const passwordInput = document.getElementById('platformPassword');
+        const loginButton = document.getElementById('platformLoginButton');
+        const statusElement = document.getElementById('platformLoginStatus');
+
+        function setStatus(message, state) {
+            statusElement.textContent = String(message || '');
+            statusElement.className = `status ${state || ''}`.trim();
+            statusElement.hidden = !message;
+        }
+
+        function setBusy(busy) {
+            loginButton.disabled = !!busy;
+            loginButton.textContent = busy ? 'Signing In...' : 'Sign In';
+        }
+
+        (async function autoRedirectIfLoggedIn() {
+            try {
+                authService?.startAuthStateTracking?.();
+                const restored = await authService.restorePlatformSessionFromSupabase();
+                if (restored?.user) window.location.replace('platform-control.html');
+            } catch (_error) {}
+        })();
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setStatus('', '');
+            if (!loginForm.checkValidity()) {
+                loginForm.reportValidity();
+                return;
+            }
+            if (!authService?.isSupabaseAuthEnabled?.()) {
+                setStatus('Enterprise authentication is not configured. Contact the system administrator.', 'error');
+                return;
+            }
+            setBusy(true);
+            try {
+                const result = await authService.loginPlatformOwnerWithSupabase(
+                    emailInput.value.trim(),
+                    passwordInput.value
+                );
+                if (!result?.user) {
+                    setStatus('Invalid credentials or this account is not authorized for platform access.', 'error');
+                    return;
+                }
+                window.location.replace('platform-control.html');
+            } catch (_error) {
+                setStatus('Authentication failed. Verify your credentials and try again.', 'error');
+            } finally {
+                setBusy(false);
+            }
+        });
+
+    </script>
+</body>
+</html>

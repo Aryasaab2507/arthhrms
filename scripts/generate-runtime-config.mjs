@@ -53,6 +53,7 @@ const flags = {
   USE_SUPABASE_EXPENSES: boolean('USE_SUPABASE_EXPENSES'),
   USE_SUPABASE_PAYROLL: boolean('USE_SUPABASE_PAYROLL'),
   USE_SUPABASE_AUTH: boolean('USE_SUPABASE_AUTH'),
+  USE_SUPABASE_PASSWORD_RECOVERY: boolean('USE_SUPABASE_PASSWORD_RECOVERY', true),
   USE_SUPABASE_IMPORTS: boolean('USE_SUPABASE_IMPORTS'),
   USE_SUPABASE_STORAGE: boolean('USE_SUPABASE_STORAGE'),
   USE_SUPABASE_INVITES: boolean('USE_SUPABASE_INVITES'),
@@ -69,8 +70,8 @@ if (mode === 'production') {
   if (!productionFlags.PRODUCTION_MODE || productionFlags.PILOT_MODE || productionFlags.DEVELOPMENT_MODE || productionFlags.DEMO_MODE) {
     throw new Error('Production mode must be enabled and pilot, development, and demo modes must be disabled.');
   }
-  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE || !flags.USE_SUPABASE_INVITES) {
-    throw new Error('Supabase auth, persistence, storage, and invites must be enabled in production.');
+  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PASSWORD_RECOVERY || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE || !flags.USE_SUPABASE_INVITES) {
+    throw new Error('Supabase auth, password recovery, persistence, storage, and invites must be enabled in production.');
   }
 } else {
   if (productionFlags.PRODUCTION_MODE) throw new Error('Local runtime config cannot enable production mode.');

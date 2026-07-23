@@ -70,6 +70,7 @@
     const TENANT_SAFE_ROLES = Object.freeze(['employee', 'manager', 'hr', 'hr_head', 'director', 'admin', 'super_admin']);
     const RUNTIME_FLAG_KEYS = Object.freeze([
         'USE_SUPABASE_AUTH',
+        'USE_SUPABASE_PASSWORD_RECOVERY',
         'USE_SUPABASE_INVITES',
         'USE_SUPABASE_EMPLOYEES',
         'USE_SUPABASE_ATTENDANCE',
@@ -94,6 +95,7 @@
     const CRITICAL_FLAG_KEYS = Object.freeze([
         'ALLOW_LOCAL_AUTH_FALLBACK',
         'USE_SUPABASE_AUTH',
+        'USE_SUPABASE_PASSWORD_RECOVERY',
         'DEMO_MODE',
         'DEVELOPMENT_MODE'
     ]);

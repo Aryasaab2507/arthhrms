@@ -35,7 +35,7 @@
         'super-admin.html': ['super_admin'],
         'working-calendar-center.html': ['super_admin', 'admin', 'hr', 'hr_head']
     });
-    const PUBLIC_ROUTES = Object.freeze(['arthhrms.html', 'auth-callback.html', '403.html']);
+    const PUBLIC_ROUTES = Object.freeze(['arthhrms.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
     const scriptElement = global.document?.currentScript || null;
     const applicationRoot = scriptElement?.src ? new URL('../', scriptElement.src) : null;
 
@@ -117,7 +117,11 @@
 
     function loginUrl(code) {
         const currentPage = pageName();
-        return `ArthHRMS.html?reason=${encodeURIComponent(code || 'session_required')}&returnTo=${encodeURIComponent(currentPage)}`;
+        const allowedRoles = policyFor(currentPage) || [];
+        const loginPage = allowedRoles.length === 1 && allowedRoles[0] === 'platform_owner'
+            ? 'platform-login.html'
+            : 'ArthHRMS.html';
+        return `${loginPage}?reason=${encodeURIComponent(code || 'session_required')}&returnTo=${encodeURIComponent(currentPage)}`;
     }
 
     function redirectToLogin(code) {

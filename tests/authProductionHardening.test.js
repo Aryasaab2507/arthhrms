@@ -106,7 +106,7 @@ async function main() {
   load('services/authGuard.js');
   assert.equal(typeof domReadyHandler, 'function', 'guard should register before protected page initialization');
 
-  const publicPages = new Set(['ArthHRMS.html', 'auth-callback.html', '403.html']);
+  const publicPages = new Set(['ArthHRMS.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
   const htmlPages = fs.readdirSync(root).filter(file => file.endsWith('.html')).sort();
   const protectedPages = htmlPages.filter(file => !publicPages.has(file));
   const policies = global.ArthAuthGuard.ROUTE_POLICIES;
@@ -160,7 +160,7 @@ async function main() {
   global.location.href = '';
   const forged = await global.ArthAuthGuard.enforce('/platform-control.html');
   assert.equal(forged.status, 401, 'forged browser state must not authorize a protected route');
-  assert.match(global.location.href, /^ArthHRMS\.html\?reason=/, 'forged browser state must redirect to Login');
+  assert.match(global.location.href, /^platform-login\.html\?reason=/, 'forged platform state must redirect to the Platform Login');
   assert.equal(global.authService.getCurrentUser(), null, 'forged browser state must be cleared');
   sessionAvailable = true;
 

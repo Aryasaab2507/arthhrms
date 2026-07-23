@@ -196,6 +196,7 @@ Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a
 | `USE_SUPABASE_EXPENSES` | Runtime | Legacy expense adapter switch | `<true-or-false>` |
 | `USE_SUPABASE_PAYROLL` | Runtime | Legacy payroll adapter switch | `<true-or-false>` |
 | `USE_SUPABASE_AUTH` | Runtime | Supabase authentication switch | `<true-or-false>` |
+| `USE_SUPABASE_PASSWORD_RECOVERY` | Runtime | Supabase password recovery switch | `<true-or-false>` |
 | `USE_SUPABASE_IMPORTS` | Runtime | Legacy import adapter switch | `<true-or-false>` |
 | `USE_SUPABASE_STORAGE` | Runtime | Supabase Storage switch | `<true-or-false>` |
 | `USE_SUPABASE_INVITES` | Runtime | Supabase invitation flow switch | `<true-or-false>` |
@@ -207,7 +208,7 @@ Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Privileged Edge Function credential | `<server-only-service-role-key>` |
 | `ALLOWED_ORIGINS` | Server-only | Exact browser origins accepted by server functions | `https://<application-host>` |
 
-For the standard production persistence path, enable `USE_SUPABASE_AUTH`, `USE_SUPABASE_STORAGE`, `USE_SUPABASE_INVITES`, and `USE_SUPABASE_PERSISTENCE`. Keep legacy module-specific adapters disabled unless a reviewed migration plan explicitly requires them. Store `SUPABASE_SERVICE_ROLE_KEY` only in Supabase Edge Function secrets; it must never be exposed to browser code or generated runtime configuration.
+For the standard production persistence path, enable `USE_SUPABASE_AUTH`, `USE_SUPABASE_PASSWORD_RECOVERY`, `USE_SUPABASE_STORAGE`, `USE_SUPABASE_INVITES`, and `USE_SUPABASE_PERSISTENCE`. Keep legacy module-specific adapters disabled unless a reviewed migration plan explicitly requires them. Store `SUPABASE_SERVICE_ROLE_KEY` only in Supabase Edge Function secrets; it must never be exposed to browser code or generated runtime configuration.
 
 ## Production Deployment
 

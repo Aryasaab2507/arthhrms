@@ -128,34 +128,17 @@
             background: white;
         }
         
-        .role-tabs {
-            display: flex;
-            gap: 10px;
+        .login-heading {
+            color: #0f172a;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: #475569;
+            line-height: 1.5;
             margin-bottom: 30px;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .role-tab {
-            padding: 8px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-        
-        .role-tab.active {
-            background: linear-gradient(135deg, #1a56db, #0ea5e9);
-            color: white;
-        }
-        
-        .login-form {
-            display: none;
-        }
-        
-        .login-form.active {
-            display: block;
         }
         
         .form-group {
@@ -199,6 +182,52 @@
         button:hover {
             transform: translateY(-2px);
         }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+            transform: none;
+        }
+
+        .forgot-row {
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .forgot-link {
+            color: #1d4ed8;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover,
+        .forgot-link:focus-visible {
+            text-decoration: underline;
+        }
+
+        .forgot-link[aria-disabled="true"] {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .login-status {
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin-top: 16px;
+            padding: 10px 12px;
+        }
+
+        .login-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .login-status.success {
+            background: #ecfdf5;
+            color: #065f46;
+        }
         
         .login-guidance {
             margin-top: 20px;
@@ -224,11 +253,6 @@
             .login-section {
                 padding: 32px 24px;
             }
-            .role-tab {
-                flex: 1 1 120px;
-                text-align: center;
-                padding: 8px 12px;
-            }
         }
     </style>
 </head>
@@ -253,94 +277,26 @@
         </div>
         
         <div class="login-section">
-            <div class="role-tabs">
-                <div class="role-tab active" data-role="platform_owner">Platform Owner</div>
-                <div class="role-tab" data-role="super_admin">Super Admin</div>
-                <div class="role-tab" data-role="admin">Admin</div>
-                <div class="role-tab" data-role="hr">HR</div>
-                <div class="role-tab" data-role="manager">Manager</div>
-                <div class="role-tab" data-role="employee">Employee</div>
-            </div>
+            <h1 class="login-heading">Company Login</h1>
+            <p class="login-subtitle">Sign in with your organization-issued account.</p>
 
-            <!-- Platform Owner Login -->
-            <div class="login-form active" id="form-platform_owner">
+            <form class="login-form" id="companyLoginForm" novalidate>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="po_email" autocomplete="username">
+                    <label for="companyEmail">Email</label>
+                    <input type="email" id="companyEmail" autocomplete="username" inputmode="email" required>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="po_password" autocomplete="current-password">
+                    <label for="companyPassword">Password</label>
+                    <input type="password" id="companyPassword" autocomplete="current-password" required>
+                    <div class="forgot-row">
+                        <a class="forgot-link" id="forgotPasswordLink" href="password-recovery.html?source=company">Forgot Password?</a>
+                    </div>
                 </div>
-                <button onclick="login('platform_owner')">Login as Platform Owner</button>
-            </div>
+                <button type="submit" id="companyLoginButton">Sign In</button>
+                <p class="login-status" id="loginStatus" role="status" aria-live="polite" hidden></p>
+            </form>
             
-            <!-- Super Admin Login -->
-            <div class="login-form" id="form-super_admin">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="sa_email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="sa_password">
-                </div>
-                <button onclick="login('super_admin')">Login as Super Admin →</button>
-            </div>
-            
-            <!-- Admin Login -->
-            <div class="login-form" id="form-admin">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="admin_email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="admin_password">
-                </div>
-                <button onclick="login('admin')">Login as Admin →</button>
-            </div>
-            
-            <!-- HR Login -->
-            <div class="login-form" id="form-hr">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="hr_email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="hr_password">
-                </div>
-                <button onclick="login('hr')">Login as HR →</button>
-            </div>
-            
-            <!-- Manager Login -->
-            <div class="login-form" id="form-manager">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="mgr_email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="mgr_password">
-                </div>
-                <button onclick="login('manager')">Login as Manager →</button>
-            </div>
-            
-            <!-- Employee Login -->
-            <div class="login-form" id="form-employee">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="emp_email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="emp_password">
-                </div>
-                <button onclick="login('employee')">Login as Employee →</button>
-            </div>
-            
-            <div class="login-guidance" id="loginGuidanceBox"></div>
+            <div class="login-guidance">Access is assigned by your organization and verified securely after sign-in.</div>
         </div>
     </div>
     
@@ -349,97 +305,62 @@
         DB.init();
         DB.migrate();
 
-        // Redirect only after the live Supabase session has been revalidated.
-        (async function autoRedirectIfLoggedIn(){
-            try{
-                if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-                const restored = await authService.restoreSessionFromSupabase();
-                const u = restored?.user || null;
-                if(!u || !u.role) return;
-                if(u.role==='platform_owner' && window.DB?.isSetupRequired?.()){
-                    window.location.replace('setup.html');
-                    return;
-                }
-                const target = window.authService?.getRoleRedirect ? authService.getRoleRedirect(u.role) : null;
-                if(target && target !== 'ArthHRMS.html') window.location.replace(target);
-            }catch(e){}
+        const loginForm = document.getElementById('companyLoginForm');
+        const emailInput = document.getElementById('companyEmail');
+        const passwordInput = document.getElementById('companyPassword');
+        const loginButton = document.getElementById('companyLoginButton');
+        const loginStatus = document.getElementById('loginStatus');
+
+        function setLoginStatus(message, state) {
+            loginStatus.textContent = String(message || '');
+            loginStatus.className = `login-status ${state || ''}`.trim();
+            loginStatus.hidden = !message;
+        }
+
+        function setLoginBusy(busy) {
+            loginButton.disabled = !!busy;
+            loginButton.textContent = busy ? 'Signing In...' : 'Sign In';
+        }
+
+        (async function autoRedirectIfLoggedIn() {
+            try {
+                authService?.startAuthStateTracking?.();
+                const restored = await authService.restoreTenantSessionFromSupabase();
+                const target = restored?.user
+                    ? authService.getTenantRoleRedirect(restored.user.role)
+                    : null;
+                if (target) window.location.replace(target);
+            } catch (_error) {}
         })();
 
-        function applyLoginEnvironment(){
-            const box = document.getElementById('loginGuidanceBox');
-            if(!box) return;
-            box.style.display='block';
-            box.innerHTML='<strong>Production Access:</strong><br>Use a verified Platform Owner, Super Admin, or tenant account. Credentials are never prefilled or displayed.';
-        }
-        applyLoginEnvironment();
-        
-        // Tab switching
-        document.querySelectorAll('.role-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                const role = tab.dataset.role;
-                document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
-                document.getElementById(`form-${role}`).classList.add('active');
-            });
-        });
-        
-        async function login(role) {
-            let email, password;
-            
-            switch(role) {
-                case 'platform_owner':
-                    email = document.getElementById('po_email').value;
-                    password = document.getElementById('po_password').value;
-                    break;
-                case 'super_admin':
-                    email = document.getElementById('sa_email').value;
-                    password = document.getElementById('sa_password').value;
-                    break;
-                case 'admin':
-                    email = document.getElementById('admin_email').value;
-                    password = document.getElementById('admin_password').value;
-                    break;
-                case 'hr':
-                    email = document.getElementById('hr_email').value;
-                    password = document.getElementById('hr_password').value;
-                    break;
-                case 'manager':
-                    email = document.getElementById('mgr_email').value;
-                    password = document.getElementById('mgr_password').value;
-                    break;
-                case 'employee':
-                    email = document.getElementById('emp_email').value;
-                    password = document.getElementById('emp_password').value;
-                    break;
-                default:
-                    alert('Unsupported tenant login role.');
-                    return;
-            }
-            
-            if(!window.authService?.isSupabaseAuthEnabled?.()){
-                alert('Enterprise authentication is not configured. Contact the platform administrator.');
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setLoginStatus('', '');
+            if (!loginForm.checkValidity()) {
+                loginForm.reportValidity();
                 return;
             }
-            let result = null;
+            if (!authService?.isSupabaseAuthEnabled?.()) {
+                setLoginStatus('Enterprise authentication is not configured. Contact your administrator.', 'error');
+                return;
+            }
+            setLoginBusy(true);
             try {
-                result = await authService.loginWithSupabase(email, password, role);
-            } catch (err) {
-                console.error('Login error:', err);
-                alert('Authentication failed. Verify your credentials or contact the platform administrator.');
-                return;
+                const result = await authService.loginTenantWithSupabase(
+                    emailInput.value.trim(),
+                    passwordInput.value
+                );
+                if (!result?.user || !result.redirectTo) {
+                    setLoginStatus('Invalid email or password.', 'error');
+                    return;
+                }
+                window.location.replace(result.redirectTo);
+            } catch (_error) {
+                setLoginStatus('Authentication failed. Verify your credentials and try again.', 'error');
+            } finally {
+                setLoginBusy(false);
             }
-            
-            if (!result || result.user.role !== role) {
-                alert('Invalid credentials for ' + role);
-                return;
-            }
-
-            const target = result.user.role==='platform_owner' && window.DB?.isSetupRequired?.()
-                ? 'setup.html'
-                : authService.getRoleRedirect(result.user.role);
-            window.location.replace(target);
-        }
+        });
 
     </script>
 </body>

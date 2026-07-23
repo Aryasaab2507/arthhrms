@@ -52,7 +52,7 @@ function main() {
   assert.equal(rbac.authorize({ resource: 'unknown', action: 'read', actor: hr }).code, 'RBAC_POLICY_MISSING');
   assert.throws(() => rbac.resolveTenant('tenant-b', hr), error => error.code === 'CROSS_TENANT_ACCESS_DENIED');
 
-  const publicPages = new Set(['ArthHRMS.html', 'auth-callback.html', '403.html']);
+  const publicPages = new Set(['ArthHRMS.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
   fs.readdirSync(root).filter(file => file.endsWith('.html') && !publicPages.has(file)).forEach(file => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /services\/authGuard\.js/, `${file} lacks the shared page guard`);
