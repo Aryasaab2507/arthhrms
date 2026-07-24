@@ -22,6 +22,7 @@ if (values['env-file']) {
 }
 const output = path.resolve(root, positionals[0] || (mode === 'local' ? 'runtime-config.js' : 'dist/runtime-config.js'));
 const env = process.env;
+const isProduction = mode === 'production';
 
 function boolean(name, fallback = false) {
   const value = env[name];
@@ -37,7 +38,7 @@ function required(name) {
   return value;
 }
 
-const appEnvironment = String(env.APP_ENV || 'production').trim().toLowerCase();
+const appEnvironment = String(env.APP_ENV || (isProduction ? 'production' : 'development')).trim().toLowerCase();
 const publicKey = String(env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim();
 const supabaseUrl = required('SUPABASE_URL');
 if (!/^https:\/\//i.test(supabaseUrl)) throw new Error('SUPABASE_URL must use HTTPS.');
@@ -46,45 +47,48 @@ if (publicKey === String(env.SUPABASE_SERVICE_ROLE_KEY || '').trim()) {
   throw new Error('The browser key must never equal SUPABASE_SERVICE_ROLE_KEY.');
 }
 
+const supabaseFeatureDefault = isProduction;
 const flags = {
   USE_SUPABASE_EMPLOYEES: boolean('USE_SUPABASE_EMPLOYEES'),
   USE_SUPABASE_ATTENDANCE: boolean('USE_SUPABASE_ATTENDANCE'),
   USE_SUPABASE_LEAVE: boolean('USE_SUPABASE_LEAVE'),
   USE_SUPABASE_EXPENSES: boolean('USE_SUPABASE_EXPENSES'),
   USE_SUPABASE_PAYROLL: boolean('USE_SUPABASE_PAYROLL'),
-  USE_SUPABASE_AUTH: boolean('USE_SUPABASE_AUTH'),
-  USE_SUPABASE_PASSWORD_RECOVERY: boolean('USE_SUPABASE_PASSWORD_RECOVERY', true),
+  USE_SUPABASE_AUTH: boolean('USE_SUPABASE_AUTH', supabaseFeatureDefault),
+  USE_SUPABASE_PASSWORD_RECOVERY: boolean('USE_SUPABASE_PASSWORD_RECOVERY', supabaseFeatureDefault),
   USE_SUPABASE_IMPORTS: boolean('USE_SUPABASE_IMPORTS'),
-  USE_SUPABASE_STORAGE: boolean('USE_SUPABASE_STORAGE'),
-  USE_SUPABASE_INVITES: boolean('USE_SUPABASE_INVITES'),
-  USE_SUPABASE_PERSISTENCE: boolean('USE_SUPABASE_PERSISTENCE')
+  USE_SUPABASE_STORAGE: boolean('USE_SUPABASE_STORAGE', supabaseFeatureDefault),
+  USE_SUPABASE_INVITES: boolean('USE_SUPABASE_INVITES', supabaseFeatureDefault),
+  USE_SUPABASE_PERSISTENCE: boolean('USE_SUPABASE_PERSISTENCE', supabaseFeatureDefault)
 };
 const productionFlags = {
-  PRODUCTION_MODE: boolean('PRODUCTION_MODE'),
+  PRODUCTION_MODE: boolean('PRODUCTION_MODE', isProduction),
   PILOT_MODE: boolean('PILOT_MODE'),
-  DEVELOPMENT_MODE: boolean('DEVELOPMENT_MODE'),
+  DEVELOPMENT_MODE: boolean('DEVELOPMENT_MODE', !isProduction),
   DEMO_MODE: boolean('DEMO_MODE')
 };
-if (mode === 'production') {
+if (isProduction) {
   if (appEnvironment !== 'production') throw new Error('APP_ENV must be production for a production runtime config.');
   if (!productionFlags.PRODUCTION_MODE || productionFlags.PILOT_MODE || productionFlags.DEVELOPMENT_MODE || productionFlags.DEMO_MODE) {
     throw new Error('Production mode must be enabled and pilot, development, and demo modes must be disabled.');
   }
-  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PASSWORD_RECOVERY || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE || !flags.USE_SUPABASE_INVITES) {
-    throw new Error('Supabase auth, password recovery, persistence, storage, and invites must be enabled in production.');
-  }
 } else {
   if (productionFlags.PRODUCTION_MODE) throw new Error('Local runtime config cannot enable production mode.');
-  if (!flags.USE_SUPABASE_AUTH || !flags.USE_SUPABASE_PERSISTENCE || !flags.USE_SUPABASE_STORAGE) {
-    throw new Error('Supabase auth, persistence, and storage must be enabled for local application integration.');
-  }
 }
 for (const legacyFlag of ['USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE', 'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_IMPORTS']) {
   if (flags[legacyFlag]) throw new Error(`${legacyFlag} must remain disabled when canonical persistence is enabled.`);
 }
 
-const inviteUserEndpoint = flags.USE_SUPABASE_INVITES ? required('INVITE_USER_ENDPOINT') : '';
-const authInviteRedirectUrl = flags.USE_SUPABASE_INVITES ? required('AUTH_INVITE_REDIRECT_URL') : '';
+const inviteUserEndpoint = flags.USE_SUPABASE_INVITES
+  ? String(env.INVITE_USER_ENDPOINT || `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/invite-user`).trim()
+  : '';
+const hostedApplicationUrl = String(env.VERCEL_PROJECT_PRODUCTION_URL || env.VERCEL_URL || '').trim();
+const hostedApplicationOrigin = hostedApplicationUrl
+  ? `${/^https?:\/\//i.test(hostedApplicationUrl) ? '' : 'https://'}${hostedApplicationUrl}`.replace(/\/+$/, '')
+  : '';
+const authInviteRedirectUrl = flags.USE_SUPABASE_INVITES
+  ? String(env.AUTH_INVITE_REDIRECT_URL || (hostedApplicationOrigin ? `${hostedApplicationOrigin}/auth-callback.html` : '')).trim()
+  : '';
 const config = {
   APP_ENV: appEnvironment,
   ...productionFlags,
