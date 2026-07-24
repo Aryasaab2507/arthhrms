@@ -255,8 +255,8 @@
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="chip" id="ownerChip">platform_owner</span>
-                <a class="btn alt" href="company-profile-center.html" style="text-decoration:none">Company Profile</a>
-                <a class="btn alt" href="organization-import-center.html" style="text-decoration:none">Org Import</a>
+                <button type="button" class="btn alt" onclick="openPlatformPanel('tenant')">Company Profile</button>
+                <button type="button" class="btn alt" onclick="openPlatformPanel('migration')">Org Import</button>
                 <a class="btn alt" href="operations-monitoring.html" style="text-decoration:none">Operations</a>
                 <a class="btn alt" href="enterprise-test-lab.html" style="text-decoration:none">Test Lab</a>
                 <a class="btn alt" href="qa-validation.html" style="text-decoration:none">QA Center</a>
@@ -10779,6 +10779,10 @@ function showPanel(id,el){
     if(announcer)announcer.textContent=`Opened ${labels[id]||id}`;
     const main=document.getElementById('platformMainContent');
     if(main)main.focus({preventScroll:true});
+}
+function openPlatformPanel(id){
+    const tab=document.querySelector(`.nav button[aria-controls="panel-${id}"]`);
+    showPanel(id,tab);
 }
 
 function renderOverview(){

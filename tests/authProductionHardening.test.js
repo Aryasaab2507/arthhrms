@@ -118,6 +118,33 @@ async function main() {
     assert.match(source, /services\/authService\.js/, `${file} must load enterprise authentication`);
   });
 
+  const platformControlSource = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
+  const platformControlLinks = Array.from(
+    platformControlSource.matchAll(/href="([^"]+\.html)(?:#[^"]*)?"/gi),
+    match => match[1].split('/').pop().toLowerCase()
+  );
+  platformControlLinks.forEach(route => {
+    if (publicPages.has(htmlPages.find(page => page.toLowerCase() === route))) return;
+    assert.ok(policies[route]?.includes('platform_owner'), `Platform Control link ${route} must explicitly allow platform_owner`);
+  });
+  assert.doesNotMatch(platformControlSource, /href="(?:company-profile-center|organization-import-center)\.html"/i, 'Platform Control must not link Platform Owners into tenant configuration routes');
+  assert.match(platformControlSource, /openPlatformPanel\('tenant'\)/, 'Company Profile navigation must remain inside Platform Tenant Governance');
+  assert.match(platformControlSource, /openPlatformPanel\('migration'\)/, 'Organization Import navigation must remain inside Platform Migration Governance');
+
+  const tenantOnlyRoutes = [
+    'admin.html',
+    'company-profile-center.html',
+    'director.html',
+    'employee-portal.html',
+    'hr-dashboard.html',
+    'manager.html',
+    'organization-import-center.html',
+    'super-admin.html'
+  ];
+  tenantOnlyRoutes.forEach(route => {
+    assert.equal(policies[route]?.includes('platform_owner'), false, `${route} must remain isolated from platform_owner`);
+  });
+
   const roleHomes = {
     platform_owner: 'platform-control.html',
     super_admin: 'super-admin.html',
@@ -133,6 +160,17 @@ async function main() {
     const allowed = await global.authService.authorizePage(policies[route]);
     assert.equal(allowed.status, 200, `${testRole} should access its own route`);
     assert.equal(allowed.user.role, testRole);
+  }
+
+  role = 'platform_owner';
+  userId = 'AUTH-platform_owner';
+  signInUserId = userId;
+  expiresAt = Math.floor(Date.now() / 1000) + 3600;
+  for (const [route, allowedRoles] of Object.entries(policies).filter(([, allowedRoles]) => allowedRoles.includes('platform_owner'))) {
+    const allowed = await global.authService.authorizePage(allowedRoles);
+    assert.equal(allowed.status, 200, `platform_owner should access Platform Control route ${route}`);
+    const routeDecision = global.rbacEnforcementService.authorizeRoute(route, allowedRoles, allowed.user);
+    assert.equal(routeDecision.allowed, true, `central RBAC should authorize platform_owner for ${route}`);
   }
 
   role = 'employee';
