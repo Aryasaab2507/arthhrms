@@ -13,6 +13,8 @@ const runtimeConfigTag = '<script src="/runtime-config.js"></script>';
 const authGuardTag = '<script src="services/authGuard.js"></script>';
 const rbacTag = '<script src="services/rbacEnforcementService.js"></script>';
 const persistenceTag = '<script src="services/supabasePersistenceService.js"></script>';
+const loadingServiceTag = '<script src="services/loadingService.js"></script>';
+const loadingStylesheetTag = '<link rel="stylesheet" href="styles/loading-system.css">';
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
@@ -45,6 +47,15 @@ for (const file of htmlFiles) {
     html = supabaseScript.test(html)
       ? html.replace(supabaseScript, `${runtimeConfigTag}\n$&`)
       : html.replace('</head>', `  ${runtimeConfigTag}\n</head>`);
+  }
+  if (!html.includes('services/loadingService.js')) {
+    const frontendSecurityTag = '<script src="services/frontendSecurityService.js"></script>';
+    html = html.includes(frontendSecurityTag)
+      ? html.replace(frontendSecurityTag, `${frontendSecurityTag}\n${loadingServiceTag}`)
+      : html.replace('</head>', `  ${loadingServiceTag}\n</head>`);
+  }
+  if (!html.includes('styles/loading-system.css')) {
+    html = html.replace('</head>', `  ${loadingStylesheetTag}\n</head>`);
   }
   await writeFile(path.join(output, file), html, 'utf8');
 }

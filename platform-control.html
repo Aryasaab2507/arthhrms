@@ -5,6 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
 <meta name="referrer" content="no-referrer">
 <script src="services/frontendSecurityService.js"></script>
+<script src="services/loadingService.js"></script>
 <script src="services/authGuard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -212,6 +213,7 @@
         @media(max-width:620px){.content{padding:14px}.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
     </style>
     <link rel="stylesheet" href="styles/platform-control-shell.css">
+    <link rel="stylesheet" href="styles/loading-system.css">
 </head>
 <body>
 <a href="#platformMainContent" class="skip-link">Skip to main content</a>
@@ -5276,7 +5278,20 @@ let _latestScimGroup = null;
 let _latestScimRoleMapping = null;
 let _latestScimTokenRotation = null;
 
-function toast(msg){
+function platformNotificationType(message){
+    const value=String(message||'').toLowerCase();
+    if(/failed|failure|blocked|error|unavailable|invalid|denied|critical/.test(value))return 'error';
+    if(/warning|review|risk|missing|duplicate|degraded|pending/.test(value))return 'warning';
+    if(/created|saved|sent|completed|passed|activated|restored|updated|generated|ready|success/.test(value))return 'success';
+    return 'info';
+}
+function toast(msg,type){
+    if(window.ArthLoadingService?.notify){
+        ArthLoadingService.notify(type||platformNotificationType(msg),String(msg||''),{title:'Platform Control'});
+        const announcer=document.getElementById('platformA11yAnnouncements');
+        if(announcer)announcer.textContent=msg;
+        return;
+    }
     const el=document.getElementById('toast');
     el.textContent=msg;
     const announcer=document.getElementById('platformA11yAnnouncements');
@@ -10774,10 +10789,13 @@ function currentSessionGovernancePayload(){
         }
     };
 }
-function refreshPlatformView(){
+let _platformViewDirty=true;
+function refreshPlatformView(force=false){
+    if(_platformView&&!_platformViewDirty&&!force)return _platformView;
     _platformView=window.PlatformAccessService?.normalizeGovernanceView
         ? PlatformAccessService.normalizeGovernanceView(DB.get(),{actor:currentUser,pathname:'platform-control.html'})
         : null;
+    _platformViewDirty=false;
     return _platformView;
 }
 function platformView(){return _platformView||refreshPlatformView();}
@@ -10803,6 +10821,8 @@ function platformNavigationItems(){
 function platformModuleForElement(el,id){
     return el?.dataset?.module||id||'dashboard';
 }
+let _activePlatformPanelId='overview';
+let _activePlatformModuleHeading='';
 function updatePlatformLocation(moduleId){
     if(!moduleId||!window.history?.replaceState)return;
     const next=`#${encodeURIComponent(moduleId)}`;
@@ -10822,7 +10842,7 @@ function focusPlatformModuleHeading(heading){
     container.scrollIntoView({behavior:'smooth',block:'start'});
     container.focus({preventScroll:true});
 }
-function showPanel(id,el){
+function showPanel(id,el,options={}){
     closePlatformMobileNav();
     document.querySelectorAll('.section').forEach(s=>{
         s.classList.remove('on');
@@ -10858,14 +10878,21 @@ function showPanel(id,el){
     if(announcer)announcer.textContent=`Opened ${resolvedTitle}`;
     const main=document.getElementById('platformMainContent');
     if(main)main.focus({preventScroll:true});
+    _activePlatformPanelId=id||'overview';
+    _activePlatformModuleHeading=String(options.heading||'');
     updatePlatformLocation(platformModuleForElement(el,id));
+    schedulePlatformPanelRender(_activePlatformPanelId,{
+        heading:_activePlatformModuleHeading,
+        title:resolvedTitle,
+        reason:'navigation'
+    });
 }
 function openPlatformPanel(id){
     const tab=document.querySelector(`.nav .platform-nav-item[aria-controls="panel-${id}"]`);
     showPanel(id,tab);
 }
 function openPlatformModule(id,el,heading){
-    showPanel(id,el);
+    showPanel(id,el,{heading});
     requestAnimationFrame(()=>focusPlatformModuleHeading(heading));
 }
 function filterPlatformNavigation(query){
@@ -10903,9 +10930,13 @@ function initializePlatformShell(){
     if(window.__ARTHHRMS_PLATFORM_SHELL_READY__)return;
     window.__ARTHHRMS_PLATFORM_SHELL_READY__=true;
     const search=document.getElementById('platformNavigationSearch');
-    search?.addEventListener('input',event=>filterPlatformNavigation(event.target.value));
+    const applyNavigationFilter=window.ArthLoadingService?.debounce
+        ? ArthLoadingService.debounce(value=>filterPlatformNavigation(value),160)
+        : value=>filterPlatformNavigation(value);
+    search?.addEventListener('input',event=>applyNavigationFilter(event.target.value));
     search?.addEventListener('keydown',event=>{
         if(event.key==='Escape'){
+            applyNavigationFilter.cancel?.();
             event.target.value='';
             filterPlatformNavigation('');
         }
@@ -10919,6 +10950,7 @@ function initializePlatformShell(){
         const offset=event.key==='ArrowDown'?1:-1;
         items[(current+offset+items.length)%items.length]?.focus();
     });
+    installPlatformActionLoading();
     if(!restorePlatformNavigation()){
         const dashboard=platformNavigationItems().find(node=>node.dataset.module==='dashboard');
         if(dashboard)showPanel('overview',dashboard);
@@ -11293,7 +11325,7 @@ function renderPilotRolloutGovernanceCenter(){
     }</tbody>`;
 }
 
-function renderSecurityGovernance(){
+function renderSecurityGovernance(options={}){
     const view=platformView();
     const security=view?.security||{};
     const deployment=view?.deployment||{};
@@ -11318,11 +11350,13 @@ function renderSecurityGovernance(){
         modeLine('Production Mode',deployment.isProduction?'ACTIVE':'Off'),
         modeLine('Deployment Governance',deployment.passed===false?'BLOCKED':'Ready')
     ].join('');
-    renderTenantIsolationGovernance();
-    renderSessionGovernance();
-    renderAuthenticationSecurityCenter();
-    renderIdentityFederationCenter();
-    renderScimProvisioningCenter();
+    if(!options.deferCenters){
+        renderTenantIsolationGovernance();
+        renderSessionGovernance();
+        renderAuthenticationSecurityCenter();
+        renderIdentityFederationCenter();
+        renderScimProvisioningCenter();
+    }
 }
 
 function renderTenantIsolationGovernance(){
@@ -11726,7 +11760,7 @@ function renderStagingValidation(){
     ].join('');
 }
 
-function renderPlatformMonitoring(){
+function renderPlatformMonitoring(options={}){
     const view=platformView();
     const m=view?.monitoring||{};
     const svc=operationsMonitoringSvc();
@@ -11789,71 +11823,73 @@ function renderPlatformMonitoring(){
     document.getElementById('incidentTable').innerHTML=`<thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Module</th><th>Created</th></tr></thead><tbody>${
         incidents.length?incidents.map(row=>`<tr><td>${esc(row.incidentId||'')}</td><td>${migrationBadge(row.severity||'INFO')}</td><td>${esc(row.status||'Open')}</td><td>${esc(row.module||'System')}</td><td>${esc(row.createdAt?new Date(row.createdAt).toLocaleString():'')}</td></tr>`).join(''):'<tr><td colspan="5" class="muted">No active incidents in platform view.</td></tr>'
     }</tbody>`;
-    renderGlobalIncidentCenter();
-    renderPlatformHealthCenter();
-    renderRuntimeEnvironmentHealthCenter();
-    renderEmergencyOverrideCenter();
-    renderDeploymentValidationCenter();
-    renderEnterpriseProductionCertificationCenter();
-    renderEnterpriseCertificationSuiteCenter();
-    renderEnterpriseComplianceCenter();
-    renderPrivacyComplianceCenter();
-    renderProductionReadinessCenter();
-    renderSafeReleaseCenter();
-    renderConfigurationDriftCenter();
-    renderEnvironmentSnapshotCenter();
-    renderCICDGovernanceCenter();
-    renderZeroDowntimeCenter();
-    renderEscalationCommand();
-    renderNotificationCommandCenter();
-    renderAsyncOperationsCenter();
-    renderEmployeeBulkImportCenter();
-    renderExcelValidationCenter();
-    renderInviteDeliveryCenter();
-    renderOnboardingConversionCenter();
-    renderEmployeeActivationCenter();
-    renderEmployeeLifecycleCenter();
-    renderEmployeeProfileCenter();
-    renderCredentialRecoveryCenter();
-    renderManagerHierarchyCenter();
-    renderDepartmentSetupCenter();
-    renderOrganizationInitializationCenter();
-    renderCompanyHolidayCenter();
-    renderInitialLeaveMigrationCenter();
-    renderImportPipelineCenter();
-    renderPayrollGovernanceCenter();
-    renderLeaveAttendanceGovernanceCenter();
-    renderExpenseGovernanceCenter();
-    renderDocumentGovernanceCenter();
-    renderFileAttachmentGovernanceCenter();
-    renderUploadValidationCenter();
-    renderDocumentVisibilityCenter();
-    renderStorageHardeningCenter();
-    renderAttachmentAuditTrailCenter();
-    renderFileRetentionCenter();
-    renderDocumentClassificationCenter();
-    renderSignedAccessGovernanceCenter();
-    renderThreatGovernanceCenter();
-    renderDeliverableTimelineCenter();
-    renderStrategicDependencyCenter();
-    renderDepartmentExecutionCenter();
-    renderQuarterlyGoalCenter();
-    renderLeadershipAccountabilityCenter();
-    renderStrategicBottleneckCenter();
-    renderExecutionHeatmapCenter();
-    renderStrategicDelayPredictionCenter();
-    renderPlatformAnalyticsCenter();
-    renderTenantUsageIntelligenceCenter();
-    renderPlatformCostMonitoringCenter();
-    renderTenantBillingCenter();
-    renderPerformanceGovernanceCenter();
-    renderRecruitmentGovernanceCenter();
-    renderCommunicationGovernanceCenter();
-    renderWorkflowDiscussionCenter();
-    renderPolicyGovernanceCenter();
-    renderAnnouncementHubCenter();
-    renderTeamWorkspaceCenter();
-    renderCommunicationAnalyticsCenter();
+    if(!options.deferCenters){
+        renderGlobalIncidentCenter();
+        renderPlatformHealthCenter();
+        renderRuntimeEnvironmentHealthCenter();
+        renderEmergencyOverrideCenter();
+        renderDeploymentValidationCenter();
+        renderEnterpriseProductionCertificationCenter();
+        renderEnterpriseCertificationSuiteCenter();
+        renderEnterpriseComplianceCenter();
+        renderPrivacyComplianceCenter();
+        renderProductionReadinessCenter();
+        renderSafeReleaseCenter();
+        renderConfigurationDriftCenter();
+        renderEnvironmentSnapshotCenter();
+        renderCICDGovernanceCenter();
+        renderZeroDowntimeCenter();
+        renderEscalationCommand();
+        renderNotificationCommandCenter();
+        renderAsyncOperationsCenter();
+        renderEmployeeBulkImportCenter();
+        renderExcelValidationCenter();
+        renderInviteDeliveryCenter();
+        renderOnboardingConversionCenter();
+        renderEmployeeActivationCenter();
+        renderEmployeeLifecycleCenter();
+        renderEmployeeProfileCenter();
+        renderCredentialRecoveryCenter();
+        renderManagerHierarchyCenter();
+        renderDepartmentSetupCenter();
+        renderOrganizationInitializationCenter();
+        renderCompanyHolidayCenter();
+        renderInitialLeaveMigrationCenter();
+        renderImportPipelineCenter();
+        renderPayrollGovernanceCenter();
+        renderLeaveAttendanceGovernanceCenter();
+        renderExpenseGovernanceCenter();
+        renderDocumentGovernanceCenter();
+        renderFileAttachmentGovernanceCenter();
+        renderUploadValidationCenter();
+        renderDocumentVisibilityCenter();
+        renderStorageHardeningCenter();
+        renderAttachmentAuditTrailCenter();
+        renderFileRetentionCenter();
+        renderDocumentClassificationCenter();
+        renderSignedAccessGovernanceCenter();
+        renderThreatGovernanceCenter();
+        renderDeliverableTimelineCenter();
+        renderStrategicDependencyCenter();
+        renderDepartmentExecutionCenter();
+        renderQuarterlyGoalCenter();
+        renderLeadershipAccountabilityCenter();
+        renderStrategicBottleneckCenter();
+        renderExecutionHeatmapCenter();
+        renderStrategicDelayPredictionCenter();
+        renderPlatformAnalyticsCenter();
+        renderTenantUsageIntelligenceCenter();
+        renderPlatformCostMonitoringCenter();
+        renderTenantBillingCenter();
+        renderPerformanceGovernanceCenter();
+        renderRecruitmentGovernanceCenter();
+        renderCommunicationGovernanceCenter();
+        renderWorkflowDiscussionCenter();
+        renderPolicyGovernanceCenter();
+        renderAnnouncementHubCenter();
+        renderTeamWorkspaceCenter();
+        renderCommunicationAnalyticsCenter();
+    }
 }
 
 function renderGlobalIncidentCenter(){
@@ -20533,7 +20569,7 @@ function renderFrontendResilienceCenter(){
     }</tbody>`;
 }
 
-function renderAudit(){
+function renderAudit(options={}){
     const snapshots=gov().rollbackSnapshots||[];
     document.getElementById('rollbackTable').innerHTML=`<thead><tr><th>Snapshot</th><th>Created</th><th>Reason</th><th>Action</th></tr></thead><tbody>${
         snapshots.length?snapshots.map(s=>`<tr><td>${esc(s.snapshotId)}</td><td>${esc(new Date(s.createdAt).toLocaleString())}</td><td>${esc(s.reason)}</td><td><button class="btn alt" onclick="rollback('${esc(s.snapshotId)}')">Restore</button></td></tr>`).join(''):'<tr><td colspan="4" class="muted">No rollback snapshots yet.</td></tr>'
@@ -20542,34 +20578,36 @@ function renderAudit(){
     document.getElementById('auditTable').innerHTML=`<thead><tr><th>Date</th><th>Role</th><th>Action</th><th>Description</th></tr></thead><tbody>${
         logs.length?logs.map(l=>`<tr><td>${esc(new Date(l.date).toLocaleString())}</td><td>${esc(l.userRole||l.actorRole)}</td><td>${esc(l.action||l.actionType)}</td><td>${esc(l.description)}</td></tr>`).join(''):'<tr><td colspan="4" class="muted">No platform governance audit entries yet.</td></tr>'
     }</tbody>`;
-    renderTenantBackupExportCenter();
-    renderBackupIntegrityCenter();
-    renderCacheOperationsCenter();
-    renderAssetDeliveryCenter();
-    renderQueueOperationsCenter();
-    renderApiGatewayOperationsCenter();
-    renderWebhookOperationsCenter();
-    renderDeveloperPlatformCenter();
-    renderIntegrationMarketplaceCenter();
-    renderAutomationCenter();
-    renderScalabilityOperationsCenter();
-    renderInfrastructureObservabilityCenter();
-    renderEnterpriseLogCenter();
-    renderGlobalInfrastructureCenter();
-    renderKnowledgeIntelligenceCenter();
-    renderAiHrAssistantCenter();
-    renderAiOperationsCenter();
-    renderEnterpriseAiCenter();
-    renderDataRetentionGovernanceCenter();
-    renderRecoveryGovernanceCenter();
-    renderValidationRegistryCenter();
-    renderWorkflowRecoveryCenter();
-    renderDisasterRecoveryCenter();
-    renderApiValidationCenter();
-    renderFrontendResilienceCenter();
-    renderGlobalAuditCenter();
-    renderAuditInvestigation();
-    renderIncidentTimeline();
+    if(!options.deferCenters){
+        renderTenantBackupExportCenter();
+        renderBackupIntegrityCenter();
+        renderCacheOperationsCenter();
+        renderAssetDeliveryCenter();
+        renderQueueOperationsCenter();
+        renderApiGatewayOperationsCenter();
+        renderWebhookOperationsCenter();
+        renderDeveloperPlatformCenter();
+        renderIntegrationMarketplaceCenter();
+        renderAutomationCenter();
+        renderScalabilityOperationsCenter();
+        renderInfrastructureObservabilityCenter();
+        renderEnterpriseLogCenter();
+        renderGlobalInfrastructureCenter();
+        renderKnowledgeIntelligenceCenter();
+        renderAiHrAssistantCenter();
+        renderAiOperationsCenter();
+        renderEnterpriseAiCenter();
+        renderDataRetentionGovernanceCenter();
+        renderRecoveryGovernanceCenter();
+        renderValidationRegistryCenter();
+        renderWorkflowRecoveryCenter();
+        renderDisasterRecoveryCenter();
+        renderApiValidationCenter();
+        renderFrontendResilienceCenter();
+        renderGlobalAuditCenter();
+        renderAuditInvestigation();
+        renderIncidentTimeline();
+    }
 }
 
 function renderGlobalAuditCenter(){
@@ -20710,7 +20748,380 @@ function renderIncidentTimeline(){
     }</tbody>`;
 }
 
-function renderAll(){refreshPlatformView();renderOverview();renderSmartSearchCenter();renderErrorGovernanceCenter();renderGlobalActivityFeedCenter();renderDashboardPerformancePanel();renderMobileExperiencePanel();renderRenderOptimizationPanel();renderUXGovernancePanel();renderAccessibilityGovernancePanel();renderUserPreferenceCenter();renderAIRiskIntelligenceCenter();renderAIKPIForecastingCenter();renderSmartEscalationIntelligenceCenter();renderOrganizationPerformanceIntelligenceCenter();renderAdvancedOkrCommandCenter();renderCrossDepartmentDependencyCenter();renderWorkflowSimulationCommandCenter();renderExecutiveDecisionIntelligenceCenter();renderStrategicAIAssistantCenter();renderPredictiveWorkforceIntelligenceCenter();renderTenantGovernance();renderMigration();renderDeployment();renderPilot();renderSecurityGovernance();renderStagingValidation();renderFeatures();renderPlatformMonitoring();renderRoleMatrix();renderModes();renderBranding();renderAudit();}
+const PLATFORM_HEADING_RENDERERS=Object.freeze({
+    'Identity Federation Center':'renderIdentityFederationCenter',
+    'Platform Health + Tenant Intelligence':'renderPlatformHealthCenter',
+    'Environment Health':'renderRuntimeEnvironmentHealthCenter',
+    'Enterprise Notification Center':'renderNotificationCommandCenter',
+    'Integration Marketplace':'renderIntegrationMarketplaceCenter',
+    'Enterprise Multi-Tenant Usage Command Center':'renderTenantUsageIntelligenceCenter',
+    'Enterprise SaaS Billing Command Center':'renderTenantBillingCenter'
+});
+const _platformPanelRenderState=new Map();
+const _platformRenderMetrics=[];
+let _platformRenderJob=null;
+
+function platformRenderTask(name,run){
+    return {name,run};
+}
+function platformOverviewRenderTasks(){
+    return [
+        platformRenderTask('Platform Overview',renderOverview),
+        platformRenderTask('Global Search',renderSmartSearchCenter),
+        platformRenderTask('Error Governance',renderErrorGovernanceCenter),
+        platformRenderTask('Global Activity Feed',renderGlobalActivityFeedCenter),
+        platformRenderTask('Dashboard Performance',renderDashboardPerformancePanel),
+        platformRenderTask('Mobile Experience',renderMobileExperiencePanel),
+        platformRenderTask('Render Optimization',renderRenderOptimizationPanel),
+        platformRenderTask('UX Governance',renderUXGovernancePanel),
+        platformRenderTask('Accessibility Governance',renderAccessibilityGovernancePanel),
+        platformRenderTask('User Preferences',renderUserPreferenceCenter),
+        platformRenderTask('AI Risk Intelligence',renderAIRiskIntelligenceCenter),
+        platformRenderTask('AI KPI Forecasting',renderAIKPIForecastingCenter),
+        platformRenderTask('Smart Escalation',renderSmartEscalationIntelligenceCenter),
+        platformRenderTask('Organization Performance',renderOrganizationPerformanceIntelligenceCenter),
+        platformRenderTask('Advanced OKR',renderAdvancedOkrCommandCenter),
+        platformRenderTask('Cross Department Dependencies',renderCrossDepartmentDependencyCenter),
+        platformRenderTask('Workflow Simulation',renderWorkflowSimulationCommandCenter),
+        platformRenderTask('Executive Decisions',renderExecutiveDecisionIntelligenceCenter),
+        platformRenderTask('Strategic AI Assistant',renderStrategicAIAssistantCenter),
+        platformRenderTask('Predictive Workforce',renderPredictiveWorkforceIntelligenceCenter)
+    ];
+}
+function platformMonitoringRenderTasks(){
+    return [
+        platformRenderTask('Operations Summary',()=>renderPlatformMonitoring({deferCenters:true})),
+        platformRenderTask('Global Incidents',renderGlobalIncidentCenter),
+        platformRenderTask('Platform Health',renderPlatformHealthCenter),
+        platformRenderTask('Runtime Environment Health',renderRuntimeEnvironmentHealthCenter),
+        platformRenderTask('Emergency Override',renderEmergencyOverrideCenter),
+        platformRenderTask('Deployment Validation',renderDeploymentValidationCenter),
+        platformRenderTask('Production Certification',renderEnterpriseProductionCertificationCenter),
+        platformRenderTask('Enterprise Certification Suite',renderEnterpriseCertificationSuiteCenter),
+        platformRenderTask('Enterprise Compliance',renderEnterpriseComplianceCenter),
+        platformRenderTask('Privacy Compliance',renderPrivacyComplianceCenter),
+        platformRenderTask('Production Readiness',renderProductionReadinessCenter),
+        platformRenderTask('Safe Release',renderSafeReleaseCenter),
+        platformRenderTask('Configuration Drift',renderConfigurationDriftCenter),
+        platformRenderTask('Environment Snapshot',renderEnvironmentSnapshotCenter),
+        platformRenderTask('CI/CD Governance',renderCICDGovernanceCenter),
+        platformRenderTask('Zero Downtime',renderZeroDowntimeCenter),
+        platformRenderTask('Escalation Command',renderEscalationCommand),
+        platformRenderTask('Notification Command',renderNotificationCommandCenter),
+        platformRenderTask('Async Operations',renderAsyncOperationsCenter),
+        platformRenderTask('Employee Bulk Import',renderEmployeeBulkImportCenter),
+        platformRenderTask('Excel Validation',renderExcelValidationCenter),
+        platformRenderTask('Invite Delivery',renderInviteDeliveryCenter),
+        platformRenderTask('Onboarding Conversion',renderOnboardingConversionCenter),
+        platformRenderTask('Employee Activation',renderEmployeeActivationCenter),
+        platformRenderTask('Employee Lifecycle',renderEmployeeLifecycleCenter),
+        platformRenderTask('Employee Profile',renderEmployeeProfileCenter),
+        platformRenderTask('Credential Recovery',renderCredentialRecoveryCenter),
+        platformRenderTask('Manager Hierarchy',renderManagerHierarchyCenter),
+        platformRenderTask('Department Setup',renderDepartmentSetupCenter),
+        platformRenderTask('Organization Initialization',renderOrganizationInitializationCenter),
+        platformRenderTask('Company Holidays',renderCompanyHolidayCenter),
+        platformRenderTask('Initial Leave Migration',renderInitialLeaveMigrationCenter),
+        platformRenderTask('Import Pipeline',renderImportPipelineCenter),
+        platformRenderTask('Payroll Governance',renderPayrollGovernanceCenter),
+        platformRenderTask('Leave and Attendance',renderLeaveAttendanceGovernanceCenter),
+        platformRenderTask('Expense Governance',renderExpenseGovernanceCenter),
+        platformRenderTask('Document Governance',renderDocumentGovernanceCenter),
+        platformRenderTask('File Attachments',renderFileAttachmentGovernanceCenter),
+        platformRenderTask('Upload Validation',renderUploadValidationCenter),
+        platformRenderTask('Document Visibility',renderDocumentVisibilityCenter),
+        platformRenderTask('Storage Hardening',renderStorageHardeningCenter),
+        platformRenderTask('Attachment Audit Trail',renderAttachmentAuditTrailCenter),
+        platformRenderTask('File Retention',renderFileRetentionCenter),
+        platformRenderTask('Document Classification',renderDocumentClassificationCenter),
+        platformRenderTask('Signed Access',renderSignedAccessGovernanceCenter),
+        platformRenderTask('Threat Governance',renderThreatGovernanceCenter),
+        platformRenderTask('Deliverable Timeline',renderDeliverableTimelineCenter),
+        platformRenderTask('Strategic Dependencies',renderStrategicDependencyCenter),
+        platformRenderTask('Department Execution',renderDepartmentExecutionCenter),
+        platformRenderTask('Quarterly Goals',renderQuarterlyGoalCenter),
+        platformRenderTask('Leadership Accountability',renderLeadershipAccountabilityCenter),
+        platformRenderTask('Strategic Bottlenecks',renderStrategicBottleneckCenter),
+        platformRenderTask('Execution Heatmap',renderExecutionHeatmapCenter),
+        platformRenderTask('Strategic Delay Prediction',renderStrategicDelayPredictionCenter),
+        platformRenderTask('Platform Analytics',renderPlatformAnalyticsCenter),
+        platformRenderTask('Tenant Usage Intelligence',renderTenantUsageIntelligenceCenter),
+        platformRenderTask('Platform Cost Monitoring',renderPlatformCostMonitoringCenter),
+        platformRenderTask('Tenant Billing',renderTenantBillingCenter),
+        platformRenderTask('Performance Governance',renderPerformanceGovernanceCenter),
+        platformRenderTask('Recruitment Governance',renderRecruitmentGovernanceCenter),
+        platformRenderTask('Communication Governance',renderCommunicationGovernanceCenter),
+        platformRenderTask('Workflow Discussion',renderWorkflowDiscussionCenter),
+        platformRenderTask('Policy Governance',renderPolicyGovernanceCenter),
+        platformRenderTask('Announcement Hub',renderAnnouncementHubCenter),
+        platformRenderTask('Team Workspace',renderTeamWorkspaceCenter),
+        platformRenderTask('Communication Analytics',renderCommunicationAnalyticsCenter)
+    ];
+}
+function platformAuditRenderTasks(){
+    return [
+        platformRenderTask('Audit Summary',()=>renderAudit({deferCenters:true})),
+        platformRenderTask('Tenant Backup Export',renderTenantBackupExportCenter),
+        platformRenderTask('Backup Integrity',renderBackupIntegrityCenter),
+        platformRenderTask('Cache Operations',renderCacheOperationsCenter),
+        platformRenderTask('Asset Delivery',renderAssetDeliveryCenter),
+        platformRenderTask('Queue Operations',renderQueueOperationsCenter),
+        platformRenderTask('API Gateway',renderApiGatewayOperationsCenter),
+        platformRenderTask('Webhook Operations',renderWebhookOperationsCenter),
+        platformRenderTask('Developer Platform',renderDeveloperPlatformCenter),
+        platformRenderTask('Integration Marketplace',renderIntegrationMarketplaceCenter),
+        platformRenderTask('Automation',renderAutomationCenter),
+        platformRenderTask('Scalability Operations',renderScalabilityOperationsCenter),
+        platformRenderTask('Infrastructure Observability',renderInfrastructureObservabilityCenter),
+        platformRenderTask('Enterprise Logging',renderEnterpriseLogCenter),
+        platformRenderTask('Global Infrastructure',renderGlobalInfrastructureCenter),
+        platformRenderTask('Knowledge Intelligence',renderKnowledgeIntelligenceCenter),
+        platformRenderTask('AI HR Assistant',renderAiHrAssistantCenter),
+        platformRenderTask('AI Operations',renderAiOperationsCenter),
+        platformRenderTask('Enterprise AI',renderEnterpriseAiCenter),
+        platformRenderTask('Data Retention',renderDataRetentionGovernanceCenter),
+        platformRenderTask('Record Recovery',renderRecoveryGovernanceCenter),
+        platformRenderTask('Validation Registry',renderValidationRegistryCenter),
+        platformRenderTask('Workflow Recovery',renderWorkflowRecoveryCenter),
+        platformRenderTask('Disaster Recovery',renderDisasterRecoveryCenter),
+        platformRenderTask('API Validation',renderApiValidationCenter),
+        platformRenderTask('Frontend Resilience',renderFrontendResilienceCenter),
+        platformRenderTask('Global Audit',renderGlobalAuditCenter),
+        platformRenderTask('Audit Investigation',renderAuditInvestigation),
+        platformRenderTask('Incident Timeline',renderIncidentTimeline)
+    ];
+}
+function platformSecurityRenderTasks(){
+    return [
+        platformRenderTask('Security Summary',()=>renderSecurityGovernance({deferCenters:true})),
+        platformRenderTask('Tenant Isolation',renderTenantIsolationGovernance),
+        platformRenderTask('Session Governance',renderSessionGovernance),
+        platformRenderTask('Authentication Security',renderAuthenticationSecurityCenter),
+        platformRenderTask('Identity Federation',renderIdentityFederationCenter),
+        platformRenderTask('SCIM Provisioning',renderScimProvisioningCenter)
+    ];
+}
+function platformPanelRenderTasks(panelId,heading=''){
+    let tasks;
+    switch(panelId){
+        case 'overview':tasks=platformOverviewRenderTasks();break;
+        case 'tenant':tasks=[platformRenderTask('Tenant Governance',renderTenantGovernance)];break;
+        case 'migration':tasks=[platformRenderTask('Migration',renderMigration)];break;
+        case 'deployment':tasks=[platformRenderTask('Deployment',renderDeployment)];break;
+        case 'pilot':tasks=[platformRenderTask('Pilot Onboarding',renderPilot)];break;
+        case 'security':tasks=platformSecurityRenderTasks();break;
+        case 'staging':tasks=[platformRenderTask('Staging Validation',renderStagingValidation)];break;
+        case 'features':tasks=[platformRenderTask('Feature Flags',renderFeatures)];break;
+        case 'monitoring':tasks=platformMonitoringRenderTasks();break;
+        case 'roles':tasks=[platformRenderTask('Role Matrix',renderRoleMatrix)];break;
+        case 'presets':tasks=[platformRenderTask('Platform Modes',renderModes)];break;
+        case 'branding':tasks=[platformRenderTask('Branding',renderBranding)];break;
+        case 'audit':tasks=platformAuditRenderTasks();break;
+        default:tasks=[platformRenderTask('Platform Overview',renderOverview)];
+    }
+    const preferredName=PLATFORM_HEADING_RENDERERS[heading];
+    if(preferredName){
+        const preferredIndex=tasks.findIndex(task=>task.run?.name===preferredName);
+        if(preferredIndex>1){
+            const [preferred]=tasks.splice(preferredIndex,1);
+            tasks.splice(1,0,preferred);
+        }
+    }
+    return [platformRenderTask('Refresh Platform View',refreshPlatformView),...tasks];
+}
+function platformButtonLoadingLabel(button){
+    const text=String(button?.textContent||'').trim().toLowerCase();
+    if(/create|provision/.test(text))return 'Creating...';
+    if(/import/.test(text))return 'Importing...';
+    if(/invite|send/.test(text))return 'Sending...';
+    if(/activate|launch/.test(text))return 'Activating...';
+    if(/save/.test(text))return 'Saving...';
+    if(/update/.test(text))return 'Updating...';
+    if(/delete|remove/.test(text))return 'Deleting...';
+    if(/deploy/.test(text))return 'Deploying...';
+    if(/restore|rollback/.test(text))return 'Restoring...';
+    if(/generate|export|download/.test(text))return 'Generating...';
+    return 'Processing...';
+}
+function platformOperationTitle(button){
+    const text=String(button?.textContent||'').trim();
+    if(!text)return 'Processing request';
+    if(/create company|provision tenant/i.test(text))return 'Creating Company...';
+    if(/import/i.test(text))return 'Importing...';
+    if(/invite|send/i.test(text))return 'Sending Invitations...';
+    if(/activate|launch/i.test(text))return 'Completing setup...';
+    if(/deploy/i.test(text))return 'Deploying...';
+    if(/report|generate|export/i.test(text))return 'Generating Reports...';
+    if(/sync|refresh/i.test(text))return 'Synchronizing...';
+    if(/save|update/i.test(text))return 'Saving...';
+    return `${text.replace(/\s+/g,' ')}...`;
+}
+function installPlatformActionLoading(){
+    if(window.__ARTHHRMS_PLATFORM_ACTION_LOADING__)return;
+    window.__ARTHHRMS_PLATFORM_ACTION_LOADING__=true;
+    if(!window.ArthLoadingService?.run)return;
+    const skipped=new Set([
+        'showPanel','openPlatformPanel','openPlatformModule','togglePlatformMobileNav',
+        'closePlatformMobileNav','filterPlatformNavigation','restorePlatformNavigation','logout'
+    ]);
+    const names=new Set();
+    document.querySelectorAll('button[onclick]').forEach(button=>{
+        const source=String(button.getAttribute('onclick')||'');
+        const match=source.match(/^\s*([A-Za-z_$][\w$]*)\s*\(/);
+        if(match&&!skipped.has(match[1]))names.add(match[1]);
+    });
+    names.forEach(name=>{
+        const original=window[name];
+        if(typeof original!=='function'||original.__arthLoadingWrapped)return;
+        const wrapped=function(...args){
+            if(window.__ARTHHRMS_PLATFORM_OPERATION_DEPTH__)return original.apply(this,args);
+            const button=document.activeElement?.closest?.('button')||null;
+            const label=String(button?.textContent||name);
+            const overlay=/provision|create|import|invite|send|activate|launch|deploy|validate|readiness|certif|backup|restore|rollback|generate|sync|process/i.test(`${name} ${label}`);
+            return ArthLoadingService.run(async()=>{
+                window.__ARTHHRMS_PLATFORM_OPERATION_DEPTH__=1;
+                try{
+                    return await original.apply(this,args);
+                }finally{
+                    window.__ARTHHRMS_PLATFORM_OPERATION_DEPTH__=0;
+                }
+            },{
+                title:platformOperationTitle(button),
+                message:'Validating and processing the request...',
+                overlay,
+                overlayDelayMs:300,
+                button,
+                buttonLabel:platformButtonLoadingLabel(button),
+                metricLabel:`Platform action: ${name}`,
+                errorMessage:'The operation could not be completed. Review the error and retry.'
+            }).catch(error=>{
+                console.error('[PlatformControl] Action failed:',name,error);
+                return null;
+            });
+        };
+        Object.defineProperty(wrapped,'__arthLoadingWrapped',{value:true});
+        window[name]=wrapped;
+    });
+}
+function platformRenderState(panelId){
+    if(!_platformPanelRenderState.has(panelId)){
+        _platformPanelRenderState.set(panelId,{dirty:true,rendered:false,lastDurationMs:0,longTasks:0});
+    }
+    return _platformPanelRenderState.get(panelId);
+}
+function markPlatformPanelsDirty(){
+    _platformViewDirty=true;
+    document.querySelectorAll('.section[id^="panel-"]').forEach(panel=>{
+        platformRenderState(panel.id.replace(/^panel-/,'')).dirty=true;
+    });
+}
+function recordPlatformRenderMetric(panelId,taskName,durationMs){
+    const metric=Object.freeze({
+        panelId,
+        taskName,
+        durationMs:Math.round(durationMs*100)/100,
+        longTask:durationMs>50,
+        timestamp:new Date().toISOString()
+    });
+    _platformRenderMetrics.push(metric);
+    if(_platformRenderMetrics.length>250)_platformRenderMetrics.splice(0,_platformRenderMetrics.length-250);
+    return metric;
+}
+function platformPerformanceSnapshot(){
+    const panels={};
+    _platformPanelRenderState.forEach((value,key)=>{panels[key]={...value};});
+    return Object.freeze({
+        activePanel:_activePlatformPanelId,
+        rendering:!!_platformRenderJob,
+        panels:Object.freeze(panels),
+        recentTasks:Object.freeze(_platformRenderMetrics.slice(-100)),
+        loading:Object.freeze(window.ArthLoadingService?.getMetrics?.()||[])
+    });
+}
+window.getArthHRMSPlatformPerformance=platformPerformanceSnapshot;
+
+async function schedulePlatformPanelRender(panelId,options={}){
+    const resolvedPanelId=panelId||'overview';
+    const state=platformRenderState(resolvedPanelId);
+    if(options.reason==='navigation'&&state.rendered&&!state.dirty)return {skipped:true,panelId:resolvedPanelId};
+    if(_platformRenderJob)_platformRenderJob.cancelled=true;
+    const job={panelId:resolvedPanelId,cancelled:false};
+    _platformRenderJob=job;
+    const panel=document.getElementById(`panel-${resolvedPanelId}`);
+    const activeButton=options.reason==='navigation'?null:document.activeElement?.closest?.('button.btn');
+    const title=String(options.title||document.getElementById('pageTitle')?.textContent||'Platform module');
+    const loading=window.ArthLoadingService;
+    const token=loading?.begin?.({
+        title:`Loading ${title}`,
+        message:'Preparing the latest platform information...',
+        progress:8,
+        overlayDelayMs:300,
+        button:activeButton,
+        buttonLabel:platformButtonLoadingLabel(activeButton)
+    });
+    loading?.showSkeleton?.(panel,{rows:4});
+    const tasks=platformPanelRenderTasks(resolvedPanelId,options.heading||_activePlatformModuleHeading);
+    const started=performance.now();
+    let completed=0;
+    let longTasks=0;
+    const taskErrors=[];
+    let sliceStarted=performance.now();
+    try{
+        await (loading?.nextFrame?.()||new Promise(resolve=>requestAnimationFrame(resolve)));
+        for(const task of tasks){
+            if(job.cancelled)break;
+            const taskStarted=performance.now();
+            try{
+                task.run();
+            }catch(error){
+                taskErrors.push({taskName:task.name,message:error?.message||String(error)});
+                console.error('[PlatformControl] Render task failed:',resolvedPanelId,task.name,error);
+            }
+            const duration=performance.now()-taskStarted;
+            if(recordPlatformRenderMetric(resolvedPanelId,task.name,duration).longTask)longTasks+=1;
+            completed+=1;
+            loading?.update?.(token,{
+                message:`Loading ${task.name}...`,
+                progress:Math.min(96,8+(completed/tasks.length)*88)
+            });
+            if(performance.now()-sliceStarted>=12){
+                await (loading?.yieldToBrowser?.()||new Promise(resolve=>setTimeout(resolve,0)));
+                sliceStarted=performance.now();
+            }
+        }
+        if(job.cancelled){
+            state.dirty=true;
+            loading?.finish?.(token,{label:`${title} render cancelled`,status:'cancelled'});
+            return {cancelled:true,panelId:resolvedPanelId};
+        }
+        state.dirty=taskErrors.length>0;
+        state.rendered=true;
+        state.lastDurationMs=Math.round((performance.now()-started)*100)/100;
+        state.longTasks=longTasks;
+        state.errors=taskErrors.length;
+        loading?.finish?.(token,{label:`${title} rendered`,status:taskErrors.length?'degraded':'completed'});
+        if(taskErrors.length){
+            loading?.notify?.('warning',`${taskErrors.length} section(s) could not be refreshed. The rest of the module remains available.`,{title});
+        }
+        return {success:taskErrors.length===0,panelId:resolvedPanelId,durationMs:state.lastDurationMs,longTasks,taskErrors};
+    }catch(error){
+        state.dirty=true;
+        loading?.fail?.(token,error,'This platform module could not finish loading. Retry the module from the navigation.');
+        console.error('[PlatformControl] Module render failed:',resolvedPanelId,error);
+        return {success:false,panelId:resolvedPanelId,error};
+    }finally{
+        loading?.hideSkeleton?.(panel);
+        if(_platformRenderJob===job)_platformRenderJob=null;
+    }
+}
+function renderAll(){
+    markPlatformPanelsDirty();
+    return schedulePlatformPanelRender(_activePlatformPanelId,{
+        heading:_activePlatformModuleHeading,
+        title:document.getElementById('pageTitle')?.textContent||'Platform module',
+        reason:'update'
+    });
+}
 function safetyGate(actionType,payload,label){
     const svc=deploymentSvc();
     return svc?.guardAction ? svc.guardAction(actionType,payload||{},{label}) : {ok:true};
@@ -25910,7 +26321,6 @@ ArthAuthGuard.ready.then((decision)=>{
         return;
     }
     if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
-    renderAll();
     initializePlatformShell();
 });
 </script>

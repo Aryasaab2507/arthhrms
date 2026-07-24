@@ -1,0 +1,271 @@
+.arth-loading-system {
+    color: #0f172a;
+    font-family: "DM Sans", system-ui, sans-serif;
+    letter-spacing: 0;
+}
+
+.arth-loading-progress {
+    height: 3px;
+    inset: 0 0 auto;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: fixed;
+    transition: opacity 140ms ease;
+    z-index: 10020;
+}
+
+.arth-loading-progress.is-visible {
+    opacity: 1;
+}
+
+.arth-loading-progress-bar {
+    background: #0284c7;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.45);
+    height: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 180ms ease;
+    width: 100%;
+}
+
+.arth-loading-overlay {
+    align-items: center;
+    background: rgba(15, 23, 42, 0.48);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    opacity: 0;
+    padding: 24px;
+    pointer-events: none;
+    position: fixed;
+    transition: opacity 160ms ease;
+    visibility: hidden;
+    z-index: 10010;
+}
+
+.arth-loading-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.arth-loading-dialog {
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+    display: flex;
+    gap: 14px;
+    max-width: 440px;
+    min-width: min(360px, calc(100vw - 48px));
+    padding: 18px 20px;
+}
+
+.arth-loading-spinner,
+.arth-button-spinner {
+    animation: arth-loading-spin 700ms linear infinite;
+    border: 3px solid #bae6fd;
+    border-radius: 50%;
+    border-top-color: #0369a1;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 24px;
+    width: 24px;
+}
+
+.arth-button-spinner {
+    border-width: 2px;
+    height: 16px;
+    width: 16px;
+}
+
+.arth-loading-copy,
+.arth-toast-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.arth-loading-title,
+.arth-toast-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.arth-loading-message,
+.arth-toast-message {
+    color: #475569;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.arth-button-loading {
+    align-items: center;
+    display: inline-flex !important;
+    gap: 8px;
+    justify-content: center;
+}
+
+.arth-skeleton-host {
+    min-height: 120px;
+    position: relative;
+}
+
+.arth-skeleton-host > :not(.arth-skeleton) {
+    opacity: 0.38;
+    pointer-events: none;
+}
+
+.arth-skeleton {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: grid;
+    gap: 12px;
+    inset: 0 auto auto 0;
+    padding: 16px;
+    position: absolute;
+    width: 100%;
+    z-index: 3;
+}
+
+.arth-skeleton-line {
+    animation: arth-skeleton-pulse 1.2s ease-in-out infinite;
+    background: #e2e8f0;
+    border-radius: 4px;
+    display: block;
+    height: 12px;
+    width: 92%;
+}
+
+.arth-skeleton-line.is-title {
+    height: 18px;
+    width: 42%;
+}
+
+.arth-skeleton-line:nth-child(3n) {
+    width: 76%;
+}
+
+.arth-toast-region {
+    bottom: 20px;
+    display: grid;
+    gap: 10px;
+    max-width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+    position: fixed;
+    right: 20px;
+    width: 100%;
+    z-index: 10030;
+}
+
+.arth-toast {
+    align-items: start;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 4px minmax(0, 1fr) 28px;
+    opacity: 0;
+    padding: 12px;
+    pointer-events: auto;
+    transform: translateY(8px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.arth-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.arth-toast-indicator {
+    align-self: stretch;
+    background: #0284c7;
+    border-radius: 2px;
+}
+
+.arth-toast-success .arth-toast-indicator {
+    background: #15803d;
+}
+
+.arth-toast-warning .arth-toast-indicator {
+    background: #b45309;
+}
+
+.arth-toast-error .arth-toast-indicator {
+    background: #b91c1c;
+}
+
+.arth-toast-close {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: #475569;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+}
+
+.arth-toast-close:hover,
+.arth-toast-close:focus-visible {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+@keyframes arth-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes arth-skeleton-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 640px) {
+    .arth-loading-overlay {
+        align-items: flex-end;
+        padding: 16px;
+    }
+
+    .arth-loading-dialog {
+        min-width: 100%;
+    }
+
+    .arth-toast-region {
+        bottom: 12px;
+        max-width: calc(100vw - 24px);
+        right: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .arth-loading-progress,
+    .arth-loading-progress-bar,
+    .arth-loading-overlay,
+    .arth-toast {
+        transition: none;
+    }
+
+    .arth-loading-spinner,
+    .arth-button-spinner,
+    .arth-skeleton-line {
+        animation-duration: 1.6s;
+    }
+}
