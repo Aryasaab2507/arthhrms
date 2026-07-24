@@ -211,6 +211,7 @@
         @media(max-width:980px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.shell.has-mobile-drawer>.side{position:fixed;height:100vh}.grid{grid-template-columns:repeat(2,1fr)}.row,.form{grid-template-columns:1fr}}
         @media(max-width:620px){.content{padding:14px}.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
     </style>
+    <link rel="stylesheet" href="styles/platform-control-shell.css">
 </head>
 <body>
 <a href="#platformMainContent" class="skip-link">Skip to main content</a>
@@ -225,22 +226,58 @@
                 <p>Root Governance Console</p>
             </div>
         </div>
-        <div class="nav" id="platformSidebarNav" role="tablist" aria-label="Platform control sections">
-            <button type="button" class="on" role="tab" aria-selected="true" aria-controls="panel-overview" onclick="showPanel('overview',this)">Overview</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-tenant" onclick="showPanel('tenant',this)">Tenant Management</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-migration" onclick="showPanel('migration',this)">Migration Status</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-deployment" onclick="showPanel('deployment',this)">Deployment Safety</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-pilot" onclick="showPanel('pilot',this)">Pilot Onboarding</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-security" onclick="showPanel('security',this)">Security Governance</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-staging" onclick="showPanel('staging',this)">Staging Validation</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-features" onclick="showPanel('features',this)">Feature Flags</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-monitoring" onclick="showPanel('monitoring',this)">Operational Monitoring</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-roles" onclick="showPanel('roles',this)">Role Matrix</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-presets" onclick="showPanel('presets',this)">Presets & Safe Mode</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-branding" onclick="showPanel('branding',this)">Branding</button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="panel-audit" onclick="showPanel('audit',this)">Audit & Rollback</button>
-            <button type="button" onclick="logout()">Logout</button>
+        <div class="platform-environment"><span>Control plane</span><strong>Platform isolated</strong></div>
+        <div class="platform-nav-search">
+            <label class="sr-only" for="platformNavigationSearch">Search platform modules</label>
+            <input id="platformNavigationSearch" type="search" placeholder="Search modules" autocomplete="off">
         </div>
+        <nav class="nav" id="platformSidebarNav" aria-label="Platform control sections">
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Workspace</p>
+                <button type="button" class="platform-nav-item on" aria-current="page" aria-controls="panel-overview" data-module="dashboard" data-title="Platform Dashboard" data-subtitle="Governance posture, readiness, alerts, and platform-wide intelligence." onclick="showPanel('overview',this)">Dashboard</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-tenant" data-module="companies" data-title="Companies" data-subtitle="Tenant lifecycle, company health, provisioning, and activation governance." onclick="showPanel('tenant',this)">Companies</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-pilot" data-module="company-onboarding" data-title="Company Onboarding" data-subtitle="Controlled onboarding, readiness checkpoints, invitations, and pilot activation." onclick="showPanel('pilot',this)">Company Onboarding</button>
+            </div>
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Identity</p>
+                <button type="button" class="platform-nav-item" aria-controls="panel-roles" data-module="users" data-title="Users" data-subtitle="Platform-visible role governance without tenant employee-data access." onclick="showPanel('roles',this)">Users</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-security" data-module="identity-access" data-title="Identity &amp; Access" data-subtitle="Authentication, sessions, federation, SCIM, and access-governance posture." onclick="openPlatformModule('security',this,'Identity Federation Center')">Identity &amp; Access</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-security" data-module="security" data-title="Security" data-subtitle="Tenant isolation, session policy, threat posture, and security controls." onclick="showPanel('security',this)">Security</button>
+            </div>
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Operations</p>
+                <button type="button" class="platform-nav-item" aria-controls="panel-migration" data-module="imports" data-title="Imports" data-subtitle="Migration status, validation evidence, controlled activation, and rollback readiness." onclick="showPanel('migration',this)">Imports</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-deployment" data-module="deployments" data-title="Deployments" data-subtitle="Release safety, checkpoints, environment validation, and rollback controls." onclick="showPanel('deployment',this)">Deployments</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="operations" data-title="Operations" data-subtitle="Runtime operations, queues, logs, storage, delivery, and service health." onclick="openPlatformModule('monitoring',this,'Enterprise Operations Center')">Operations</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="monitoring" data-title="Monitoring" data-subtitle="Health signals, operational stability, observability, and recovery status." onclick="openPlatformModule('monitoring',this,'Platform Health + Tenant Intelligence')">Monitoring</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="system-health" data-title="System Health" data-subtitle="Environment, runtime, dependency, and tenant operational health." onclick="openPlatformModule('monitoring',this,'Environment Health')">System Health</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="notifications" data-title="Notifications" data-subtitle="Delivery governance, reliability, channels, retries, and communication health." onclick="openPlatformModule('monitoring',this,'Enterprise Notification Center')">Notifications</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="integrations" data-title="Integrations" data-subtitle="Marketplace connectors, APIs, webhooks, automation, and integration health." onclick="openPlatformModule('monitoring',this,'Integration Marketplace')">Integrations</button>
+            </div>
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Governance</p>
+                <button type="button" class="platform-nav-item" aria-controls="panel-staging" data-module="governance" data-title="Governance" data-subtitle="Staging evidence, certification gates, compliance posture, and release controls." onclick="showPanel('staging',this)">Governance</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="analytics" data-title="Analytics" data-subtitle="Platform growth, tenant usage, cost, performance, and operational intelligence." onclick="openPlatformModule('monitoring',this,'Enterprise Multi-Tenant Usage Command Center')">Analytics</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-monitoring" data-module="billing" data-title="Billing" data-subtitle="Subscription lifecycle, usage-linked billing, renewal, and cost governance." onclick="openPlatformModule('monitoring',this,'Enterprise SaaS Billing Command Center')">Billing</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-audit" data-module="audit-logs" data-title="Audit Logs" data-subtitle="Immutable governance history, investigations, changes, and rollback evidence." onclick="showPanel('audit',this)">Audit Logs</button>
+            </div>
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Configuration</p>
+                <button type="button" class="platform-nav-item" aria-controls="panel-features" data-module="feature-flags" data-title="Feature Flags" data-subtitle="Governed feature availability, role visibility, rollout, and rollback." onclick="showPanel('features',this)">Feature Flags</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-branding" data-module="branding" data-title="Branding" data-subtitle="Platform identity, theme governance, assets, and accessibility checks." onclick="showPanel('branding',this)">Branding</button>
+                <button type="button" class="platform-nav-item" aria-controls="panel-presets" data-module="settings" data-title="Settings" data-subtitle="Company presets, maintenance controls, safe mode, and emergency posture." onclick="showPanel('presets',this)">Settings</button>
+            </div>
+            <div class="platform-nav-group" data-nav-group>
+                <p class="platform-nav-label">Assurance</p>
+                <a class="platform-nav-item" data-module="test-lab" href="enterprise-test-lab.html">Test Lab</a>
+                <a class="platform-nav-item" data-module="qa-center" href="qa-validation.html">QA Center</a>
+                <a class="platform-nav-item" data-module="support" href="operations-monitoring.html">Support &amp; Incidents</a>
+            </div>
+            <p class="platform-nav-empty" id="platformNavigationEmpty">No platform modules match this search.</p>
+            <div class="platform-sidebar-footer">
+                <button type="button" class="platform-nav-item" onclick="logout()">Logout</button>
+            </div>
+        </nav>
     </aside>
     <main class="content" id="platformMainContent" tabindex="-1" aria-labelledby="pageTitle">
         <div class="top">
@@ -249,6 +286,7 @@
                     <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
                 <div style="min-width:0">
+                    <div class="platform-breadcrumb" aria-label="Breadcrumb"><span>Platform Control</span><span aria-hidden="true">/</span><strong id="platformBreadcrumbCurrent">Dashboard</strong></div>
                     <h2 id="pageTitle">Platform Control Center</h2>
                     <p id="pageSub">Feature visibility, role governance, safe mode, presets, and platform behavior.</p>
                 </div>
@@ -264,6 +302,7 @@
             </div>
         </div>
 
+        <section class="section on" id="panel-overview">
         <div class="card" style="margin-bottom:12px">
             <h3 class="section-title">Enterprise Global Search Bar</h3>
             <p class="muted" style="margin-bottom:10px">Tenant-scoped discovery across employees, departments, workflows, documents, notifications, strategic execution, discussions, announcements, and governance records with RBAC filtering before relevance scoring.</p>
@@ -902,7 +941,6 @@
             <div class="table-wrap" style="margin-top:12px"><table id="predictiveWorkforceForecastTable"></table></div>
         </div>
 
-        <section class="section on" id="panel-overview">
             <div class="grid" id="overviewCards"></div>
             <div class="row">
                 <div class="card">
@@ -10759,30 +10797,132 @@ function closePlatformMobileNav(){
     const toggle=document.getElementById('platformMobileNavToggle');
     if(toggle)toggle.setAttribute('aria-expanded','false');
 }
+function platformNavigationItems(){
+    return Array.from(document.querySelectorAll('#platformSidebarNav [data-module]'));
+}
+function platformModuleForElement(el,id){
+    return el?.dataset?.module||id||'dashboard';
+}
+function updatePlatformLocation(moduleId){
+    if(!moduleId||!window.history?.replaceState)return;
+    const next=`#${encodeURIComponent(moduleId)}`;
+    if(window.location.hash!==next)window.history.replaceState(null,'',next);
+}
+function focusPlatformModuleHeading(heading){
+    document.querySelectorAll('.platform-module-focus').forEach(node=>{
+        node.classList.remove('platform-module-focus');
+        node.removeAttribute('tabindex');
+    });
+    if(!heading)return;
+    const target=Array.from(document.querySelectorAll('.section.on .section-title')).find(node=>node.textContent.trim()===heading);
+    const container=target?.closest('.card')||target;
+    if(!container)return;
+    container.classList.add('platform-module-focus');
+    container.setAttribute('tabindex','-1');
+    container.scrollIntoView({behavior:'smooth',block:'start'});
+    container.focus({preventScroll:true});
+}
 function showPanel(id,el){
     closePlatformMobileNav();
-    document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+    document.querySelectorAll('.section').forEach(s=>{
+        s.classList.remove('on');
+        s.setAttribute('aria-hidden','true');
+    });
     const panel=document.getElementById('panel-'+id);
-    if(panel)panel.classList.add('on');
+    if(panel){
+        panel.classList.add('on');
+        panel.setAttribute('aria-hidden','false');
+    }
+    platformNavigationItems().forEach(item=>{
+        item.classList.remove('on');
+        item.removeAttribute('aria-current');
+    });
     document.querySelectorAll('.nav button').forEach(b=>{
         b.classList.remove('on');
         if(b.getAttribute('role')==='tab')b.setAttribute('aria-selected','false');
     });
     if(el){
         el.classList.add('on');
+        el.setAttribute('aria-current','page');
         if(el.getAttribute('role')==='tab')el.setAttribute('aria-selected','true');
     }
     const labels={overview:'Platform Governance Center',tenant:'Enterprise Tenant Governance',migration:'Supabase Migration Status',deployment:'Deployment Safety',pilot:'Pilot Onboarding',security:'Security Governance',staging:'Staging Validation',features:'Feature Flags',monitoring:'Operational Monitoring',roles:'Role Feature Matrix',presets:'Presets & Safe Mode',branding:'Branding Governance',audit:'Audit & Rollback'};
     const title=document.getElementById('pageTitle');
-    if(title)title.textContent=labels[id]||id;
+    const resolvedTitle=el?.dataset?.title||labels[id]||id;
+    if(title)title.textContent=resolvedTitle;
+    const subtitle=document.getElementById('pageSub');
+    if(subtitle&&el?.dataset?.subtitle)subtitle.textContent=el.dataset.subtitle;
+    const breadcrumb=document.getElementById('platformBreadcrumbCurrent');
+    if(breadcrumb)breadcrumb.textContent=resolvedTitle;
     const announcer=document.getElementById('platformA11yAnnouncements');
-    if(announcer)announcer.textContent=`Opened ${labels[id]||id}`;
+    if(announcer)announcer.textContent=`Opened ${resolvedTitle}`;
     const main=document.getElementById('platformMainContent');
     if(main)main.focus({preventScroll:true});
+    updatePlatformLocation(platformModuleForElement(el,id));
 }
 function openPlatformPanel(id){
-    const tab=document.querySelector(`.nav button[aria-controls="panel-${id}"]`);
+    const tab=document.querySelector(`.nav .platform-nav-item[aria-controls="panel-${id}"]`);
     showPanel(id,tab);
+}
+function openPlatformModule(id,el,heading){
+    showPanel(id,el);
+    requestAnimationFrame(()=>focusPlatformModuleHeading(heading));
+}
+function filterPlatformNavigation(query){
+    const normalized=String(query||'').trim().toLowerCase();
+    let visibleCount=0;
+    document.querySelectorAll('[data-nav-group]').forEach(group=>{
+        let groupVisible=0;
+        group.querySelectorAll('[data-module]').forEach(item=>{
+            const searchable=`${item.textContent} ${item.dataset.module||''} ${item.dataset.title||''} ${item.dataset.subtitle||''}`.toLowerCase();
+            const visible=!normalized||searchable.includes(normalized);
+            item.hidden=!visible;
+            if(visible){
+                visibleCount+=1;
+                groupVisible+=1;
+            }
+        });
+        group.hidden=groupVisible===0;
+    });
+    document.getElementById('platformNavigationEmpty')?.classList.toggle('on',visibleCount===0);
+}
+function restorePlatformNavigation(){
+    let moduleId='';
+    try{
+        moduleId=decodeURIComponent(String(window.location.hash||'').replace(/^#/,'')).trim();
+    }catch(_error){
+        return false;
+    }
+    if(!moduleId)return false;
+    const item=platformNavigationItems().find(node=>node.dataset.module===moduleId&&node.tagName==='BUTTON');
+    if(!item)return false;
+    item.click();
+    return true;
+}
+function initializePlatformShell(){
+    if(window.__ARTHHRMS_PLATFORM_SHELL_READY__)return;
+    window.__ARTHHRMS_PLATFORM_SHELL_READY__=true;
+    const search=document.getElementById('platformNavigationSearch');
+    search?.addEventListener('input',event=>filterPlatformNavigation(event.target.value));
+    search?.addEventListener('keydown',event=>{
+        if(event.key==='Escape'){
+            event.target.value='';
+            filterPlatformNavigation('');
+        }
+    });
+    document.getElementById('platformSidebarNav')?.addEventListener('keydown',event=>{
+        if(!['ArrowDown','ArrowUp'].includes(event.key))return;
+        const items=platformNavigationItems().filter(item=>!item.hidden);
+        const current=items.indexOf(document.activeElement);
+        if(current<0)return;
+        event.preventDefault();
+        const offset=event.key==='ArrowDown'?1:-1;
+        items[(current+offset+items.length)%items.length]?.focus();
+    });
+    if(!restorePlatformNavigation()){
+        const dashboard=platformNavigationItems().find(node=>node.dataset.module==='dashboard');
+        if(dashboard)showPanel('overview',dashboard);
+    }
 }
 
 function renderOverview(){
@@ -25771,6 +25911,7 @@ ArthAuthGuard.ready.then((decision)=>{
     }
     if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
     renderAll();
+    initializePlatformShell();
 });
 </script>
 </body>
