@@ -16,7 +16,7 @@ Use `deploy/production.env.example` as the browser-safe deployment template. The
 
 - `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`)
 
-Production mode, canonical Supabase capabilities, trusted role metadata, and verified email checks default to their secure production values. Optional variables override those defaults but are never mandatory merely because they are feature flags. Vercel derives the hosted application origin; other hosting targets may set `APP_ORIGIN`. The invite endpoint is derived from `SUPABASE_URL`, and the callback URL is derived from the hosted origin.
+Production mode, canonical Supabase capabilities, trusted role metadata, and verified email checks default to their secure production values. Optional variables override those defaults but are never mandatory merely because they are feature flags. Vercel derives the hosted application origin from `VERCEL_PROJECT_PRODUCTION_URL`; production builds never use `VERCEL_URL`, which may identify a preview deployment. Other hosting targets set `APP_ORIGIN`. The invite endpoint is derived from `SUPABASE_URL`. Invitation and password recovery callbacks are generated independently from the reviewed production origin.
 
 Hosted Supabase Auth must allow both the exact callback and its typed recovery query URL. The release configuration command applies these callback URLs and the exact Edge Function origin allowlist.
 

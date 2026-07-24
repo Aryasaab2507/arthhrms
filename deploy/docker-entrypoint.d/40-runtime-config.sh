@@ -87,11 +87,28 @@ else
 fi
 if [ "$USE_SUPABASE_AUTH" = "true" ] && \
    { [ "$USE_SUPABASE_INVITES" = "true" ] || [ "$USE_SUPABASE_PASSWORD_RECOVERY" = "true" ]; }; then
-  if [ -z "${AUTH_INVITE_REDIRECT_URL:-}" ] && [ -n "${APP_ORIGIN:-}" ]; then
-    AUTH_INVITE_REDIRECT_URL="${APP_ORIGIN%/}/auth-callback.html"
-  fi
+  : "${APP_ORIGIN:?APP_ORIGIN is required for production authentication callbacks}"
+  APP_ORIGIN="${APP_ORIGIN%/}"
+  case "$APP_ORIGIN" in
+    https://*) ;;
+    *) echo "APP_ORIGIN must be a production HTTPS origin" >&2; exit 1 ;;
+  esac
+  APP_HOST="${APP_ORIGIN#https://}"
+  case "$APP_HOST" in
+    ''|*[/?#]*|*[!A-Za-z0-9.:-]*) echo "APP_ORIGIN must be a bare production host without credentials, path, query, or fragment" >&2; exit 1 ;;
+  esac
+else
+  APP_ORIGIN=""
+fi
+if [ "$USE_SUPABASE_AUTH" = "true" ] && [ "$USE_SUPABASE_INVITES" = "true" ]; then
+  AUTH_INVITE_REDIRECT_URL="${AUTH_INVITE_REDIRECT_URL:-${APP_ORIGIN}/auth-callback.html}"
 else
   AUTH_INVITE_REDIRECT_URL=""
+fi
+if [ "$USE_SUPABASE_AUTH" = "true" ] && [ "$USE_SUPABASE_PASSWORD_RECOVERY" = "true" ]; then
+  PASSWORD_RECOVERY_REDIRECT_URL="${PASSWORD_RECOVERY_REDIRECT_URL:-${APP_ORIGIN}/auth-callback.html?flow=recovery}"
+else
+  PASSWORD_RECOVERY_REDIRECT_URL=""
 fi
 case "$INVITE_USER_ENDPOINT" in
   ''|https://*) ;;
@@ -107,12 +124,26 @@ esac
 case "${AUTH_INVITE_REDIRECT_URL:-}" in
   *[!A-Za-z0-9:/._~-]*) echo "AUTH_INVITE_REDIRECT_URL contains invalid characters" >&2; exit 1 ;;
 esac
+if [ -n "$AUTH_INVITE_REDIRECT_URL" ] && [ "$AUTH_INVITE_REDIRECT_URL" != "${APP_ORIGIN}/auth-callback.html" ]; then
+  echo "AUTH_INVITE_REDIRECT_URL must use the production APP_ORIGIN" >&2
+  exit 1
+fi
+if [ -n "$PASSWORD_RECOVERY_REDIRECT_URL" ] && [ "$PASSWORD_RECOVERY_REDIRECT_URL" != "${APP_ORIGIN}/auth-callback.html?flow=recovery" ]; then
+  echo "PASSWORD_RECOVERY_REDIRECT_URL must use the production APP_ORIGIN and flow=recovery" >&2
+  exit 1
+fi
+if [ -n "$AUTH_INVITE_REDIRECT_URL" ] && [ "$AUTH_INVITE_REDIRECT_URL" = "$PASSWORD_RECOVERY_REDIRECT_URL" ]; then
+  echo "Invitation and password recovery redirects must remain distinct" >&2
+  exit 1
+fi
 
 export ARTHHRMS_PUBLIC_SUPABASE_KEY
+export APP_ORIGIN
 export INVITE_USER_ENDPOINT
 export AUTH_INVITE_REDIRECT_URL
+export PASSWORD_RECOVERY_REDIRECT_URL
 
-envsubst '${APP_ENV} ${PRODUCTION_MODE} ${PILOT_MODE} ${DEVELOPMENT_MODE} ${DEMO_MODE} ${SUPABASE_URL} ${ARTHHRMS_PUBLIC_SUPABASE_KEY} ${SUPABASE_TIMEOUT_MS} ${INVITE_USER_ENDPOINT} ${AUTH_INVITE_REDIRECT_URL} ${REQUIRE_APP_METADATA_ROLE} ${REQUIRE_EMAIL_VERIFIED} ${USE_SUPABASE_EMPLOYEES} ${USE_SUPABASE_ATTENDANCE} ${USE_SUPABASE_LEAVE} ${USE_SUPABASE_EXPENSES} ${USE_SUPABASE_PAYROLL} ${USE_SUPABASE_AUTH} ${USE_SUPABASE_PASSWORD_RECOVERY} ${USE_SUPABASE_IMPORTS} ${USE_SUPABASE_STORAGE} ${USE_SUPABASE_INVITES} ${USE_SUPABASE_PERSISTENCE}' \
+envsubst '${APP_ENV} ${PRODUCTION_MODE} ${PILOT_MODE} ${DEVELOPMENT_MODE} ${DEMO_MODE} ${SUPABASE_URL} ${ARTHHRMS_PUBLIC_SUPABASE_KEY} ${SUPABASE_TIMEOUT_MS} ${APP_ORIGIN} ${INVITE_USER_ENDPOINT} ${AUTH_INVITE_REDIRECT_URL} ${PASSWORD_RECOVERY_REDIRECT_URL} ${REQUIRE_APP_METADATA_ROLE} ${REQUIRE_EMAIL_VERIFIED} ${USE_SUPABASE_EMPLOYEES} ${USE_SUPABASE_ATTENDANCE} ${USE_SUPABASE_LEAVE} ${USE_SUPABASE_EXPENSES} ${USE_SUPABASE_PAYROLL} ${USE_SUPABASE_AUTH} ${USE_SUPABASE_PASSWORD_RECOVERY} ${USE_SUPABASE_IMPORTS} ${USE_SUPABASE_STORAGE} ${USE_SUPABASE_INVITES} ${USE_SUPABASE_PERSISTENCE}' \
   < /opt/arthhrms/runtime-config.template.js \
   > /usr/share/nginx/html/runtime-config.js
 chmod 0444 /usr/share/nginx/html/runtime-config.js

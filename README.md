@@ -173,7 +173,7 @@ Serve the generated `dist` directory for local development:
 python -m http.server 8000 --directory dist
 ```
 
-Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a different local port, run the static server on that port or update the ignored local value and the Edge Function origin allowlist together. Protected pages require a valid Supabase Auth session and configured runtime values.
+Open `http://localhost:8000/ArthHRMS.html`. If either authentication callback uses a different local port, run the static server on that port or update the ignored local values and the Supabase redirect allowlist together. Invitation onboarding uses `AUTH_INVITE_REDIRECT_URL`; password recovery independently uses `PASSWORD_RECOVERY_REDIRECT_URL`. Protected pages require a valid Supabase Auth session and configured runtime values.
 
 ## Environment Variables
 
@@ -203,6 +203,7 @@ Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a
 | `USE_SUPABASE_PERSISTENCE` | Runtime | Authenticated business persistence switch | `<true-or-false>` |
 | `INVITE_USER_ENDPOINT` | Client-safe | Deployed invitation Edge Function URL | `https://<project-ref>.supabase.co/functions/v1/invite-user` |
 | `AUTH_INVITE_REDIRECT_URL` | Client-safe | Approved invitation callback URL | `https://<application-host>/auth-callback.html` |
+| `PASSWORD_RECOVERY_REDIRECT_URL` | Client-safe | Approved password recovery callback URL; never shared with invitation onboarding | `https://<application-host>/auth-callback.html?flow=recovery` |
 | `REQUIRE_APP_METADATA_ROLE` | Runtime | Requires a trusted role claim | `<true-or-false>` |
 | `REQUIRE_EMAIL_VERIFIED` | Runtime | Requires verified email identities | `<true-or-false>` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Privileged Edge Function credential | `<server-only-service-role-key>` |

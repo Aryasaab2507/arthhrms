@@ -58,8 +58,10 @@
             SUPABASE_URL: String(injected.SUPABASE_URL || '').trim(),
             SUPABASE_ANON_KEY: publicKey,
             SUPABASE_PUBLISHABLE_KEY: publicKey,
+            APP_ORIGIN: String(injected.APP_ORIGIN || '').trim(),
             INVITE_USER_ENDPOINT: String(injected.INVITE_USER_ENDPOINT || '').trim(),
             AUTH_INVITE_REDIRECT_URL: String(injected.AUTH_INVITE_REDIRECT_URL || '').trim(),
+            PASSWORD_RECOVERY_REDIRECT_URL: String(injected.PASSWORD_RECOVERY_REDIRECT_URL || '').trim(),
             SUPABASE_TIMEOUT_MS: Number(injected.SUPABASE_TIMEOUT_MS || 10000),
             flags
         };
@@ -127,25 +129,81 @@
                 return { ok: false, code: 'INVITE_ENDPOINT_INVALID' };
             }
         }
-        if (config.AUTH_INVITE_REDIRECT_URL) {
+        let appOrigin = '';
+        if (config.APP_ORIGIN) {
             try {
-                const callback = new URL(config.AUTH_INVITE_REDIRECT_URL);
+                const parsedOrigin = new URL(config.APP_ORIGIN);
+                if (
+                    parsedOrigin.protocol !== 'https:' ||
+                    parsedOrigin.username ||
+                    parsedOrigin.password ||
+                    parsedOrigin.pathname !== '/' ||
+                    parsedOrigin.search ||
+                    parsedOrigin.hash
+                ) {
+                    return { ok: false, code: 'APP_ORIGIN_INVALID' };
+                }
+                appOrigin = parsedOrigin.origin;
+            } catch (_error) {
+                return { ok: false, code: 'APP_ORIGIN_INVALID' };
+            }
+        }
+        const validateCallback = (value, field, expectedFlow = '') => {
+            if (!value) return { ok: true, origin: '' };
+            try {
+                const callback = new URL(value);
                 const localHttp = config.APP_ENV !== 'production' &&
                     callback.protocol === 'http:' &&
                     ['localhost', '127.0.0.1', '::1'].includes(callback.hostname);
+                const queryIsValid = expectedFlow
+                    ? callback.searchParams.size === 1 && callback.searchParams.get('flow') === expectedFlow
+                    : !callback.search;
                 if (
                     (callback.protocol !== 'https:' && !localHttp) ||
                     callback.username ||
                     callback.password ||
                     !/\/auth-callback\.html$/i.test(callback.pathname) ||
-                    callback.search ||
-                    callback.hash
+                    callback.hash ||
+                    !queryIsValid
                 ) {
-                    return { ok: false, code: 'AUTH_CALLBACK_INVALID' };
+                    return { ok: false, code: `${field}_INVALID` };
                 }
+                if (config.APP_ENV === 'production' && (!appOrigin || callback.origin !== appOrigin)) {
+                    return { ok: false, code: `${field}_ORIGIN_MISMATCH` };
+                }
+                return { ok: true, origin: callback.origin };
             } catch (_error) {
-                return { ok: false, code: 'AUTH_CALLBACK_INVALID' };
+                return { ok: false, code: `${field}_INVALID` };
             }
+        };
+        const inviteCallback = validateCallback(config.AUTH_INVITE_REDIRECT_URL, 'AUTH_INVITE_REDIRECT_URL');
+        if (!inviteCallback.ok) return inviteCallback;
+        const recoveryCallback = validateCallback(
+            config.PASSWORD_RECOVERY_REDIRECT_URL,
+            'PASSWORD_RECOVERY_REDIRECT_URL',
+            'recovery'
+        );
+        if (!recoveryCallback.ok) return recoveryCallback;
+        if (
+            config.APP_ENV === 'production' &&
+            config.flags.USE_SUPABASE_INVITES &&
+            !config.AUTH_INVITE_REDIRECT_URL
+        ) {
+            return { ok: false, code: 'AUTH_INVITE_REDIRECT_URL_REQUIRED' };
+        }
+        if (
+            config.APP_ENV === 'production' &&
+            config.flags.USE_SUPABASE_PASSWORD_RECOVERY &&
+            !config.PASSWORD_RECOVERY_REDIRECT_URL
+        ) {
+            return { ok: false, code: 'PASSWORD_RECOVERY_REDIRECT_URL_REQUIRED' };
+        }
+        if (
+            config.AUTH_INVITE_REDIRECT_URL &&
+            config.PASSWORD_RECOVERY_REDIRECT_URL &&
+            config.AUTH_INVITE_REDIRECT_URL === config.PASSWORD_RECOVERY_REDIRECT_URL
+        ) {
+            return { ok: false, code: 'AUTH_REDIRECTS_NOT_ISOLATED' };
         }
         return { ok: true, code: 'RUNTIME_CONFIG_VALID', config };
     }

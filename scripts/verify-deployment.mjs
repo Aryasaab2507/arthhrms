@@ -94,8 +94,13 @@ check(!/user_metadata/i.test(persistenceSql), 'Canonical persistence uses mutabl
 check(/revoke all on public\.%I from anon/i.test(persistenceSql), 'Canonical persistence does not revoke anonymous table access.');
 
 const runtimeConfig = await read('dist/runtime-config.js');
+const runtimeContractSource = await read('scripts/runtime-config-contract.mjs');
 check(!runtimeConfig.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Built runtime config references the service role key.');
 check(runtimeConfig.includes("Object.defineProperty(window, 'ARTHHRMS_CONFIG'"), 'Runtime configuration is not installed as an immutable browser contract.');
+check(runtimeConfig.includes('PASSWORD_RECOVERY_REDIRECT_URL'), 'Built runtime config lacks the dedicated password recovery redirect.');
+check(runtimeContractSource.includes('VERCEL_PROJECT_PRODUCTION_URL'), 'Runtime generation lacks the Vercel production-origin source.');
+check(runtimeContractSource.includes('isProduction ? productionHost : (previewHost || productionHost)'), 'Production runtime generation may use a preview deployment URL.');
+check(runtimeContractSource.includes("'PASSWORD_RECOVERY_REDIRECT_URL',") && runtimeContractSource.includes("'recovery'"), 'Runtime generation does not validate the typed recovery callback independently.');
 if (/"APP_ENV": "production"/.test(runtimeConfig)) {
   for (const flag of [
     'USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY', 'USE_SUPABASE_STORAGE',
@@ -103,6 +108,11 @@ if (/"APP_ENV": "production"/.test(runtimeConfig)) {
   ]) {
     check(new RegExp(`"${flag}": true`).test(runtimeConfig), `Production runtime config did not default ${flag} to true.`);
   }
+  const inviteRedirect = runtimeConfig.match(/"AUTH_INVITE_REDIRECT_URL": "([^"]+)"/)?.[1] || '';
+  const recoveryRedirect = runtimeConfig.match(/"PASSWORD_RECOVERY_REDIRECT_URL": "([^"]+)"/)?.[1] || '';
+  check(!!inviteRedirect && /\/auth-callback\.html$/.test(inviteRedirect), 'Production invitation callback is missing or malformed.');
+  check(!!recoveryRedirect && /\/auth-callback\.html\?flow=recovery$/.test(recoveryRedirect), 'Production recovery callback is missing or malformed.');
+  check(inviteRedirect !== recoveryRedirect, 'Production invitation and recovery callbacks are not isolated.');
 } else {
   check(/"APP_ENV": "unconfigured"/.test(runtimeConfig), 'Build-time runtime placeholder is malformed.');
 }
@@ -115,6 +125,12 @@ const recoveryPage = await read('password-recovery.html');
 const callbackPage = await read('auth-callback.html');
 const companyLoginPage = await read('ArthHRMS.html');
 check(authServiceSource.includes('resetPasswordForEmail'), 'Auth service lacks the Supabase password recovery request API.');
+const recoveryRedirectResolver = authServiceSource.slice(
+  authServiceSource.indexOf('function passwordRecoveryRedirectUrl()'),
+  authServiceSource.indexOf('async function invalidateSupabaseSession()')
+);
+check(recoveryRedirectResolver.includes('PASSWORD_RECOVERY_REDIRECT_URL'), 'Password recovery does not use its dedicated runtime redirect.');
+check(!recoveryRedirectResolver.includes('AUTH_INVITE_REDIRECT_URL'), 'Password recovery still depends on the invitation redirect.');
 check(authServiceSource.includes('authCallbackService.dispatchAuthCallback'), 'Auth service does not use the dedicated callback dispatcher.');
 check(authCallbackSource.includes('switch (type)'), 'Authentication callback types are not dispatched explicitly.');
 check(authCallbackSource.includes('exchangeCodeForSession'), 'PKCE callback exchange is missing.');
@@ -142,6 +158,10 @@ check(headers.includes('Content-Security-Policy:'), 'Content Security Policy hea
 check(headers.includes('Strict-Transport-Security:'), 'HSTS header is missing.');
 const dockerRuntimeTemplate = await read('deploy/runtime-config.template.js');
 check(dockerRuntimeTemplate.includes('Object.defineProperty(window, "ARTHHRMS_CONFIG"'), 'Container runtime config does not use the immutable browser contract.');
+check(dockerRuntimeTemplate.includes('PASSWORD_RECOVERY_REDIRECT_URL'), 'Container runtime config lacks the isolated recovery callback.');
+const dockerRuntimeEntrypoint = await read('deploy/docker-entrypoint.d/40-runtime-config.sh');
+check(dockerRuntimeEntrypoint.includes('PASSWORD_RECOVERY_REDIRECT_URL="${PASSWORD_RECOVERY_REDIRECT_URL:-${APP_ORIGIN}/auth-callback.html?flow=recovery}"'), 'Container runtime does not derive a dedicated recovery callback.');
+check(dockerRuntimeEntrypoint.includes('Invitation and password recovery redirects must remain distinct'), 'Container runtime does not enforce auth callback isolation.');
 const databaseSource = await read('db.js');
 check(!/process\.env|querySelector\(`meta\[name="arthhrms:/.test(databaseSource), 'Database runtime flags have conflicting browser sources.');
 
@@ -182,6 +202,7 @@ const productionEnv = await read('deploy/production.env.example');
 check(/^SUPABASE_URL=https:\/\//m.test(productionEnv), 'Production environment template lacks required SUPABASE_URL.');
 check(/^SUPABASE_PUBLISHABLE_KEY=/m.test(productionEnv), 'Production environment template lacks a required public browser key.');
 check(!productionEnv.includes('SUPABASE_SERVICE_ROLE_KEY='), 'Browser-safe production environment template exposes a service-role variable.');
+check(productionEnv.includes('PASSWORD_RECOVERY_REDIRECT_URL=https://hr.example.com/auth-callback.html?flow=recovery'), 'Production environment template lacks the dedicated recovery callback.');
 const vercelConfig = JSON.parse(await read('vercel.json'));
 check(vercelConfig.outputDirectory === 'dist', 'Vercel must deploy the reviewed dist output.');
 check(vercelConfig.buildCommand === 'npm run build:production', 'Vercel must run the complete production build and verification command.');

@@ -45,9 +45,11 @@ function validateHttpsUrl(value, label) {
   return parsed;
 }
 
-function normalizeHostedOrigin(env) {
+function normalizeHostedOrigin(env, isProduction) {
   const explicit = String(env.APP_ORIGIN || '').trim();
-  const vercelHost = String(env.VERCEL_PROJECT_PRODUCTION_URL || env.VERCEL_URL || '').trim();
+  const productionHost = String(env.VERCEL_PROJECT_PRODUCTION_URL || '').trim();
+  const previewHost = String(env.VERCEL_URL || '').trim();
+  const vercelHost = isProduction ? productionHost : (previewHost || productionHost);
   const candidate = explicit || (vercelHost
     ? `${/^https?:\/\//i.test(vercelHost) ? '' : 'https://'}${vercelHost}`
     : '');
@@ -56,23 +58,43 @@ function normalizeHostedOrigin(env) {
   if (parsed.pathname !== '/' || parsed.search || parsed.hash) {
     throw new Error(`${explicit ? 'APP_ORIGIN' : 'Vercel application URL'} must be an origin without a path, query, or fragment.`);
   }
+  if (isProduction && explicit && productionHost && previewHost && String(env.VERCEL_ENV || '').trim().toLowerCase() === 'preview') {
+    const productionOrigin = validateHttpsUrl(
+      `${/^https?:\/\//i.test(productionHost) ? '' : 'https://'}${productionHost}`,
+      'VERCEL_PROJECT_PRODUCTION_URL'
+    ).origin;
+    const previewOrigin = validateHttpsUrl(
+      `${/^https?:\/\//i.test(previewHost) ? '' : 'https://'}${previewHost}`,
+      'VERCEL_URL'
+    ).origin;
+    if (parsed.origin === previewOrigin && previewOrigin !== productionOrigin) {
+      throw new Error('APP_ORIGIN must not use VERCEL_URL from a preview deployment in production mode.');
+    }
+  }
   return parsed.origin;
 }
 
-function validateCallbackUrl(value, isProduction) {
+function validateCallbackUrl(value, isProduction, field, expectedFlow = '') {
   if (!value) return '';
   let parsed;
   try {
     parsed = new URL(value);
   } catch (_error) {
-    throw new Error('AUTH_INVITE_REDIRECT_URL must be a valid URL.');
+    throw new Error(`${field} must be a valid URL.`);
   }
   const localHttp = !isProduction && parsed.protocol === 'http:' && ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
   if ((parsed.protocol !== 'https:' && !localHttp) || parsed.username || parsed.password) {
-    throw new Error('AUTH_INVITE_REDIRECT_URL must use HTTPS, except for local loopback development.');
+    throw new Error(`${field} must use HTTPS, except for local loopback development.`);
   }
-  if (!/\/auth-callback\.html$/i.test(parsed.pathname) || parsed.search || parsed.hash) {
-    throw new Error('AUTH_INVITE_REDIRECT_URL must target the exact /auth-callback.html path without a query or fragment.');
+  if (!/\/auth-callback\.html$/i.test(parsed.pathname) || parsed.hash) {
+    throw new Error(`${field} must target the exact /auth-callback.html path.`);
+  }
+  const queryIsValid = expectedFlow
+    ? parsed.searchParams.size === 1 && parsed.searchParams.get('flow') === expectedFlow
+    : !parsed.search;
+  if (!queryIsValid) {
+    const suffix = expectedFlow ? `?flow=${expectedFlow}` : 'without a query';
+    throw new Error(`${field} must target /auth-callback.html ${suffix}.`);
   }
   return parsed.href;
 }
@@ -88,8 +110,10 @@ export function createUnconfiguredRuntimeConfig() {
     SUPABASE_ANON_KEY: '',
     SUPABASE_PUBLISHABLE_KEY: '',
     SUPABASE_TIMEOUT_MS: 10000,
+    APP_ORIGIN: '',
     INVITE_USER_ENDPOINT: '',
     AUTH_INVITE_REDIRECT_URL: '',
+    PASSWORD_RECOVERY_REDIRECT_URL: '',
     REQUIRE_APP_METADATA_ROLE: true,
     REQUIRE_EMAIL_VERIFIED: true,
     flags: Object.fromEntries([
@@ -143,21 +167,44 @@ export function resolveRuntimeConfig(env = process.env, requestedMode = 'product
     }
   }
 
-  const hostedOrigin = normalizeHostedOrigin(env);
+  const hostedOrigin = normalizeHostedOrigin(env, isProduction);
   const inviteUserEndpoint = flags.USE_SUPABASE_INVITES
     ? String(env.INVITE_USER_ENDPOINT || `${parsedSupabaseUrl.origin}/functions/v1/invite-user`).trim()
     : '';
   if (inviteUserEndpoint) validateHttpsUrl(inviteUserEndpoint, 'INVITE_USER_ENDPOINT');
-  const callbackEnabled = flags.USE_SUPABASE_AUTH && (
-    flags.USE_SUPABASE_INVITES ||
-    flags.USE_SUPABASE_PASSWORD_RECOVERY
-  );
-  const authInviteRedirectUrl = callbackEnabled
+  const inviteCallbackEnabled = flags.USE_SUPABASE_AUTH && flags.USE_SUPABASE_INVITES;
+  const recoveryCallbackEnabled = flags.USE_SUPABASE_AUTH && flags.USE_SUPABASE_PASSWORD_RECOVERY;
+  if (isProduction && (inviteCallbackEnabled || recoveryCallbackEnabled) && !hostedOrigin) {
+    throw new Error('APP_ORIGIN or VERCEL_PROJECT_PRODUCTION_URL is required for production authentication callbacks.');
+  }
+  const authInviteRedirectUrl = inviteCallbackEnabled
     ? validateCallbackUrl(
       String(env.AUTH_INVITE_REDIRECT_URL || (hostedOrigin ? `${hostedOrigin}/auth-callback.html` : '')).trim(),
-      isProduction
+      isProduction,
+      'AUTH_INVITE_REDIRECT_URL'
     )
     : '';
+  const passwordRecoveryRedirectUrl = recoveryCallbackEnabled
+    ? validateCallbackUrl(
+      String(env.PASSWORD_RECOVERY_REDIRECT_URL || (hostedOrigin ? `${hostedOrigin}/auth-callback.html?flow=recovery` : '')).trim(),
+      isProduction,
+      'PASSWORD_RECOVERY_REDIRECT_URL',
+      'recovery'
+    )
+    : '';
+  if (isProduction) {
+    for (const [field, value] of [
+      ['AUTH_INVITE_REDIRECT_URL', authInviteRedirectUrl],
+      ['PASSWORD_RECOVERY_REDIRECT_URL', passwordRecoveryRedirectUrl]
+    ]) {
+      if (value && new URL(value).origin !== hostedOrigin) {
+        throw new Error(`${field} must use the production APP_ORIGIN.`);
+      }
+    }
+  }
+  if (authInviteRedirectUrl && passwordRecoveryRedirectUrl && authInviteRedirectUrl === passwordRecoveryRedirectUrl) {
+    throw new Error('Invitation and password recovery redirects must remain distinct.');
+  }
 
   const timeout = Number(env.SUPABASE_TIMEOUT_MS || 10000);
   if (!Number.isFinite(timeout) || timeout < 1000 || timeout > 60000) {
@@ -171,8 +218,10 @@ export function resolveRuntimeConfig(env = process.env, requestedMode = 'product
     SUPABASE_ANON_KEY: publicKey,
     SUPABASE_PUBLISHABLE_KEY: publicKey,
     SUPABASE_TIMEOUT_MS: timeout,
+    APP_ORIGIN: hostedOrigin,
     INVITE_USER_ENDPOINT: inviteUserEndpoint,
     AUTH_INVITE_REDIRECT_URL: authInviteRedirectUrl,
+    PASSWORD_RECOVERY_REDIRECT_URL: passwordRecoveryRedirectUrl,
     REQUIRE_APP_METADATA_ROLE: booleanValue(env, 'REQUIRE_APP_METADATA_ROLE', true),
     REQUIRE_EMAIL_VERIFIED: booleanValue(env, 'REQUIRE_EMAIL_VERIFIED', true),
     flags

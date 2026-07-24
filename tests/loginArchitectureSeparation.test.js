@@ -129,7 +129,10 @@ async function main() {
     getClient() { return client; },
     readConfig() {
       return {
+        APP_ENV: 'production',
+        APP_ORIGIN: 'https://hrms.example.com',
         AUTH_INVITE_REDIRECT_URL: 'https://hrms.example.com/auth-callback.html',
+        PASSWORD_RECOVERY_REDIRECT_URL: 'https://hrms.example.com/auth-callback.html?flow=recovery',
         SUPABASE_TIMEOUT_MS: 10000,
         flags: {
           USE_SUPABASE_AUTH: true,
@@ -179,7 +182,11 @@ async function main() {
   const reset = await global.authService.requestPasswordRecovery('USER@Example.com');
   assert.equal(reset.ok, true, 'password recovery request must be accepted');
   assert.equal(resetRequest.email, 'user@example.com', 'recovery email must be normalized');
-  assert.equal(resetRequest.options.redirectTo, 'https://hrms.example.com/auth-callback.html?flow=recovery', 'recovery must use the approved typed callback');
+  assert.equal(
+    resetRequest.options.redirectTo,
+    'https://hrms.example.com/auth-callback.html?flow=recovery',
+    'recovery must use only PASSWORD_RECOVERY_REDIRECT_URL'
+  );
   assert.match(reset.message, /if an account exists/i, 'recovery response must resist account enumeration');
 
   const invalidReset = await global.authService.requestPasswordRecovery('not-an-email');

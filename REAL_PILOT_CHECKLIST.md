@@ -29,6 +29,7 @@ Use this checklist before onboarding the first real company dataset. Pilot rollo
 - Confirm the first Super Admin has exact `tenant_id` and `organization_id` claims in trusted `app_metadata`.
 - Configure `INVITE_USER_ENDPOINT`.
 - Configure `AUTH_INVITE_REDIRECT_URL` to the deployed `auth-callback.html`.
+- Configure `PASSWORD_RECOVERY_REDIRECT_URL` independently as the production `auth-callback.html?flow=recovery` URL.
 - Confirm `USE_SUPABASE_AUTH=true` and `USE_SUPABASE_INVITES=true`.
 - Confirm role and employee authorization uses app metadata, not user-editable metadata.
 - Confirm platform owner and at least one HR/Admin operator are active.

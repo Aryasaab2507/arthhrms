@@ -269,22 +269,31 @@
     }
 
     function passwordRecoveryRedirectUrl() {
-        const configured = String(
-            global.supabaseClientService?.readConfig?.()?.AUTH_INVITE_REDIRECT_URL || ''
-        ).trim();
-        const origin = String(global.location?.origin || '').replace(/\/+$/, '');
-        const fallback = origin ? `${origin}/auth-callback.html` : 'auth-callback.html';
-        if (!configured) return `${fallback}?flow=recovery`;
+        const runtime = global.supabaseClientService?.readConfig?.() || {};
+        const configured = String(runtime.PASSWORD_RECOVERY_REDIRECT_URL || '').trim();
+        const browserOrigin = String(global.location?.origin || '').replace(/\/+$/, '');
+        const trustedOrigin = runtime.APP_ENV === 'production'
+            ? String(runtime.APP_ORIGIN || '').replace(/\/+$/, '')
+            : browserOrigin;
+        const fallback = trustedOrigin ? `${trustedOrigin}/auth-callback.html?flow=recovery` : '';
+        if (!configured) return fallback;
         try {
-            const url = new URL(configured, fallback);
-            if ((origin && url.origin !== origin) || !/\/auth-callback\.html$/i.test(url.pathname)) return fallback;
-            url.search = '';
-            url.searchParams.set('flow', 'recovery');
-            url.hash = '';
+            const url = new URL(configured);
+            const trustedProductionOrigin = runtime.APP_ENV !== 'production' || (
+                trustedOrigin && url.origin === trustedOrigin
+            );
+            if (
+                !trustedProductionOrigin ||
+                !/\/auth-callback\.html$/i.test(url.pathname) ||
+                url.searchParams.size !== 1 ||
+                url.searchParams.get('flow') !== 'recovery' ||
+                url.hash
+            ) {
+                return fallback;
+            }
             return url.href;
         } catch (_error) {
-            const separator = fallback.includes('?') ? '&' : '?';
-            return `${fallback}${separator}flow=recovery`;
+            return fallback;
         }
     }
 
@@ -513,9 +522,17 @@
                 };
             }
             try {
+                const redirectTo = passwordRecoveryRedirectUrl();
+                if (!redirectTo) {
+                    return {
+                        ok: false,
+                        code: 'RECOVERY_REDIRECT_REQUIRED',
+                        message: 'Secure password recovery is not configured for this application origin.'
+                    };
+                }
                 const result = await withAuthTimeout(
                     client().auth.resetPasswordForEmail(normalizedEmail, {
-                        redirectTo: passwordRecoveryRedirectUrl()
+                        redirectTo
                     }),
                     'Password recovery request'
                 );

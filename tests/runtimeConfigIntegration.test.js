@@ -13,9 +13,11 @@ const publicKey = 'sb_publishable_runtime_config_integration_test';
 const serviceKey = 'server_only_runtime_config_integration_test';
 const variableNames = [
   'APP_ENV', 'PRODUCTION_MODE', 'PILOT_MODE', 'DEVELOPMENT_MODE', 'DEMO_MODE',
+  'APP_ORIGIN', 'VERCEL_ENV', 'VERCEL_URL', 'VERCEL_PROJECT_PRODUCTION_URL',
   'SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY',
   'SUPABASE_TIMEOUT_MS', 'SUPABASE_SERVICE_ROLE_KEY', 'INVITE_USER_ENDPOINT',
-  'AUTH_INVITE_REDIRECT_URL', 'REQUIRE_APP_METADATA_ROLE', 'REQUIRE_EMAIL_VERIFIED',
+  'AUTH_INVITE_REDIRECT_URL', 'PASSWORD_RECOVERY_REDIRECT_URL',
+  'REQUIRE_APP_METADATA_ROLE', 'REQUIRE_EMAIL_VERIFIED',
   'USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE',
   'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_IMPORTS',
   'USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY', 'USE_SUPABASE_STORAGE', 'USE_SUPABASE_INVITES',
@@ -50,6 +52,7 @@ try {
     `SUPABASE_SERVICE_ROLE_KEY=${serviceKey}`,
     'INVITE_USER_ENDPOINT=https://runtime-config-test.supabase.co/functions/v1/invite-user',
     'AUTH_INVITE_REDIRECT_URL=http://localhost:3000/auth-callback.html',
+    'PASSWORD_RECOVERY_REDIRECT_URL=http://localhost:3000/auth-callback.html?flow=recovery',
     'REQUIRE_APP_METADATA_ROLE=true',
     'REQUIRE_EMAIL_VERIFIED=true',
     'USE_SUPABASE_EMPLOYEES=false',
@@ -102,6 +105,8 @@ try {
   assert.equal(config.flags.USE_SUPABASE_PASSWORD_RECOVERY, true);
   assert.equal(config.flags.USE_SUPABASE_PERSISTENCE, true);
   assert.equal(config.flags.USE_SUPABASE_STORAGE, true);
+  assert.equal(config.AUTH_INVITE_REDIRECT_URL, 'http://localhost:3000/auth-callback.html');
+  assert.equal(config.PASSWORD_RECOVERY_REDIRECT_URL, 'http://localhost:3000/auth-callback.html?flow=recovery');
 
   context.supabaseClientService.getClient();
   assert.equal(captured.url, config.SUPABASE_URL, 'Supabase client must receive the injected project URL');
@@ -132,8 +137,51 @@ try {
   ]) {
     assert.equal(productionConfig.flags[flag], true, `${flag} should default true in production`);
   }
+  assert.equal(productionConfig.APP_ORIGIN, 'https://arthhrms.example.com');
   assert.equal(productionConfig.AUTH_INVITE_REDIRECT_URL, 'https://arthhrms.example.com/auth-callback.html');
+  assert.equal(
+    productionConfig.PASSWORD_RECOVERY_REDIRECT_URL,
+    'https://arthhrms.example.com/auth-callback.html?flow=recovery'
+  );
+  assert.notEqual(
+    productionConfig.AUTH_INVITE_REDIRECT_URL,
+    productionConfig.PASSWORD_RECOVERY_REDIRECT_URL,
+    'invitation and recovery redirects must remain separate runtime values'
+  );
   assert.equal(vm.runInContext('Object.isFrozen(ARTHHRMS_CONFIG) && Object.isFrozen(ARTHHRMS_CONFIG.flags)', productionContext), true);
+
+  const previewOutput = path.join(tempDirectory, 'runtime-config.preview-build.js');
+  const previewBuild = generate(previewOutput, 'production', {
+    ...productionEnvironment,
+    VERCEL_ENV: 'preview',
+    VERCEL_URL: 'arthhrms-git-feature-example.vercel.app',
+    VERCEL_PROJECT_PRODUCTION_URL: 'arthhrms.vercel.app'
+  });
+  assert.equal(previewBuild.status, 0, previewBuild.stderr || previewBuild.stdout);
+  const previewContext = {};
+  previewContext.window = previewContext;
+  vm.createContext(previewContext);
+  vm.runInContext(fs.readFileSync(previewOutput, 'utf8'), previewContext);
+  assert.equal(
+    previewContext.ARTHHRMS_CONFIG.PASSWORD_RECOVERY_REDIRECT_URL,
+    'https://arthhrms.vercel.app/auth-callback.html?flow=recovery',
+    'production runtime generation must never use the Vercel preview deployment URL'
+  );
+  assert.equal(
+    previewContext.ARTHHRMS_CONFIG.AUTH_INVITE_REDIRECT_URL,
+    'https://arthhrms.vercel.app/auth-callback.html',
+    'invitation onboarding must also remain on the production domain'
+  );
+
+  const mismatchedOrigin = generate(path.join(tempDirectory, 'runtime-config.origin-mismatch.js'), 'production', {
+    ...productionEnvironment,
+    APP_ORIGIN: 'https://arthhrms-git-feature-example.vercel.app',
+    VERCEL_ENV: 'preview',
+    VERCEL_URL: 'arthhrms-git-feature-example.vercel.app',
+    VERCEL_PROJECT_PRODUCTION_URL: 'arthhrms.vercel.app'
+  });
+  assert.notEqual(mismatchedOrigin.status, 0, 'a preview APP_ORIGIN must not override Vercel production origin');
+  assert.match(mismatchedOrigin.stderr, /must not use VERCEL_URL from a preview deployment/);
 
   const overrideOutput = path.join(tempDirectory, 'runtime-config.override.js');
   const override = generate(overrideOutput, 'production', {

@@ -32,6 +32,7 @@ When `USE_SUPABASE_INVITES=false`, invite delivery is blocked and recorded as fa
 - Deploy `supabase/functions/invite-user/index.ts` as a Supabase Edge Function.
 - Set server-only `SUPABASE_SERVICE_ROLE_KEY` in the Edge Function environment.
 - `INVITE_USER_ENDPOINT` is derived from `SUPABASE_URL`; override it only for a reviewed custom endpoint.
-- `AUTH_INVITE_REDIRECT_URL` is derived from the hosted origin; override it only for a reviewed callback origin.
+- `AUTH_INVITE_REDIRECT_URL` is derived from the hosted production origin and is used only for invitation onboarding.
+- `PASSWORD_RECOVERY_REDIRECT_URL` is derived independently as `/auth-callback.html?flow=recovery`; recovery requests never read the invitation redirect.
 - Apply the versioned migrations in `supabase/migrations/` and run the canonical persistence gate in `context/sql/authenticated_business_persistence_tests.sql`.
 - Configure Supabase Auth invite email templates and allow `/auth-callback.html`, `/auth-callback.html?flow=invite`, and `/auth-callback.html?flow=recovery`.
