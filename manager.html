@@ -58,20 +58,6 @@
 :root{--p:#0891b2;--pl:#ecfeff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f0f9ff;--side:#0c1a2e;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 10px rgba(8,145,178,.08);--rad:13px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0c1a2e,#0e4f68,#0891b2);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:22px;padding:42px;width:400px;box-shadow:0 28px 70px rgba(0,0,0,.35)}
-.login-logo{text-align:center;margin-bottom:26px}
-.login-logo .icon{width:54px;height:54px;background:linear-gradient(135deg,#0891b2,#67e8f9);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:10px}
-.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem}
-.login-logo p{font-size:.76rem;color:var(--muted);margin-top:3px}
-.lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
-.linput{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.86rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:13px;transition:border .15s}
-.linput:focus{border-color:var(--p)}
-.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#0891b2,#67e8f9);color:#fff;border:none;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.76rem;font-weight:600;margin-bottom:12px;display:none}
-.hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:11px}
-.other-links{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
-.other-links a{font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none}
 .sidebar{width:226px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
 .sidebar-logo{padding:20px 17px 13px;border-bottom:1px solid rgba(255,255,255,.07)}
 .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#0891b2,#67e8f9);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
@@ -169,24 +155,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 </style>
 </head>
 <body>
-
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
-      <h2>Manager Panel</h2>
-      <p>HRMS — Team Management</p>
-    </div>
-    <div class="lerr" id="lerr">Invalid credentials.</div>
-    <label class="lbl">Email</label>
-    <input class="linput" id="lemail" placeholder="manager@company.com"/>
-    <label class="lbl">Password</label>
-    <input class="linput" id="lpass" type="password"/>
-    <button class="lbtn" onclick="doLogin()">Login as Manager →</button>
-    <div class="hint">Use your activated company account.</div>
-    
-  </div>
-</div>
 
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar" style="display:none">
@@ -406,25 +374,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 <script>
 DB.init();DB.migrate();
-if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-const __mgCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('manager') : null;
-if(!__mgCurrent || __mgCurrent.role!=='manager'){ location.replace('ArthHRMS.html'); }
-if(!sessionStorage.getItem('mgUser')) sessionStorage.setItem('mgUser', JSON.stringify(__mgCurrent));
+let __mgCurrent=null;
 let ME_MGR=null, MY_TEAM=null, TEAM_IDS=[];
 
-async function doLogin(){
-  const email=document.getElementById('lemail').value.trim();
-  const pass=document.getElementById('lpass').value.trim();
-  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'manager') : null;
-  if(!res||res.user.role!=='manager'){document.getElementById('lerr').style.display='block';return;}
-  sessionStorage.setItem('mgUser',JSON.stringify(res.user));
-  initManager(res.user, res.emp);
-}
 function initManager(user, emp){
   ME_MGR=emp||{id:user.empId,name:user.name};
   MY_TEAM=DB.getManagerTeam(ME_MGR.id)||null;
   TEAM_IDS=MY_TEAM?MY_TEAM.memberIds:[ME_MGR.id];
-  document.getElementById('loginScreen').style.display='none';
   document.getElementById('sidebar').style.display='flex';
   document.getElementById('mainArea').style.display='flex';
   const init=(ME_MGR.name||'MG').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -447,9 +403,12 @@ function toggleSidebar(forceOpen){
 }
 function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
-window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('mgUser');
-  if(s){const u=JSON.parse(s);const emp=u.empId?DB.getEmployee(u.empId):null;initManager(u,emp);}
+ArthAuthGuard.ready.then((decision)=>{
+  if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='manager')return;
+  __mgCurrent=decision.user;
+  sessionStorage.setItem('mgUser',JSON.stringify(__mgCurrent));
+  if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+  initManager(__mgCurrent,decision.emp||null);
   const d=document.getElementById('mgAttDate');if(d)d.value=today();
 });
 

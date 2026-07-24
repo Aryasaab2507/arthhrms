@@ -38,6 +38,10 @@
     const PUBLIC_ROUTES = Object.freeze(['arthhrms.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
     const scriptElement = global.document?.currentScript || null;
     const applicationRoot = scriptElement?.src ? new URL('../', scriptElement.src) : null;
+    let resolveReady;
+    const ready = new Promise((resolve) => {
+        resolveReady = resolve;
+    });
 
     function pageName(pathname) {
         const path = String(pathname || global.location?.pathname || '').split(/[?#]/)[0];
@@ -92,7 +96,7 @@
         }
         if (!global.ARTHHRMS_CONFIG) throw new Error('Runtime configuration is unavailable.');
         if (!global.supabase) {
-            await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+            await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8');
         }
         if (!global.supabaseClientService) {
             if (!applicationRoot) throw new Error('Application root is unavailable.');
@@ -198,6 +202,7 @@
     const guard = Object.freeze({
         ROUTE_POLICIES,
         PUBLIC_ROUTES,
+        ready,
         pageName,
         policyFor,
         isPublic,
@@ -205,10 +210,16 @@
     });
     global.ArthAuthGuard = guard;
 
+    async function start() {
+        const decision = await enforce();
+        resolveReady(decision);
+        return decision;
+    }
+
     hideDocument();
     if (global.document?.readyState === 'loading') {
-        global.document.addEventListener('DOMContentLoaded', () => enforce(), { once: true });
+        global.document.addEventListener('DOMContentLoaded', start, { once: true });
     } else {
-        enforce();
+        start();
     }
 })(window);

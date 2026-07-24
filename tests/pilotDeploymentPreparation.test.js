@@ -108,7 +108,7 @@ function jsonResponse(value, status = 200) {
   });
   assert.deepEqual(config.authPatch, {
     site_url: 'https://pilot.example.com',
-    uri_allow_list: 'https://pilot.example.com/auth-callback.html'
+    uri_allow_list: 'https://pilot.example.com/auth-callback.html,https://pilot.example.com/auth-callback.html?flow=invite,https://pilot.example.com/auth-callback.html?flow=recovery'
   });
 
   const managementCalls = [];
@@ -123,7 +123,7 @@ function jsonResponse(value, status = 200) {
       if (options.method === 'GET') {
         return {
           site_url: 'https://pilot.example.com',
-          uri_allow_list: 'https://pilot.example.com/auth-callback.html'
+          uri_allow_list: 'https://pilot.example.com/auth-callback.html,https://pilot.example.com/auth-callback.html?flow=invite,https://pilot.example.com/auth-callback.html?flow=recovery'
         };
       }
       return {};

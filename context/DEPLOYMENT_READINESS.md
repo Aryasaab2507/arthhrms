@@ -10,17 +10,15 @@
 
 Production mode fails closed. Local fixtures and legacy module adapters are not production persistence paths.
 
-## Mandatory Configuration
+## Runtime Configuration
 
-Use `deploy/production.env.example` as the browser-safe deployment template. Production requires:
+Use `deploy/production.env.example` as the browser-safe deployment template. The frontend build requires only:
 
-- `APP_ENV=production`
-- `PRODUCTION_MODE=true`
-- `DEVELOPMENT_MODE=false`, `DEMO_MODE=false`, and `PILOT_MODE=false`
 - `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`)
-- `USE_SUPABASE_AUTH=true`, `USE_SUPABASE_PERSISTENCE=true`, `USE_SUPABASE_STORAGE=true`, and `USE_SUPABASE_INVITES=true`
-- `REQUIRE_APP_METADATA_ROLE=true` and `REQUIRE_EMAIL_VERIFIED=true`
-- Exact invite endpoint, callback URL, and origin allowlist
+
+Production mode, canonical Supabase capabilities, trusted role metadata, and verified email checks default to their secure production values. Optional variables override those defaults but are never mandatory merely because they are feature flags. Vercel derives the hosted application origin; other hosting targets may set `APP_ORIGIN`. The invite endpoint is derived from `SUPABASE_URL`, and the callback URL is derived from the hosted origin.
+
+Hosted Supabase Auth must allow both the exact callback and its typed recovery query URL. The release configuration command applies these callback URLs and the exact Edge Function origin allowlist.
 
 The service role key is forbidden from browser configuration and must exist only in the Edge Function secret store.
 

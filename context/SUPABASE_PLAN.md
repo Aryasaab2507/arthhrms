@@ -6,7 +6,7 @@ Purpose: outline the future backend migration boundary.
 Supabase is introduced as an optional service-layer backend only. Keep live flags disabled until schema, RLS, and role mapping are verified.
 
 ## Current Foundation
-- `services/supabaseClient.js` reads `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and migration flags from injected frontend config or meta tags.
+- `services/supabaseClient.js` reads the Supabase URL, public browser key, and canonical feature flags only from the generated immutable runtime configuration.
 - `USE_SUPABASE_EMPLOYEES=false` keeps employee master on local `db.js`.
 - `USE_SUPABASE_ATTENDANCE=false` keeps attendance on local `db.js` while live attendance SQL and service methods are prepared.
 - `USE_SUPABASE_LEAVE=false` keeps leave workflows on local `db.js` while live leave SQL and service methods are prepared.

@@ -11,8 +11,8 @@
     ]);
 
     function evaluate(password) {
-        if (global.authInviteService?.evaluateRecoveryPassword) {
-            return global.authInviteService.evaluateRecoveryPassword(password);
+        if (global.passwordRecoveryService?.evaluatePassword) {
+            return global.passwordRecoveryService.evaluatePassword(password);
         }
         const value = String(password || '');
         const checks = Object.freeze({

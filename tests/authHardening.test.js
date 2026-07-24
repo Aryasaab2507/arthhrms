@@ -68,11 +68,17 @@ async function main() {
   const sent = await global.authInviteService.sendInvite({ email:'new.user@example.com', role:'employee', empId:'EMP002', name:'New User', invitedByRole:'hr' });
   assert.equal(sent.ok, true, 'configured invite should send');
   assert.equal(sent.mode, 'live', 'configured production invite must be live');
-  assert.equal(calledBody.redirectTo, 'https://hrms.example.com/auth-callback.html', 'invite uses callback redirect');
+  assert.equal(calledBody.redirectTo, 'https://hrms.example.com/auth-callback.html?flow=invite', 'invite uses a typed callback redirect');
   assert.equal(global.DB.getEmployee('EMP002').authUserId, '00000000-0000-4000-8000-000000000111', 'invite links auth_user_id to employee');
 
   global.__mockAuthUser = { id:'00000000-0000-4000-8000-000000000111', email:'new.user@example.com', email_confirmed_at:'2026-05-18T00:00:00.000Z', app_metadata:{ role:'employee', empId:'EMP002' }, user_metadata:{ full_name:'New User' } };
-  const activated = await global.authInviteService.handleInviteCallback({});
+  const activated = await global.authInviteService.handleInviteCallback({
+    session: {
+      access_token: 'verified-access-token',
+      expires_at: Math.floor(Date.now()/1000)+3600,
+      user: global.__mockAuthUser
+    }
+  });
   assert.equal(activated.ok, true, 'callback should activate account');
   assert.equal(global.DB.getEmployee('EMP002').activationStatus, 'Active', 'employee becomes active after callback');
   assert.equal(global.DB.getEmployee('EMP002').inviteStatus, 'Activated', 'employee invite status records activation stage');

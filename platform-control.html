@@ -4948,15 +4948,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
-const currentUser = (window.authService?.requireCurrentRole
-    ? authService.requireCurrentRole('platform_owner', { redirect:false })
-    : null) || {};
-const platformAccess = window.PlatformAccessService?.validatePlatformAccess
-    ? PlatformAccessService.validatePlatformAccess(currentUser, { pathname: 'platform-control.html' })
-    : window.platformGovernanceService?.authorizePlatformGovernanceAccess
-    ? platformGovernanceService.authorizePlatformGovernanceAccess(currentUser, 'platform_control_open', { route: 'platform-control.html' })
-    : { allowed: currentUser.role === 'platform_owner' };
-const platformAccessAllowed = platformAccess.allowed === true;
+let currentUser = {};
+let platformAccess = null;
 let _platformView = null;
 let _stagingValidationReport = null;
 let _activationReadinessReport = null;
@@ -10766,77 +10759,6 @@ function closePlatformMobileNav(){
     const toggle=document.getElementById('platformMobileNavToggle');
     if(toggle)toggle.setAttribute('aria-expanded','false');
 }
-function renderAccessGate(){
-    const content=document.querySelector('.content');
-    const nav=document.querySelector('.nav');
-    if(nav){
-        nav.querySelectorAll('button').forEach(btn=>{
-            if(!/logout/i.test(btn.textContent||'')) btn.style.display='none';
-        });
-    }
-    if(content){
-        content.setAttribute('aria-labelledby','platformGatePageTitle');
-        content.innerHTML=`<div class="top"><div class="title"><h2 id="platformGatePageTitle">Platform Control Center</h2><p>Hidden governance console</p></div></div>
-        <div class="card access-gate" role="dialog" aria-modal="true" aria-labelledby="platformGateTitle" aria-describedby="platformGateDescription">
-            <h3 class="section-title" id="platformGateTitle">Platform Governance Access Required</h3>
-            <p class="muted" id="platformGateDescription" style="margin-bottom:12px">This console is reserved for platform governance. Tenant users should use their company HRMS route. No tenant login redirect is performed from this console.</p>
-            <div class="form">
-                <label for="platformGateEmail">Email</label>
-                <div>
-                    <input id="platformGateEmail" type="email" autocomplete="username" placeholder="Platform governance email" aria-describedby="platformGateDescription" onkeydown="if(event.key==='Enter')loginPlatformOwnerFromGate()">
-                </div>
-                <label for="platformGatePassword">Password</label>
-                <div>
-                    <input id="platformGatePassword" type="password" autocomplete="current-password" placeholder="Password" aria-describedby="platformGateDescription" onkeydown="if(event.key==='Enter')loginPlatformOwnerFromGate()">
-                </div>
-            </div>
-            <div id="platformGateError" class="gate-error" role="alert" aria-live="assertive"></div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px">
-                <button class="btn" type="button" onclick="loginPlatformOwnerFromGate()">Open Platform Control</button>
-                <a class="btn alt" href="ArthHRMS.html" style="text-decoration:none">Company Login</a>
-            </div>
-        </div>`;
-    }
-}
-
-function showPlatformGateError(message){
-    const el=document.getElementById('platformGateError');
-    if(!el)return;
-    el.textContent=message||'Platform governance access failed.';
-    const announcer=document.getElementById('platformA11yAnnouncements');
-    if(announcer)announcer.textContent=el.textContent;
-    el.classList.add('on');
-}
-
-async function loginPlatformOwnerFromGate(){
-    const email=(document.getElementById('platformGateEmail')?.value||'').trim();
-    const password=document.getElementById('platformGatePassword')?.value||'';
-    if(!email||!password){
-        showPlatformGateError('Enter the platform governance email and password.');
-        return;
-    }
-    try{
-        let result=null;
-        if(window.authService?.loginWithSupabase) result=await authService.loginWithSupabase(email,password,'platform_owner');
-        const user=result?.user||null;
-        if(!user||user.role!=='platform_owner'){
-            showPlatformGateError('Platform owner credentials are required for this console.');
-            return;
-        }
-        const access=window.platformGovernanceService?.authorizePlatformGovernanceAccess
-            ? platformGovernanceService.authorizePlatformGovernanceAccess(user,'platform_control_login',{route:'platform-control.html'})
-            : {allowed:user.role==='platform_owner'};
-        if(access.allowed===false){
-            showPlatformGateError('This account is not authorized for platform governance.');
-            return;
-        }
-        location.href='platform-control.html';
-    }catch(err){
-        console.warn('[platform-control] Platform governance login failed:',err?.message||err);
-        showPlatformGateError('Platform governance login failed. Check the account and try again.');
-    }
-}
-
 function showPanel(id,el){
     closePlatformMobileNav();
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
@@ -25830,9 +25752,22 @@ function rollback(snapshotId){
     toast('Governance snapshot restored');
     renderAll();
 }
-async function logout(){if(window.authService?.logout)await authService.logout();else sessionStorage.clear();location.href='platform-control.html';}
-if(platformAccessAllowed) renderAll();
-else renderAccessGate();
+async function logout(){if(window.authService?.logout)await authService.logout();else sessionStorage.clear();location.href='platform-login.html';}
+ArthAuthGuard.ready.then((decision)=>{
+    if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='platform_owner')return;
+    currentUser=decision.user;
+    platformAccess=window.PlatformAccessService?.validatePlatformAccess
+        ? PlatformAccessService.validatePlatformAccess(currentUser,{pathname:'platform-control.html'})
+        : window.platformGovernanceService?.authorizePlatformGovernanceAccess
+        ? platformGovernanceService.authorizePlatformGovernanceAccess(currentUser,'platform_control_open',{route:'platform-control.html'})
+        : {allowed:false};
+    if(platformAccess.allowed!==true){
+        location.replace('403.html');
+        return;
+    }
+    if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+    renderAll();
+});
 </script>
 </body>
 </html>

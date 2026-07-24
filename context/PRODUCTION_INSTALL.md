@@ -29,4 +29,4 @@ Local bootstrap credentials created during first-time setup are for installation
 
 ## Deployment Note
 
-Static `.env` files are templates for deployment tooling. Browser runtime flags must be injected through build tooling, meta tags, or `window.ARTHHRMS_CONFIG` before `db.js` loads.
+Static `.env` files are templates for deployment tooling. Browser runtime values are installed once through the generated immutable `window.ARTHHRMS_CONFIG` contract before application services load.

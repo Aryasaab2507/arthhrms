@@ -63,7 +63,7 @@
     function isDevelopmentMode() { return flagEnabled('DEVELOPMENT_MODE', false); }
     function isDemoMode() { return flagEnabled('DEMO_MODE', false); }
     function isPasswordRecoveryEnabled() {
-        return supabaseAuthReady() && flagEnabled('USE_SUPABASE_PASSWORD_RECOVERY', true);
+        return supabaseAuthReady() && flagEnabled('USE_SUPABASE_PASSWORD_RECOVERY', false);
     }
     function requireAppMetadataRole() { return flagEnabled('REQUIRE_APP_METADATA_ROLE', true); }
     function requireEmailVerified() { return flagEnabled('REQUIRE_EMAIL_VERIFIED', true); }
@@ -274,15 +274,17 @@
         ).trim();
         const origin = String(global.location?.origin || '').replace(/\/+$/, '');
         const fallback = origin ? `${origin}/auth-callback.html` : 'auth-callback.html';
-        if (!configured) return fallback;
+        if (!configured) return `${fallback}?flow=recovery`;
         try {
             const url = new URL(configured, fallback);
             if ((origin && url.origin !== origin) || !/\/auth-callback\.html$/i.test(url.pathname)) return fallback;
             url.search = '';
+            url.searchParams.set('flow', 'recovery');
             url.hash = '';
             return url.href;
         } catch (_error) {
-            return fallback;
+            const separator = fallback.includes('?') ? '&' : '?';
+            return `${fallback}${separator}flow=recovery`;
         }
     }
 
@@ -564,12 +566,12 @@
             return validation;
         },
         async handleAuthCallback(input = {}) {
-            if (!global.authInviteService?.dispatchAuthCallback) {
+            if (!global.authCallbackService?.dispatchAuthCallback) {
                 return { ok: false, error: 'Authentication callback handler is not loaded' };
             }
-            const result = await global.authInviteService.dispatchAuthCallback(input);
+            const result = await global.authCallbackService.dispatchAuthCallback(input);
             if (!result?.ok) return result;
-            if (result.type === global.authInviteService.CALLBACK_TYPES?.RECOVERY) {
+            if (result.type === global.authCallbackService.CALLBACK_TYPES?.RECOVERY) {
                 clearLocalSession();
                 return result;
             }
@@ -585,7 +587,7 @@
             return { ...result, user: validation.user, redirectTo: this.getRoleRedirect(validation.user.role) };
         },
         async updateRecoveredPassword(password) {
-            if (!global.authInviteService?.completePasswordRecovery) {
+            if (!global.passwordRecoveryService?.completePasswordRecovery) {
                 return {
                     ok: false,
                     type: 'recovery',
@@ -593,7 +595,7 @@
                     error: 'Password recovery is unavailable. Try again later.'
                 };
             }
-            return global.authInviteService.completePasswordRecovery(password);
+            return global.passwordRecoveryService.completePasswordRecovery(password);
         },
         startAuthStateTracking() {
             if (!supabaseAuthReady() || authTrackingStarted) return false;

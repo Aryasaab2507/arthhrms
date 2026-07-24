@@ -66,20 +66,6 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1a3a6b 60%,#059669 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:24px;padding:48px 44px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.35)}
-.login-logo{text-align:center;margin-bottom:32px}
-.login-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,#059669,#0ea5e9);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:12px}
-.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem}
-.login-logo p{font-size:.82rem;color:var(--muted);margin-top:4px}
-.lbl{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block}
-.linput{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border .15s;margin-bottom:16px}
-.linput:focus{border-color:var(--g)}
-.lbtn{width:100%;padding:13px;background:linear-gradient(135deg,#059669,#0ea5e9);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:opacity .15s}
-.lbtn:hover{opacity:.9}
-.lerr{background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:.82rem;font-weight:600;margin-bottom:14px;display:none}
-.hint{font-size:.75rem;color:var(--muted);text-align:center;margin-top:14px}
-.hr-link{display:block;text-align:center;margin-top:18px;font-size:.82rem;color:var(--p);font-weight:700;text-decoration:none}
 .sidebar{width:232px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
 .sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
 .logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#059669,#0ea5e9);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
@@ -218,30 +204,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   .topbar-r{gap:8px}
   .uchip{padding-right:8px}.uname,.urole{max-width:110px}
   .notif-panel{right:-8px;width:min(320px,calc(100vw - 24px))}
-  .login-box{width:92vw;padding:30px 20px;border-radius:16px}
   .content{padding:14px}
 }
 </style>
 </head>
 <body>
-
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <h2>Employee Portal</h2>
-      <p>Employee Self Service — My HR</p>
-    </div>
-    <div class="lerr" id="lerr">Invalid Employee ID or Password.</div>
-    <label class="lbl">Employee ID</label>
-    <input class="linput" id="leid" placeholder="Employee ID or email"/>
-    <label class="lbl">Password</label>
-    <input class="linput" id="lpass" type="password"/>
-    <button class="lbtn" onclick="empLogin()">Login to My Portal →</button>
-    <div class="hint">Use your activated company account.</div>
-    
-  </div>
-</div>
 
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar" style="display:none">
@@ -696,13 +663,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 <script>
 DB.init();
 DB.migrate();
-if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-const __empCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('employee') : null;
-if(!__empCurrent || __empCurrent.role!=='employee'){ location.replace('ArthHRMS.html'); }
-if(!sessionStorage.getItem('empUser')){
-  const emp = JSON.parse(sessionStorage.getItem('currentEmployee') || 'null') || (__empCurrent.empId ? DB.getEmployee(__empCurrent.empId) : null) || __empCurrent;
-  sessionStorage.setItem('empUser', JSON.stringify(emp));
-}
+let __empCurrent=null;
 let ME=null;
 
 setInterval(()=>{
@@ -713,22 +674,9 @@ setInterval(()=>{
   if(dd)dd.textContent=now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 },1000);
 
-async function empLogin(){
-  const id=document.getElementById('leid').value.trim().toUpperCase();
-  const p=document.getElementById('lpass').value.trim();
-  if(id.includes('@') && window.authService?.loginWithSupabase){
-    const res=await authService.loginWithSupabase(id.toLowerCase(),p,'employee');
-    if(!res){document.getElementById('lerr').style.display='block';return;}
-    initPortal(res.emp||res.user);
-    return;
-  }
-  document.getElementById('lerr').textContent='Use your verified email address for enterprise authentication.';
-  document.getElementById('lerr').style.display='block';
-}
 function initPortal(emp){
   emp=DB.getEmployee(emp.id)||(emp.empId?DB.getEmployee(emp.empId):null)||emp;
   ME=emp;
-  document.getElementById('loginScreen').style.display='none';
   document.getElementById('sidebar').style.display='flex';
   document.getElementById('mainArea').style.display='flex';
   const init=(emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)).toUpperCase();
@@ -757,9 +705,13 @@ function toggleSidebar(forceOpen){
 }
 function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
-window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('empUser');
-  if(s)initPortal(JSON.parse(s));
+ArthAuthGuard.ready.then((decision)=>{
+  if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='employee')return;
+  __empCurrent=decision.user;
+  const employee=(__empCurrent.empId?DB.getEmployee(__empCurrent.empId):null)||decision.emp||__empCurrent;
+  sessionStorage.setItem('empUser',JSON.stringify(employee));
+  if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+  initPortal(employee);
 });
 
 function show(id,el){

@@ -1,7 +1,9 @@
 // Invite-based auth onboarding adapter.
 // Live invite sending must happen through a server-side endpoint or Supabase Edge Function.
 (function (global) {
-    const OFFICIAL_ROLES = ['employee', 'manager', 'admin', 'hr', 'hr_head', 'director', 'super_admin', 'platform_owner'];
+    const OFFICIAL_ROLES = Object.freeze(['employee', 'manager', 'admin', 'hr', 'hr_head', 'director', 'super_admin', 'platform_owner']);
+    const TENANT_INVITE_ROLES = Object.freeze(['employee', 'manager', 'admin', 'hr', 'hr_head', 'director']);
+    const PRIVILEGED_ONBOARDING_METHOD = 'release_operator_invite';
     const INVITE_STATES = {
         NOT_INVITED: 'Not Invited',
         PENDING: 'Invite Pending',
@@ -12,16 +14,6 @@
         FAILED: 'Invite Failed',
         EXPIRED: 'Invite Expired'
     };
-    const CALLBACK_TYPES = Object.freeze({
-        INVITE: 'invite',
-        RECOVERY: 'recovery',
-        MAGIC_LINK: 'magiclink',
-        SIGNUP: 'signup',
-        EMAIL_CONFIRMATION: 'email_confirmation'
-    });
-    const SUPPORTED_CALLBACK_TYPES = Object.freeze(Object.values(CALLBACK_TYPES));
-    let pendingRecovery = null;
-
     function db() { return global.DB; }
 
     function config() {
@@ -47,11 +39,22 @@
 
     function redirectTo() {
         const configured = config().AUTH_INVITE_REDIRECT_URL || '';
-        if (configured) return configured;
-        if (global.location?.origin && !String(global.location.origin).startsWith('file:')) {
-            return `${global.location.origin}/auth-callback.html`;
+        const base = configured || (
+            global.location?.origin && !String(global.location.origin).startsWith('file:')
+                ? `${global.location.origin}/auth-callback.html`
+                : 'auth-callback.html'
+        );
+        try {
+            const url = new URL(base, global.location?.origin || 'https://arthhrms.invalid');
+            url.search = '';
+            url.searchParams.set('flow', 'invite');
+            url.hash = '';
+            return configured || /^https?:/i.test(base)
+                ? url.href
+                : `${url.pathname.split('/').pop()}${url.search}`;
+        } catch (_error) {
+            return `${base}${base.includes('?') ? '&' : '?'}flow=invite`;
         }
-        return 'auth-callback.html';
     }
 
     function validateInvitePayload(payload = {}) {
@@ -62,24 +65,25 @@
                 actorId: payload.invitedBy || actor.id || '',
                 tenantId: payload.tenantId || payload.companyId || actor.tenantId || actor.companyId || ''
             });
+            const governedRole = governed.normalizedPayload?.role || normalizeRole(payload.role || 'employee');
+            const governedErrors = (governed.failures || []).map(item => item.message || item.failureCode);
+            if (!TENANT_INVITE_ROLES.includes(governedRole)) {
+                governedErrors.push('Privileged roles must be created through secure release onboarding');
+            }
             return {
-                ok: !!governed.success,
-                errors: (governed.failures || []).map(item => item.message || item.failureCode),
+                ok: !!governed.success && governedErrors.length === 0,
+                errors: governedErrors,
                 warnings: governed.warnings || [],
                 email: governed.normalizedPayload?.email || normalizeEmail(payload.email),
-                role: governed.normalizedPayload?.role || normalizeRole(payload.role || 'employee'),
+                role: governedRole,
                 governance: governed
             };
         }
         const errors = [];
         const email = normalizeEmail(payload.email);
         const role = normalizeRole(payload.role || 'employee');
-        const actorRole = normalizeRole(global.authService?.getCurrentUser?.()?.role || payload.invitedByRole || '');
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Valid email is required');
-        if (!OFFICIAL_ROLES.includes(role)) errors.push('Official role is required');
-        if (['platform_owner', 'super_admin'].includes(role) && actorRole !== 'platform_owner') {
-            errors.push('Only a validated Platform Owner may onboard privileged platform roles');
-        }
+        if (!TENANT_INVITE_ROLES.includes(role)) errors.push('Privileged roles must be created through secure release onboarding');
         if (payload.empId) {
             const duplicate = (db().get().employees || []).find(e => e.authUserId && e.id !== db().resolveEmployeeId(payload.empId) && e.authUserId === payload.authUserId);
             if (duplicate) errors.push(`Auth user already linked to ${duplicate.id}`);
@@ -190,113 +194,85 @@
         }
     }
 
-    function normalizeCallbackType(value) {
-        const normalized = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-        if (normalized === 'password_recovery' || normalized === 'password_reset') return CALLBACK_TYPES.RECOVERY;
-        if (normalized === 'magic_link') return CALLBACK_TYPES.MAGIC_LINK;
-        if (normalized === 'email' || normalized === 'confirmation' || normalized === 'email_confirm') {
-            return CALLBACK_TYPES.EMAIL_CONFIRMATION;
-        }
-        return SUPPORTED_CALLBACK_TYPES.includes(normalized) ? normalized : '';
-    }
-
-    function callbackTypeFromEvent(event) {
-        const normalized = String(event || '').trim().toUpperCase();
-        if (normalized === 'PASSWORD_RECOVERY') return CALLBACK_TYPES.RECOVERY;
-        if (normalized === 'SIGNED_IN') return CALLBACK_TYPES.MAGIC_LINK;
-        if (normalized === 'USER_UPDATED') return CALLBACK_TYPES.EMAIL_CONFIRMATION;
-        return '';
-    }
-
-    function detectCallbackType(input = {}) {
-        const params = input.params || parseCallbackParams(input.url || '');
-        return normalizeCallbackType(input.type || params.type) || callbackTypeFromEvent(input.event);
-    }
-
-    function callbackHasCredentials(params = {}) {
-        return !!(
-            params.code ||
-            params.token_hash ||
-            (params.access_token && params.refresh_token)
-        );
-    }
-
-    function sessionExpired(session) {
-        const expiresAt = Number(session?.expires_at || 0);
-        return !expiresAt || expiresAt <= Math.floor(Date.now() / 1000);
-    }
-
-    async function sessionFromCallback(input = {}) {
-        const client = global.supabaseClientService?.getClient?.();
-        const params = input.params || parseCallbackParams(input.url || '');
-        if (params.error || params.error_description || params.error_code) {
-            const callbackError = new Error(params.error_description || params.error || 'Authentication callback failed');
-            callbackError.code = params.error_code || params.error || '';
-            throw callbackError;
-        }
-        if (!client) throw new Error('Supabase auth client is not available');
-        let session = null;
-        let callbackType = normalizeCallbackType(params.type);
-        if (params.token_hash && params.type) {
-            const otpType = normalizeCallbackType(params.type) === CALLBACK_TYPES.EMAIL_CONFIRMATION
-                ? 'email'
-                : params.type;
-            const { data, error } = await client.auth.verifyOtp({ token_hash: params.token_hash, type: otpType });
-            if (error) throw error;
-            session = data?.session || null;
-        } else if (params.access_token && params.refresh_token) {
-            if (!client.auth.setSession) throw new Error('Supabase callback session exchange is unavailable');
-            const { data, error } = await client.auth.setSession({
-                access_token: params.access_token,
-                refresh_token: params.refresh_token
-            });
-            if (error) throw error;
-            session = data?.session || null;
-        } else if (params.code && client.auth.exchangeCodeForSession) {
-            const { data, error } = await client.auth.exchangeCodeForSession(params.code);
-            if (error) throw error;
-            session = data?.session || null;
-            callbackType = callbackType || normalizeCallbackType(data?.redirectType);
-        } else {
-            const { data, error } = await client.auth.getSession();
-            if (error) throw error;
-            session = data?.session || null;
-        }
-        if (!session?.access_token || !session.user?.id || sessionExpired(session)) return null;
-        const verified = await client.auth.getUser(session.access_token);
-        if (verified.error || !verified.data?.user || verified.data.user.id !== session.user.id) {
-            throw verified.error || new Error('Authentication session validation failed');
-        }
-        return { ...session, user: verified.data.user, callbackType };
-    }
-
-    function parseCallbackParams(url = '') {
-        const source = String(url || global.location?.href || `${global.location?.search || ''}${global.location?.hash || ''}`);
-        const base = global.location?.origin && !String(global.location.origin).startsWith('file:')
-            ? global.location.origin
-            : 'https://arthhrms.invalid';
-        try {
-            const parsed = new URL(source || '/', base);
-            const combined = new URLSearchParams(parsed.search);
-            const hash = new URLSearchParams(String(parsed.hash || '').replace(/^#/, ''));
-            hash.forEach((value, key) => combined.set(key, value));
-            return Object.fromEntries(combined);
-        } catch (_error) {
-            const combined = new URLSearchParams(String(source || '').replace(/^[?#]/, ''));
-            return Object.fromEntries(combined);
-        }
-    }
-
     async function handleInviteCallback(input = {}) {
         try {
-            const session = input.session || await sessionFromCallback(input);
+            const session = input.session;
             const user = session?.user;
             if (!user) return { ok: false, error: 'Invite session could not be established' };
             const email = normalizeEmail(user.email);
             const role = normalizeRole(user.app_metadata?.role || '');
             if (!OFFICIAL_ROLES.includes(role)) return { ok: false, error: 'Invite role is not allowed for tenant activation' };
             if (!(user.email_confirmed_at || user.confirmed_at)) return { ok: false, error: 'Invite email must be verified before activation' };
+            const onboardingMethod = String(user.app_metadata?.onboarding_method || '').trim().toLowerCase();
+            if (onboardingMethod === PRIVILEGED_ONBOARDING_METHOD) {
+                if (!['platform_owner', 'super_admin'].includes(role)) {
+                    return { ok: false, error: 'Privileged onboarding metadata is invalid' };
+                }
+                const tenantId = user.app_metadata?.tenant_id || user.app_metadata?.tenantSlug || '';
+                const organizationId = user.app_metadata?.organization_id || user.app_metadata?.organizationId || '';
+                if (role === 'super_admin' && (!tenantId || !organizationId)) {
+                    return { ok: false, error: 'Super Admin onboarding requires trusted tenant and organization metadata' };
+                }
+                const mapped = {
+                    id: user.id,
+                    authUserId: user.id,
+                    email,
+                    name: user.app_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.name || email,
+                    role,
+                    tenantId: role === 'platform_owner' ? '' : tenantId,
+                    companyId: role === 'platform_owner' ? '' : organizationId,
+                    source: 'supabase',
+                    emailVerified: true,
+                    roleTrusted: true,
+                    tenantTrusted: role === 'platform_owner' || !!tenantId
+                };
+                db()?.writeAuditLog?.(
+                    'system',
+                    user.id,
+                    'privileged invite activation completed',
+                    'Auth Invite',
+                    user.app_metadata?.onboarding_operation_id || user.id,
+                    `Secure release onboarding activated for ${email}`
+                );
+                return {
+                    ok: true,
+                    user: mapped,
+                    employee: null,
+                    invite: null,
+                    redirectTo: global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html'
+                };
+            }
+            if (!TENANT_INVITE_ROLES.includes(role)) {
+                return { ok: false, error: 'Privileged roles must use secure release onboarding' };
+            }
             const empId = user.app_metadata?.empId || user.app_metadata?.emp_id || '';
+            const persistedActivation = await activatePersistedInvite(user);
+            if (persistedActivation) {
+                const tenantId = user.app_metadata?.tenant_id || user.app_metadata?.tenantSlug || '';
+                const organizationId = user.app_metadata?.organization_id || user.app_metadata?.organizationId || '';
+                const mapped = {
+                    id: user.id,
+                    authUserId: user.id,
+                    email,
+                    name: user.app_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.name || email,
+                    role,
+                    empId,
+                    tenantId,
+                    companyId: organizationId,
+                    source: 'supabase',
+                    emailVerified: true,
+                    roleTrusted: true,
+                    empIdTrusted: true,
+                    tenantTrusted: true
+                };
+                return {
+                    ok: true,
+                    user: mapped,
+                    employee: null,
+                    invite: persistedActivation,
+                    redirectTo: global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html'
+                };
+            }
             const inviteByEmp = empId ? db().getLatestAuthInviteForEmployee(empId) : null;
             const inviteByEmail = !inviteByEmp && db().getLatestAuthInviteByEmail ? db().getLatestAuthInviteByEmail(email) : null;
             const invite = inviteByEmp || inviteByEmail;
@@ -330,7 +306,6 @@
                 roleTrusted: true,
                 empIdTrusted: !!targetEmpId
             };
-            global.authService?.persistCompatibleSession?.(mapped, emp || null);
             db().writeAuditLog('system', targetEmpId || user.id, 'invite activation completed', 'Auth Invite', invite.inviteId, `Invite activated for ${email}`);
             return { ok: true, user: mapped, employee: emp, invite: updated, redirectTo: global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html' };
         } catch (error) {
@@ -341,193 +316,6 @@
         }
     }
 
-    function recoveryError(error) {
-        const raw = [
-            error?.code,
-            error?.name,
-            error?.message,
-            error?.error_description
-        ].filter(Boolean).join(' ').toLowerCase();
-        if (/user.*(deleted|not found)|account.*(deleted|not found)/.test(raw)) {
-            return {
-                code: 'RECOVERY_USER_UNAVAILABLE',
-                error: 'This user account is no longer available. Contact your administrator.'
-            };
-        }
-        if (/network|fetch|offline|timeout|connection/.test(raw)) {
-            return {
-                code: 'RECOVERY_NETWORK_ERROR',
-                error: 'We could not connect to the authentication service. Check your connection and try again.'
-            };
-        }
-        if (/weak|password.*(short|strength|require)|same password/.test(raw)) {
-            return {
-                code: 'RECOVERY_PASSWORD_REJECTED',
-                error: 'The password was rejected. Use at least 12 characters with uppercase, lowercase, number, and special character.'
-            };
-        }
-        if (/expired|otp_expired|invalid.*(token|otp|claim|jwt)|(?:token|jwt).*invalid|already.*used|session.*(missing|invalid|required)|refresh_token_not_found/.test(raw)) {
-            return {
-                code: 'RECOVERY_LINK_EXPIRED',
-                error: 'Recovery link expired. Request another password reset.'
-            };
-        }
-        return {
-            code: 'RECOVERY_FAILED',
-            error: 'Password recovery could not be completed. Request another password reset or try again.'
-        };
-    }
-
-    function evaluateRecoveryPassword(password) {
-        const value = String(password || '');
-        const checks = Object.freeze({
-            minimumLength: value.length >= 12,
-            uppercase: /[A-Z]/.test(value),
-            lowercase: /[a-z]/.test(value),
-            number: /[0-9]/.test(value),
-            specialCharacter: /[^A-Za-z0-9\s]/.test(value)
-        });
-        const score = Object.values(checks).filter(Boolean).length;
-        return {
-            valid: score === Object.keys(checks).length,
-            score,
-            maximumScore: Object.keys(checks).length,
-            checks
-        };
-    }
-
-    async function handleRecoveryCallback(input = {}) {
-        try {
-            const params = input.params || parseCallbackParams(input.url || '');
-            if (!callbackHasCredentials(params)) {
-                return {
-                    ok: false,
-                    type: CALLBACK_TYPES.RECOVERY,
-                    ...recoveryError(new Error('Recovery session missing'))
-                };
-            }
-            const session = input.session || await sessionFromCallback({ ...input, params });
-            if (!session?.user?.id) {
-                return {
-                    ok: false,
-                    type: CALLBACK_TYPES.RECOVERY,
-                    ...recoveryError(new Error('Recovery session invalid'))
-                };
-            }
-            pendingRecovery = Object.freeze({
-                userId: session.user.id,
-                expiresAt: Number(session.expires_at || 0),
-                establishedAt: Date.now()
-            });
-            global.authService?.clearSession?.();
-            return {
-                ok: true,
-                type: CALLBACK_TYPES.RECOVERY,
-                action: 'reset_password',
-                userId: session.user.id
-            };
-        } catch (error) {
-            pendingRecovery = null;
-            global.operationsMonitoringService?.recordError?.(error, {
-                module: 'Authentication',
-                action: 'handleRecoveryCallback',
-                severity: 'HIGH'
-            });
-            return { ok: false, type: CALLBACK_TYPES.RECOVERY, ...recoveryError(error) };
-        }
-    }
-
-    async function completePasswordRecovery(password) {
-        const policy = evaluateRecoveryPassword(password);
-        if (!policy.valid) {
-            return {
-                ok: false,
-                type: CALLBACK_TYPES.RECOVERY,
-                code: 'RECOVERY_PASSWORD_WEAK',
-                error: 'Use at least 12 characters with uppercase, lowercase, number, and special character.',
-                policy
-            };
-        }
-        if (!pendingRecovery?.userId) {
-            return {
-                ok: false,
-                type: CALLBACK_TYPES.RECOVERY,
-                ...recoveryError(new Error('Recovery session missing'))
-            };
-        }
-        const client = global.supabaseClientService?.getClient?.();
-        if (!client?.auth?.updateUser) {
-            return {
-                ok: false,
-                type: CALLBACK_TYPES.RECOVERY,
-                code: 'RECOVERY_SERVICE_UNAVAILABLE',
-                error: 'The authentication service is unavailable. Try again later.'
-            };
-        }
-        try {
-            const sessionResult = await client.auth.getSession();
-            const session = sessionResult?.data?.session;
-            if (sessionResult?.error || !session?.access_token || sessionExpired(session) || session.user?.id !== pendingRecovery.userId) {
-                pendingRecovery = null;
-                throw sessionResult?.error || new Error('Recovery session invalid');
-            }
-            const verified = await client.auth.getUser(session.access_token);
-            if (verified.error || !verified.data?.user || verified.data.user.id !== pendingRecovery.userId) {
-                pendingRecovery = null;
-                throw verified.error || new Error('Recovery session invalid');
-            }
-            const result = await client.auth.updateUser({ password: String(password) });
-            if (result.error || !result.data?.user) throw result.error || new Error('Password update failed');
-            const userId = pendingRecovery.userId;
-            pendingRecovery = null;
-            try {
-                db()?.writeAuditLog?.(
-                    'system',
-                    userId,
-                    'password recovery completed',
-                    'Authentication',
-                    userId,
-                    'Password updated through a validated Supabase recovery session.'
-                );
-            } catch (auditError) {
-                global.operationsMonitoringService?.recordError?.(auditError, {
-                    module: 'Authentication',
-                    action: 'auditPasswordRecovery',
-                    severity: 'MEDIUM'
-                });
-            }
-            try {
-                if (client.auth.signOut) await client.auth.signOut({ scope: 'local' });
-            } catch (_signOutError) {}
-            global.authService?.clearSession?.();
-            return {
-                ok: true,
-                type: CALLBACK_TYPES.RECOVERY,
-                message: 'Password updated successfully.'
-            };
-        } catch (error) {
-            const userId = pendingRecovery?.userId || '';
-            try {
-                if (userId) {
-                    db()?.writeAuditLog?.(
-                        'system',
-                        userId,
-                        'password recovery failed',
-                        'Authentication',
-                        userId,
-                        'Password recovery failed before completion.'
-                    );
-                }
-            } catch (_auditError) {}
-            global.operationsMonitoringService?.recordError?.(error, {
-                module: 'Authentication',
-                action: 'completePasswordRecovery',
-                severity: 'HIGH'
-            });
-            return { ok: false, type: CALLBACK_TYPES.RECOVERY, ...recoveryError(error) };
-        }
-    }
-
     function matchingInviteForUser(user) {
         if (!user) return null;
         const empId = user.app_metadata?.empId || user.app_metadata?.emp_id || '';
@@ -535,81 +323,15 @@
         return byEmployee || db()?.getLatestAuthInviteByEmail?.(normalizeEmail(user.email)) || null;
     }
 
-    async function handleSessionCallback(type, input = {}) {
-        try {
-            const session = input.session || await sessionFromCallback(input);
-            if (!session?.user?.id) return { ok: false, type, error: 'Authentication session could not be established.' };
-            return {
-                ok: true,
-                type,
-                userId: session.user.id,
-                redirectTo: global.authService?.getRoleRedirect?.(session.user.app_metadata?.role) || 'ArthHRMS.html'
-            };
-        } catch (error) {
-            const mapped = recoveryError(error);
-            return {
-                ok: false,
-                type,
-                code: mapped.code === 'RECOVERY_LINK_EXPIRED' ? 'AUTH_LINK_EXPIRED' : 'AUTH_CALLBACK_FAILED',
-                error: mapped.code === 'RECOVERY_LINK_EXPIRED'
-                    ? 'Authentication link expired. Request a new link.'
-                    : 'Authentication could not be completed. Try again or request a new link.'
-            };
-        }
-    }
-
-    async function dispatchAuthCallback(input = {}) {
-        const params = input.params || parseCallbackParams(input.url || '');
-        const explicitType = detectCallbackType({ ...input, params });
-        switch (explicitType) {
-            case CALLBACK_TYPES.RECOVERY:
-                return handleRecoveryCallback({ ...input, params });
-            case CALLBACK_TYPES.INVITE: {
-                const result = await handleInviteCallback({ ...input, params });
-                return { ...result, type: CALLBACK_TYPES.INVITE };
-            }
-            case CALLBACK_TYPES.MAGIC_LINK:
-            case CALLBACK_TYPES.SIGNUP:
-            case CALLBACK_TYPES.EMAIL_CONFIRMATION:
-                return handleSessionCallback(explicitType, { ...input, params });
-            default: {
-                try {
-                    const session = await sessionFromCallback({ ...input, params });
-                    const inferredType = normalizeCallbackType(session?.callbackType);
-                    if (inferredType === CALLBACK_TYPES.RECOVERY) {
-                        return handleRecoveryCallback({ ...input, params, session });
-                    }
-                    if (inferredType === CALLBACK_TYPES.INVITE) {
-                        const result = await handleInviteCallback({ ...input, params, session });
-                        return { ...result, type: CALLBACK_TYPES.INVITE };
-                    }
-                    if ([
-                        CALLBACK_TYPES.MAGIC_LINK,
-                        CALLBACK_TYPES.SIGNUP,
-                        CALLBACK_TYPES.EMAIL_CONFIRMATION
-                    ].includes(inferredType)) {
-                        return handleSessionCallback(inferredType, { ...input, params, session });
-                    }
-                    if (matchingInviteForUser(session?.user)) {
-                        const result = await handleInviteCallback({ ...input, params, session });
-                        return { ...result, type: CALLBACK_TYPES.INVITE };
-                    }
-                    return {
-                        ok: false,
-                        type: '',
-                        code: 'AUTH_CALLBACK_TYPE_REQUIRED',
-                        error: 'The authentication link type is missing or unsupported.'
-                    };
-                } catch (error) {
-                    return {
-                        ok: false,
-                        type: '',
-                        code: 'AUTH_CALLBACK_INVALID',
-                        error: 'Authentication link is invalid or expired.'
-                    };
-                }
-            }
-        }
+    async function activatePersistedInvite(user) {
+        const persistenceEnabled = !!global.supabaseClientService?.isEnabled?.('USE_SUPABASE_PERSISTENCE');
+        if (!persistenceEnabled) return null;
+        const client = global.supabaseClientService?.getClient?.();
+        if (!client?.rpc) throw new Error('Authenticated invitation activation RPC is unavailable');
+        const result = await client.rpc('arth_complete_auth_invite_activation');
+        if (result?.error) throw result.error;
+        if (!result?.data?.ok) throw new Error('Invitation activation was not confirmed by the database');
+        return result.data;
     }
 
     async function resendInvite(inviteOrEmpId) {
@@ -672,19 +394,14 @@
 
     global.authInviteService = {
         OFFICIAL_ROLES,
+        TENANT_INVITE_ROLES,
         INVITE_STATES,
-        CALLBACK_TYPES,
         isInviteEnabled: inviteEnabled,
         validateInvitePayload,
         sendInvite,
         resendInvite,
         handleInviteCallback,
-        handleRecoveryCallback,
-        dispatchAuthCallback,
-        completePasswordRecovery,
-        detectCallbackType,
-        evaluateRecoveryPassword,
-        parseCallbackParams,
+        hasMatchingInvite: (user) => !!matchingInviteForUser(user),
         recordActivationFromUser,
         getActivationSummary,
         getInvites: () => db().getAuthInvites(),

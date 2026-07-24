@@ -190,7 +190,9 @@ export async function onboardPrivilegedUser(input, dependencies = {}) {
   let userId = '';
   const persisted = [];
   try {
-    const invited = await client.invite(values.email, values.redirectTo, values.name, operationId);
+    const inviteRedirect = new URL(values.redirectTo);
+    inviteRedirect.searchParams.set('flow', 'invite');
+    const invited = await client.invite(values.email, inviteRedirect.href, values.name, operationId);
     userId = invited?.id || invited?.user?.id || '';
     if (!userId) throw new Error('Supabase did not return an invited user identifier.');
 
@@ -225,7 +227,7 @@ export async function onboardPrivilegedUser(input, dependencies = {}) {
         role: values.role,
         email: values.email,
         status: 'Invite Sent',
-        redirectTo: values.redirectTo,
+        redirectTo: inviteRedirect.href,
         initiatedAt: timestamp
       },
       updated_by: userId,

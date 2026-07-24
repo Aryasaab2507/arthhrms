@@ -43,6 +43,8 @@ async function main() {
   let signOutCalls = 0;
   let linkCalls = 0;
   let inviteUpdates = 0;
+  let persistenceEnabled = false;
+  let activationRpcCalls = 0;
   const auditRows = [];
 
   function sessionFor(user = currentUser) {
@@ -55,6 +57,19 @@ async function main() {
   }
 
   const client = {
+    async rpc(name) {
+      assert.equal(name, 'arth_complete_auth_invite_activation');
+      activationRpcCalls += 1;
+      return {
+        data: {
+          ok: true,
+          inviteId: 'INV-SERVER',
+          empId: currentUser.app_metadata.empId,
+          activationStatus: 'Active'
+        },
+        error: null
+      };
+    },
     auth: {
       async setSession(tokens) {
         assert.equal(tokens.access_token, 'callback-access-token');
@@ -126,7 +141,10 @@ async function main() {
   };
   global.supabaseClientService = {
     getClient() { return client; },
-    isEnabled(flag) { return ['USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY'].includes(flag); },
+    isEnabled(flag) {
+      return ['USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY'].includes(flag) ||
+        (flag === 'USE_SUPABASE_PERSISTENCE' && persistenceEnabled);
+    },
     readConfig() {
       return {
         SUPABASE_TIMEOUT_MS: 10000,
@@ -145,17 +163,19 @@ async function main() {
   };
   global.operationsMonitoringService = { recordError() {} };
 
-  load('services/authInviteService.js');
   load('services/authService.js');
+  load('services/authInviteService.js');
+  load('services/passwordRecoveryService.js');
+  load('services/authCallbackService.js');
   load('services/passwordRecoveryUI.js');
 
-  const parsed = global.authInviteService.parseCallbackParams(
+  const parsed = global.authCallbackService.parseCallbackParams(
     'https://arthhrms.example/auth-callback.html?source=email#access_token=callback-access-token&refresh_token=callback-refresh-token&type=recovery'
   );
   assert.equal(parsed.source, 'email');
   assert.equal(parsed.type, 'recovery');
-  assert.equal(global.authInviteService.detectCallbackType({ params: parsed }), 'recovery');
-  assert.equal(global.authInviteService.detectCallbackType({ event: 'PASSWORD_RECOVERY' }), 'recovery');
+  assert.equal(global.authCallbackService.detectCallbackType({ params: parsed }), 'recovery');
+  assert.equal(global.authCallbackService.detectCallbackType({ event: 'PASSWORD_RECOVERY' }), 'recovery');
 
   const recovery = await global.authService.handleAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token&type=recovery'
@@ -208,7 +228,7 @@ async function main() {
       app_metadata: { role: 'platform_owner' },
       user_metadata: {}
     };
-    const result = await global.authInviteService.dispatchAuthCallback({
+    const result = await global.authCallbackService.dispatchAuthCallback({
       url: `https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token&type=${type}`
     });
     assert.equal(result.ok, true, `${type} callback should establish a session`);
@@ -223,7 +243,7 @@ async function main() {
     app_metadata: { role: 'employee', empId: 'EMP-1', tenantSlug: 'tenant-a' },
     user_metadata: { full_name: 'Invite User' }
   };
-  const inviteResult = await global.authInviteService.dispatchAuthCallback({
+  const inviteResult = await global.authCallbackService.dispatchAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token&type=invite'
   });
   assert.equal(inviteResult.ok, true, 'invite callback behavior must remain active');
@@ -231,15 +251,55 @@ async function main() {
   assert.equal(linkCalls, 1, 'invite callback still links the employee');
   assert.equal(inviteUpdates, 1, 'invite callback still records activation');
 
-  const legacyInvite = await global.authInviteService.dispatchAuthCallback({
+  const legacyInvite = await global.authCallbackService.dispatchAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token'
   });
   assert.equal(legacyInvite.ok, true, 'legacy invite callbacks remain discoverable from the governed invite record');
   assert.equal(legacyInvite.type, 'invite');
   assert.equal(linkCalls, 2, 'legacy invite callback still links the employee');
 
+  persistenceEnabled = true;
+  currentUser = {
+    id: 'AUTH-SERVER-INVITE',
+    email: 'server.invite@example.com',
+    email_confirmed_at: '2026-07-24T00:00:00.000Z',
+    app_metadata: {
+      role: 'employee',
+      empId: 'EMP-SERVER',
+      tenantSlug: 'tenant-a',
+      organizationId: 'ORG-A'
+    },
+    user_metadata: { full_name: 'Server Invite' }
+  };
+  const serverInvite = await global.authCallbackService.dispatchAuthCallback({
+    url: 'https://arthhrms.example/auth-callback.html?flow=invite#access_token=callback-access-token&refresh_token=callback-refresh-token'
+  });
+  assert.equal(serverInvite.ok, true, 'production invitation activation should use the tenant-scoped database RPC');
+  assert.equal(serverInvite.invite.inviteId, 'INV-SERVER');
+  assert.equal(activationRpcCalls, 1);
+  assert.equal(linkCalls, 2, 'the browser must not relink persisted employee records');
+  persistenceEnabled = false;
+
+  currentUser = {
+    id: 'AUTH-PLATFORM-OWNER',
+    email: 'owner@example.com',
+    email_confirmed_at: '2026-07-24T00:00:00.000Z',
+    app_metadata: {
+      role: 'platform_owner',
+      onboarding_method: 'release_operator_invite',
+      onboarding_operation_id: 'OP-1'
+    },
+    user_metadata: { full_name: 'Platform Owner' }
+  };
+  const privilegedInvite = await global.authCallbackService.dispatchAuthCallback({
+    url: 'https://arthhrms.example/auth-callback.html?flow=invite#access_token=callback-access-token&refresh_token=callback-refresh-token'
+  });
+  assert.equal(privilegedInvite.ok, true, 'release-operator Platform Owner invite should not require an employee record');
+  assert.equal(privilegedInvite.user.role, 'platform_owner');
+  assert.equal(linkCalls, 2, 'privileged onboarding must never link an employee');
+
   setSessionError = { code: 'otp_expired', message: 'Token has expired' };
-  const expired = await global.authInviteService.dispatchAuthCallback({
+  const expired = await global.authCallbackService.dispatchAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token&type=recovery'
   });
   assert.equal(expired.ok, false);
@@ -252,6 +312,8 @@ async function main() {
 
   const html = fs.readFileSync(path.join(root, 'auth-callback.html'), 'utf8');
   assert.match(html, /services\/passwordRecoveryUI\.js/);
+  assert.match(html, /services\/passwordRecoveryService\.js/);
+  assert.match(html, /services\/authCallbackService\.js/);
   assert.match(html, /Password updated successfully\./);
   assert.match(html, /authService\.updateRecoveredPassword\(password\)/);
   assert.doesNotMatch(html, /service_role|SUPABASE_SERVICE_ROLE_KEY/);

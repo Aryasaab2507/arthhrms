@@ -92,22 +92,6 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
 
-/* ─── LOGIN ─── */
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1a3a6b 60%,#0ea5e9 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:24px;padding:48px 44px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.35)}
-.login-logo{text-align:center;margin-bottom:32px}
-.login-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,var(--p),#0ea5e9);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:12px}
-.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem}
-.login-logo p{font-size:.82rem;color:var(--muted);margin-top:4px}
-.lbl{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block}
-.linput{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border .15s;margin-bottom:16px}
-.linput:focus{border-color:var(--p)}
-.lbtn{width:100%;padding:13px;background:linear-gradient(135deg,var(--p),#0ea5e9);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.3px;transition:opacity .15s}
-.lbtn:hover{opacity:.9}
-.lerr{background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:.82rem;font-weight:600;margin-bottom:14px;display:none}
-.hint{font-size:.75rem;color:var(--muted);text-align:center;margin-top:14px}
-.emp-link{display:block;text-align:center;margin-top:18px;font-size:.82rem;color:var(--p);font-weight:700;text-decoration:none}
-
 /* ─── LAYOUT ─── */
 .sidebar{width:232px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
 .sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
@@ -287,26 +271,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 </style>
 </head>
 <body>
-
-<!-- ══ LOGIN ══════════════════════════════════════════════════ -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg></div>
-      <h2>HR Dashboard</h2>
-      <p>HR Command Dashboard</p>
-    </div>
-    <div class="lerr" id="lerr">Invalid credentials. Please try again.</div>
-    <label class="lbl">Email Address</label>
-    <input class="linput" id="lemail" type="email" placeholder="hr@company.com"/>
-    <label class="lbl">Password</label>
-    <input class="linput" id="lpass" type="password" placeholder="••••••••"/>
-    <button class="lbtn" onclick="hrLogin()">Login to HR Dashboard →</button>
-    <div class="hint">Use your activated company account.</div>
-    
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap"><a style="font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none" href="super-admin.html"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg> Super Admin</a><a style="font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none" href="admin.html"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin</a><a style="font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none" href="manager.html"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>‍<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Manager</a></div>
-  </div>
-</div>
 
 <!-- ══ SIDEBAR ════════════════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar" style="display:none">
@@ -1476,10 +1440,7 @@ try {
   // If DB is corrupted, reset it
   try { DB.reset({ clean:true }); DB.migrate(); } catch(e) {}
 }
-if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-const __hrCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole(['hr','hr_head']) : null;
-if(!__hrCurrent || __hrCurrent.role!=='hr'){ location.replace('ArthHRMS.html'); }
-if(!sessionStorage.getItem('hrUser')) sessionStorage.setItem('hrUser', JSON.stringify({name:__hrCurrent.name,email:__hrCurrent.email,role:'hr'}));
+let __hrCurrent=null;
 let currentPayslipHtml = '';
 
 function isCompactLayout(){
@@ -1500,33 +1461,6 @@ window.addEventListener('resize', ()=>{
   if(!isCompactLayout()) closeSidebar();
 });
 
-// ─── AUTH ──────────────────────────────────────────────
-async function hrLogin(){
-  const errEl = document.getElementById('lerr');
-  try{
-    const e=document.getElementById('lemail').value.trim();
-    const p=document.getElementById('lpass').value.trim();
-    const authResult=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(e,p,'hr') : null;
-    const hr=authResult?.user ? {name:authResult.user.name,email:authResult.user.email,role:'hr'} : null;
-    if(!hr){
-      errEl.textContent='Invalid credentials. Please try again.';
-      errEl.style.display='block';
-      return;
-    }
-    errEl.style.display='none';
-    sessionStorage.setItem('hrUser',JSON.stringify(hr));
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('sidebar').style.display='flex';
-    document.getElementById('mainArea').style.display='flex';
-    document.getElementById('hrName').textContent=hr.name;
-    renderAll();
-    refreshHRBell();
-  }catch(err){
-    console.error('HR login error:', err);
-    errEl.textContent='Login error. Please refresh and try again.';
-    errEl.style.display='block';
-  }
-}
 function logout(){
   if(window.authService?.logout) return authService.logout().then(()=>{location.href='ArthHRMS.html';});
   sessionStorage.removeItem('hrUser');
@@ -1534,17 +1468,16 @@ function logout(){
   sessionStorage.removeItem('currentEmployee');
   location.href='ArthHRMS.html';
 }
-// auto-login if session exists
-window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('hrUser');
-  if(s){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('sidebar').style.display='flex';
-    document.getElementById('mainArea').style.display='flex';
-    document.getElementById('hrName').textContent=JSON.parse(s).name;
-    renderAll();
-    refreshHRBell();
-  }
+ArthAuthGuard.ready.then((decision)=>{
+  if(!decision?.authenticated||!decision?.authorized||!['hr','hr_head'].includes(decision.user?.role))return;
+  __hrCurrent=decision.user;
+  sessionStorage.setItem('hrUser',JSON.stringify(__hrCurrent));
+  if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('hrName').textContent=__hrCurrent.name;
+  renderAll();
+  refreshHRBell();
   const attDateEl = document.getElementById('attDate');
   if(attDateEl) attDateEl.value=today();
 });

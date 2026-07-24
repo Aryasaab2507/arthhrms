@@ -22,6 +22,20 @@ const variableNames = [
   'USE_SUPABASE_PERSISTENCE'
 ];
 
+function generate(output, mode, environment, envPath = '') {
+  const args = [
+    path.join(root, 'scripts', 'generate-runtime-config.mjs'),
+    output,
+    `--mode=${mode}`
+  ];
+  if (envPath) args.push(`--env-file=${envPath}`);
+  return spawnSync(process.execPath, args, {
+    cwd: root,
+    env: environment,
+    encoding: 'utf8'
+  });
+}
+
 try {
   fs.writeFileSync(envFile, [
     'APP_ENV=development',
@@ -54,16 +68,7 @@ try {
 
   const childEnvironment = { ...process.env };
   variableNames.forEach(name => delete childEnvironment[name]);
-  const generated = spawnSync(process.execPath, [
-    path.join(root, 'scripts', 'generate-runtime-config.mjs'),
-    outputFile,
-    '--mode=local',
-    `--env-file=${envFile}`
-  ], {
-    cwd: root,
-    env: childEnvironment,
-    encoding: 'utf8'
-  });
+  const generated = generate(outputFile, 'local', childEnvironment, envFile);
   assert.equal(generated.status, 0, generated.stderr || generated.stdout);
 
   const runtimeSource = fs.readFileSync(outputFile, 'utf8');
@@ -73,6 +78,7 @@ try {
   const captured = {};
   const context = {
     console,
+    URL,
     document: { querySelector() { return null; } },
     supabase: {
       createClient(url, key, options) {
@@ -101,6 +107,57 @@ try {
   assert.equal(captured.url, config.SUPABASE_URL, 'Supabase client must receive the injected project URL');
   assert.equal(captured.key, publicKey, 'Supabase client must receive the injected publishable key');
   assert.equal(captured.options.auth.flowType, 'pkce');
+  assert.equal(captured.options.auth.detectSessionInUrl, false, 'the explicit callback dispatcher must own PKCE exchange');
+
+  const productionOutput = path.join(tempDirectory, 'runtime-config.production.js');
+  const productionEnvironment = {
+    ...childEnvironment,
+    SUPABASE_URL: 'https://runtime-config-test.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: publicKey,
+    VERCEL_PROJECT_PRODUCTION_URL: 'arthhrms.example.com'
+  };
+  const production = generate(productionOutput, 'production', productionEnvironment);
+  assert.equal(production.status, 0, production.stderr || production.stdout);
+  const productionContext = {};
+  productionContext.window = productionContext;
+  vm.createContext(productionContext);
+  vm.runInContext(fs.readFileSync(productionOutput, 'utf8'), productionContext);
+  const productionConfig = productionContext.ARTHHRMS_CONFIG;
+  for (const flag of [
+    'USE_SUPABASE_AUTH',
+    'USE_SUPABASE_PASSWORD_RECOVERY',
+    'USE_SUPABASE_PERSISTENCE',
+    'USE_SUPABASE_STORAGE',
+    'USE_SUPABASE_INVITES'
+  ]) {
+    assert.equal(productionConfig.flags[flag], true, `${flag} should default true in production`);
+  }
+  assert.equal(productionConfig.AUTH_INVITE_REDIRECT_URL, 'https://arthhrms.example.com/auth-callback.html');
+  assert.equal(vm.runInContext('Object.isFrozen(ARTHHRMS_CONFIG) && Object.isFrozen(ARTHHRMS_CONFIG.flags)', productionContext), true);
+
+  const overrideOutput = path.join(tempDirectory, 'runtime-config.override.js');
+  const override = generate(overrideOutput, 'production', {
+    ...productionEnvironment,
+    USE_SUPABASE_STORAGE: 'false'
+  });
+  assert.equal(override.status, 0, override.stderr || override.stdout);
+  const overrideSource = fs.readFileSync(overrideOutput, 'utf8');
+  assert.match(overrideSource, /"USE_SUPABASE_STORAGE": false/, 'explicit optional feature overrides must be respected');
+
+  const localDefaultOutput = path.join(tempDirectory, 'runtime-config.local-default.js');
+  const localDefault = generate(localDefaultOutput, 'local', {
+    ...childEnvironment,
+    SUPABASE_URL: 'https://runtime-config-test.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: publicKey
+  });
+  assert.equal(localDefault.status, 0, localDefault.stderr || localDefault.stdout);
+  const localDefaultSource = fs.readFileSync(localDefaultOutput, 'utf8');
+  assert.match(localDefaultSource, /"USE_SUPABASE_AUTH": false/, 'local auth should remain opt-in');
+  assert.match(localDefaultSource, /"USE_SUPABASE_PASSWORD_RECOVERY": false/, 'local recovery should remain opt-in');
+
+  const missingRequired = generate(path.join(tempDirectory, 'runtime-config.invalid.js'), 'production', childEnvironment);
+  assert.notEqual(missingRequired.status, 0, 'production generation must fail when required Supabase configuration is missing');
+  assert.match(missingRequired.stderr, /SUPABASE_URL is required/);
 
   console.log('Runtime configuration integration tests passed.');
 } finally {

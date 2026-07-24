@@ -1,4 +1,5 @@
-window.ARTHHRMS_CONFIG = Object.freeze({
+(function installArthRuntimeConfig() {
+const config = {
   APP_ENV: "${APP_ENV}",
   PRODUCTION_MODE: ${PRODUCTION_MODE},
   PILOT_MODE: ${PILOT_MODE},
@@ -25,4 +26,12 @@ window.ARTHHRMS_CONFIG = Object.freeze({
     USE_SUPABASE_INVITES: ${USE_SUPABASE_INVITES},
     USE_SUPABASE_PERSISTENCE: ${USE_SUPABASE_PERSISTENCE}
   })
+};
+config.flags = Object.freeze(config.flags);
+Object.defineProperty(window, "ARTHHRMS_CONFIG", {
+  value: Object.freeze(config),
+  writable: false,
+  configurable: false,
+  enumerable: true
 });
+}());

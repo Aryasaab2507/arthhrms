@@ -161,16 +161,16 @@ Replace every placeholder locally. Do not commit populated environment files, se
 
 ### Run Locally
 
-Generate the ignored browser runtime configuration from `.env.local`:
+Build the static site and generate its ignored browser runtime configuration from `.env.local`:
 
 ```bash
-npm run config:local
+npm run build:local
 ```
 
-Serve the repository root for local development:
+Serve the generated `dist` directory for local development:
 
 ```bash
-python -m http.server 8000
+python -m http.server 8000 --directory dist
 ```
 
 Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a different local port, run the static server on that port or update the ignored local value and the Edge Function origin allowlist together. Protected pages require a valid Supabase Auth session and configured runtime values.
@@ -208,7 +208,7 @@ Open `http://localhost:8000/ArthHRMS.html`. If `AUTH_INVITE_REDIRECT_URL` uses a
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Privileged Edge Function credential | `<server-only-service-role-key>` |
 | `ALLOWED_ORIGINS` | Server-only | Exact browser origins accepted by server functions | `https://<application-host>` |
 
-For the standard production persistence path, enable `USE_SUPABASE_AUTH`, `USE_SUPABASE_PASSWORD_RECOVERY`, `USE_SUPABASE_STORAGE`, `USE_SUPABASE_INVITES`, and `USE_SUPABASE_PERSISTENCE`. Keep legacy module-specific adapters disabled unless a reviewed migration plan explicitly requires them. Store `SUPABASE_SERVICE_ROLE_KEY` only in Supabase Edge Function secrets; it must never be exposed to browser code or generated runtime configuration.
+Production runtime generation enables `USE_SUPABASE_AUTH`, `USE_SUPABASE_PASSWORD_RECOVERY`, `USE_SUPABASE_STORAGE`, `USE_SUPABASE_INVITES`, and `USE_SUPABASE_PERSISTENCE` by default. These variables are optional overrides, not required deployment secrets. Local runtime generation keeps them disabled unless explicitly enabled. Keep legacy module-specific adapters disabled unless a reviewed migration plan explicitly requires them. Store `SUPABASE_SERVICE_ROLE_KEY` only in Supabase Edge Function secrets; it must never be exposed to browser code or generated runtime configuration.
 
 ## Production Deployment
 
@@ -218,7 +218,7 @@ For the standard production persistence path, enable `USE_SUPABASE_AUTH`, `USE_S
 4. Run database validation scripts, authenticated role tests, tenant-isolation tests, and Supabase security and performance advisors.
 5. Run the complete local release gate with `npm run ci`.
 6. Build the Docker image from a clean checkout and scan the resulting image.
-7. Configure browser-safe runtime variables using `deploy/production.env.example`.
+7. Configure `SUPABASE_URL` and one public browser key using `deploy/production.env.example`; hosted platforms derive secure production feature defaults automatically.
 8. Deploy behind HTTPS-capable ingress, configure DNS and certificates, and verify security headers.
 9. Connect durable logs, metrics, alerts, error reporting, and incident response procedures.
 10. Verify database and Storage backup restoration before enabling tenant access.

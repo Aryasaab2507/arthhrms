@@ -32,14 +32,6 @@ const DB = {
             if (injected.flags && injected.flags[name] !== undefined) return normalize(injected.flags[name]);
             if (injected[name] !== undefined) return normalize(injected[name]);
         } catch (e) {}
-        try {
-            const env = (typeof process !== 'undefined' && process.env) || {};
-            if (env[name] !== undefined) return normalize(env[name]);
-        } catch (e) {}
-        try {
-            const node = document.querySelector(`meta[name="arthhrms:${name.toLowerCase().replace(/_/g, '-')}"]`);
-            if (node) return normalize(node.getAttribute('content'));
-        } catch (e) {}
         return fallback;
     },
 

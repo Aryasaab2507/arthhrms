@@ -55,20 +55,6 @@
 :root{--p:#1d4ed8;--pl:#eff6ff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f0f4fb;--side:#0f172a;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 12px rgba(29,78,216,.08);--rad:14px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a,#1d4ed8);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:22px;padding:42px;width:400px;box-shadow:0 28px 70px rgba(0,0,0,.35)}
-.login-logo{text-align:center;margin-bottom:26px}
-.login-logo .icon{width:54px;height:54px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:10px}
-.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem}
-.login-logo p{font-size:.76rem;color:var(--muted);margin-top:3px}
-.lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
-.linput{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.86rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:13px;transition:border .15s}
-.linput:focus{border-color:var(--p)}
-.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff;border:none;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.76rem;font-weight:600;margin-bottom:12px;display:none}
-.hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:11px}
-.other-links{display:flex;gap:10px;justify-content:center;margin-top:13px;flex-wrap:wrap}
-.other-links a{font-size:.74rem;color:var(--p);font-weight:700;text-decoration:none}
 .sidebar{width:228px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
 .sidebar-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
 .logo-icon{width:35px;height:35px;background:linear-gradient(135deg,#1d4ed8,#60a5fa);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
@@ -155,30 +141,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   .topbar{height:auto;min-height:56px;padding:10px 12px;gap:10px;align-items:flex-start}
   .role-badge{display:none}
   .notif-panel{right:-8px;width:min(315px,calc(100vw - 24px))}
-  .login-box{width:92vw;padding:30px 20px;border-radius:16px}
   .content{padding:14px}
 }
 </style>
 </head>
 <body>
-
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-      <h2>Admin Panel</h2>
-      <p>HRMS — Operations Management</p>
-    </div>
-    <div class="lerr" id="lerr">Invalid credentials.</div>
-    <label class="lbl">Email</label>
-    <input class="linput" id="lemail" placeholder="admin@company.com"/>
-    <label class="lbl">Password</label>
-    <input class="linput" id="lpass" type="password"/>
-    <button class="lbtn" onclick="doLogin()">Login as Admin →</button>
-    <div class="hint">Use your activated company account.</div>
-    
-  </div>
-</div>
 
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar" style="display:none">
@@ -412,25 +379,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 <script>
 DB.init();DB.migrate();
-if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-const __adCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('admin') : null;
-if(!__adCurrent || __adCurrent.role!=='admin'){ location.replace('ArthHRMS.html'); }
-if(!sessionStorage.getItem('adUser')) sessionStorage.setItem('adUser', JSON.stringify(__adCurrent));
+let __adCurrent=null;
 let _adTrChart=null;
 
-async function doLogin(){
-  const email=document.getElementById('lemail').value.trim();
-  const pass=document.getElementById('lpass').value.trim();
-  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'admin') : null;
-  if(!res||res.user.role!=='admin'){document.getElementById('lerr').style.display='block';return;}
-  sessionStorage.setItem('adUser',JSON.stringify(res.user));
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('sidebar').style.display='flex';
-  document.getElementById('mainArea').style.display='flex';
-  document.getElementById('adName').textContent=res.user.name;
-  renderAll();
-  refreshAdBell();
-}
 async function logout(){if(window.authService?.logout) await authService.logout(); else {sessionStorage.removeItem('adUser');sessionStorage.removeItem('currentUser');sessionStorage.removeItem('currentEmployee');}location.href='ArthHRMS.html';}
 function isCompactLayout(){return window.matchMedia('(max-width:1200px)').matches;}
 function toggleSidebar(forceOpen){
@@ -443,9 +394,16 @@ function toggleSidebar(forceOpen){
 }
 function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
-window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('adUser');
-  if(s){document.getElementById('loginScreen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('mainArea').style.display='flex';document.getElementById('adName').textContent=JSON.parse(s).name;renderAll();refreshAdBell();}
+ArthAuthGuard.ready.then((decision)=>{
+  if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='admin')return;
+  __adCurrent=decision.user;
+  sessionStorage.setItem('adUser',JSON.stringify(__adCurrent));
+  if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('adName').textContent=__adCurrent.name;
+  renderAll();
+  refreshAdBell();
   const d=document.getElementById('adAttDate');if(d)d.value=today();
 });
 

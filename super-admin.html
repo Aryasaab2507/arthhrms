@@ -55,20 +55,6 @@
 :root{--p:#7c3aed;--pd:#6d28d9;--pl:#f5f3ff;--g:#059669;--gl:#d1fae5;--o:#d97706;--ol:#fef3c7;--r:#dc2626;--rl:#fee2e2;--bg:#f8f7ff;--side:#1e1040;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--sh:0 2px 12px rgba(124,58,237,.09);--rad:14px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1e1040,#4c1d95,#7c3aed);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:24px;padding:44px;width:400px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .icon{width:56px;height:56px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:10px}
-.login-logo h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem}
-.login-logo p{font-size:.78rem;color:var(--muted);margin-top:3px}
-.lbl{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
-.linput{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px;transition:border .15s}
-.linput:focus{border-color:var(--p)}
-.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
-.lerr{background:#fee2e2;color:#dc2626;padding:9px 12px;border-radius:8px;font-size:.78rem;font-weight:600;margin-bottom:12px;display:none}
-.hint{font-size:.73rem;color:var(--muted);text-align:center;margin-top:12px}
-.other-links{display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap}
-.other-links a{font-size:.76rem;color:var(--p);font-weight:700;text-decoration:none}
 .sidebar{width:230px;min-height:100vh;background:var(--side);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
 .sidebar-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
 .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
@@ -180,24 +166,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 </style>
 </head>
 <body>
-
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 8 6-6 6 6 4-8v14H2z"/></svg></div>
-      <h2>Super Admin Panel</h2>
-      <p>HRMS — Full System Access</p>
-    </div>
-    <div class="lerr" id="lerr">Invalid credentials.</div>
-    <label class="lbl">Email</label>
-    <input class="linput" id="lemail" placeholder="superadmin@company.com"/>
-    <label class="lbl">Password</label>
-    <input class="linput" id="lpass" type="password"/>
-    <button class="lbtn" onclick="doLogin()">Login as Super Admin →</button>
-    <div class="hint">Use your activated company account.</div>
-    
-  </div>
-</div>
 
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar" style="display:none">
@@ -521,25 +489,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 <script>
 DB.init(); DB.migrate();
-if(window.authService?.startAuthStateTracking) authService.startAuthStateTracking();
-const __saCurrent = window.authService?.requireCurrentRole ? authService.requireCurrentRole('super_admin') : null;
-if(!__saCurrent || __saCurrent.role!=='super_admin'){ location.replace('ArthHRMS.html'); }
-if(!sessionStorage.getItem('saUser')) sessionStorage.setItem('saUser', JSON.stringify(__saCurrent));
+let __saCurrent=null;
 let _saChart=null;
 
-async function doLogin(){
-  const email=document.getElementById('lemail').value.trim();
-  const pass=document.getElementById('lpass').value.trim();
-  const res=window.authService?.loginWithSupabase ? await authService.loginWithSupabase(email,pass,'super_admin') : null;
-  if(!res||res.user.role!=='super_admin'){document.getElementById('lerr').style.display='block';return;}
-  sessionStorage.setItem('saUser',JSON.stringify(res.user));
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('sidebar').style.display='flex';
-  document.getElementById('mainArea').style.display='flex';
-  document.getElementById('saName').textContent=res.user.name;
-  renderAll();
-  refreshSABell();
-}
 async function logout(){if(window.authService?.logout) await authService.logout(); else {sessionStorage.removeItem('saUser');sessionStorage.removeItem('currentUser');sessionStorage.removeItem('currentEmployee');}location.href='ArthHRMS.html';}
 function isCompactLayout(){return window.matchMedia('(max-width:1200px)').matches;}
 function toggleSidebar(forceOpen){
@@ -552,9 +504,16 @@ function toggleSidebar(forceOpen){
 }
 function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
-window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('saUser');
-  if(s){document.getElementById('loginScreen').style.display='none';document.getElementById('sidebar').style.display='flex';document.getElementById('mainArea').style.display='flex';document.getElementById('saName').textContent=JSON.parse(s).name;renderAll();refreshSABell();}
+ArthAuthGuard.ready.then((decision)=>{
+  if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='super_admin')return;
+  __saCurrent=decision.user;
+  sessionStorage.setItem('saUser',JSON.stringify(__saCurrent));
+  if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('saName').textContent=__saCurrent.name;
+  renderAll();
+  refreshSABell();
   const d=document.getElementById('saAttDate'); if(d) d.value=today();
 });
 

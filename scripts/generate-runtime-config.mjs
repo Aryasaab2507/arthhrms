@@ -3,6 +3,10 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { parseArgs } from 'node:util';
+import {
+  resolveRuntimeConfig,
+  serializeBrowserRuntimeConfig
+} from './runtime-config-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { values, positionals } = parseArgs({
@@ -20,93 +24,8 @@ if (!['local', 'production'].includes(mode)) {
 if (values['env-file']) {
   loadEnvFile(path.resolve(root, values['env-file']));
 }
-const output = path.resolve(root, positionals[0] || (mode === 'local' ? 'runtime-config.js' : 'dist/runtime-config.js'));
-const env = process.env;
-const isProduction = mode === 'production';
-
-function boolean(name, fallback = false) {
-  const value = env[name];
-  if (value === undefined || value === '') return fallback;
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  throw new Error(`${name} must be true or false.`);
-}
-
-function required(name) {
-  const value = String(env[name] || '').trim();
-  if (!value) throw new Error(`${name} is required.`);
-  return value;
-}
-
-const appEnvironment = String(env.APP_ENV || (isProduction ? 'production' : 'development')).trim().toLowerCase();
-const publicKey = String(env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim();
-const supabaseUrl = required('SUPABASE_URL');
-if (!/^https:\/\//i.test(supabaseUrl)) throw new Error('SUPABASE_URL must use HTTPS.');
-if (!publicKey) throw new Error('SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY is required.');
-if (publicKey === String(env.SUPABASE_SERVICE_ROLE_KEY || '').trim()) {
-  throw new Error('The browser key must never equal SUPABASE_SERVICE_ROLE_KEY.');
-}
-
-const supabaseFeatureDefault = isProduction;
-const flags = {
-  USE_SUPABASE_EMPLOYEES: boolean('USE_SUPABASE_EMPLOYEES'),
-  USE_SUPABASE_ATTENDANCE: boolean('USE_SUPABASE_ATTENDANCE'),
-  USE_SUPABASE_LEAVE: boolean('USE_SUPABASE_LEAVE'),
-  USE_SUPABASE_EXPENSES: boolean('USE_SUPABASE_EXPENSES'),
-  USE_SUPABASE_PAYROLL: boolean('USE_SUPABASE_PAYROLL'),
-  USE_SUPABASE_AUTH: boolean('USE_SUPABASE_AUTH', supabaseFeatureDefault),
-  USE_SUPABASE_PASSWORD_RECOVERY: boolean('USE_SUPABASE_PASSWORD_RECOVERY', supabaseFeatureDefault),
-  USE_SUPABASE_IMPORTS: boolean('USE_SUPABASE_IMPORTS'),
-  USE_SUPABASE_STORAGE: boolean('USE_SUPABASE_STORAGE', supabaseFeatureDefault),
-  USE_SUPABASE_INVITES: boolean('USE_SUPABASE_INVITES', supabaseFeatureDefault),
-  USE_SUPABASE_PERSISTENCE: boolean('USE_SUPABASE_PERSISTENCE', supabaseFeatureDefault)
-};
-const productionFlags = {
-  PRODUCTION_MODE: boolean('PRODUCTION_MODE', isProduction),
-  PILOT_MODE: boolean('PILOT_MODE'),
-  DEVELOPMENT_MODE: boolean('DEVELOPMENT_MODE', !isProduction),
-  DEMO_MODE: boolean('DEMO_MODE')
-};
-if (isProduction) {
-  if (appEnvironment !== 'production') throw new Error('APP_ENV must be production for a production runtime config.');
-  if (!productionFlags.PRODUCTION_MODE || productionFlags.PILOT_MODE || productionFlags.DEVELOPMENT_MODE || productionFlags.DEMO_MODE) {
-    throw new Error('Production mode must be enabled and pilot, development, and demo modes must be disabled.');
-  }
-} else {
-  if (productionFlags.PRODUCTION_MODE) throw new Error('Local runtime config cannot enable production mode.');
-}
-for (const legacyFlag of ['USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE', 'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_IMPORTS']) {
-  if (flags[legacyFlag]) throw new Error(`${legacyFlag} must remain disabled when canonical persistence is enabled.`);
-}
-
-const inviteUserEndpoint = flags.USE_SUPABASE_INVITES
-  ? String(env.INVITE_USER_ENDPOINT || `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/invite-user`).trim()
-  : '';
-const hostedApplicationUrl = String(env.VERCEL_PROJECT_PRODUCTION_URL || env.VERCEL_URL || '').trim();
-const hostedApplicationOrigin = hostedApplicationUrl
-  ? `${/^https?:\/\//i.test(hostedApplicationUrl) ? '' : 'https://'}${hostedApplicationUrl}`.replace(/\/+$/, '')
-  : '';
-const authInviteRedirectUrl = flags.USE_SUPABASE_INVITES
-  ? String(env.AUTH_INVITE_REDIRECT_URL || (hostedApplicationOrigin ? `${hostedApplicationOrigin}/auth-callback.html` : '')).trim()
-  : '';
-const config = {
-  APP_ENV: appEnvironment,
-  ...productionFlags,
-  SUPABASE_URL: supabaseUrl,
-  SUPABASE_ANON_KEY: publicKey,
-  SUPABASE_PUBLISHABLE_KEY: publicKey,
-  SUPABASE_TIMEOUT_MS: Number(env.SUPABASE_TIMEOUT_MS || 10000),
-  INVITE_USER_ENDPOINT: inviteUserEndpoint,
-  AUTH_INVITE_REDIRECT_URL: authInviteRedirectUrl,
-  REQUIRE_APP_METADATA_ROLE: boolean('REQUIRE_APP_METADATA_ROLE', true),
-  REQUIRE_EMAIL_VERIFIED: boolean('REQUIRE_EMAIL_VERIFIED', true),
-  flags
-};
-if (!Number.isFinite(config.SUPABASE_TIMEOUT_MS) || config.SUPABASE_TIMEOUT_MS < 1000 || config.SUPABASE_TIMEOUT_MS > 60000) {
-  throw new Error('SUPABASE_TIMEOUT_MS must be between 1000 and 60000.');
-}
-
-const serialized = JSON.stringify(config, null, 2).replaceAll('<', '\\u003c');
+const output = path.resolve(root, positionals[0] || 'dist/runtime-config.js');
+const config = resolveRuntimeConfig(process.env, mode);
 await mkdir(path.dirname(output), { recursive: true });
-await writeFile(output, `window.ARTHHRMS_CONFIG = Object.freeze(${serialized});\n`, { encoding: 'utf8', mode: 0o600 });
+await writeFile(output, serializeBrowserRuntimeConfig(config), { encoding: 'utf8', mode: 0o600 });
 console.log(`${mode === 'production' ? 'Production' : 'Local'} runtime config written to ${path.relative(root, output)} without server secrets.`);

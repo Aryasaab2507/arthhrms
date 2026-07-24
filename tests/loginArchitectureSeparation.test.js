@@ -17,16 +17,20 @@ function load(file) {
 }
 
 async function main() {
-  for (const page of ['ArthHRMS.html', 'index.html']) {
-    const source = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.doesNotMatch(source, /platform[_\s-]*owner/i, `${page} must not expose Platform Owner`);
-    assert.doesNotMatch(source, /role-tab|data-role|login\(['"][a-z_]+/i, `${page} must not ask the user to select a role`);
-    assert.match(source, /id="companyLoginForm"/, `${page} must expose one company login form`);
-    assert.match(source, /id="forgotPasswordLink"[\s\S]*Forgot Password\?/i, `${page} must expose password recovery below the password field`);
-    assert.match(source, /href="password-recovery\.html\?source=company"/, `${page} must open the password recovery page`);
-    assert.match(source, /loginTenantWithSupabase\s*\(/, `${page} must use the tenant-only authentication boundary`);
-    assert.match(source, /restoreTenantSessionFromSupabase\s*\(/, `${page} must restore only tenant sessions`);
-  }
+  const companyPage = fs.readFileSync(path.join(root, 'ArthHRMS.html'), 'utf8');
+  assert.doesNotMatch(companyPage, /platform[_\s-]*owner/i, 'company login must not expose Platform Owner');
+  assert.doesNotMatch(companyPage, /role-tab|data-role|login\(['"][a-z_]+/i, 'company login must not ask the user to select a role');
+  assert.match(companyPage, /id="companyLoginForm"/, 'company login must expose one form');
+  assert.match(companyPage, /id="forgotPasswordLink"[\s\S]*Forgot Password\?/i, 'company login must expose password recovery below the password field');
+  assert.match(companyPage, /href="password-recovery\.html\?source=company"/, 'company login must open the password recovery page');
+  assert.match(companyPage, /loginTenantWithSupabase\s*\(/, 'company login must use the tenant-only authentication boundary');
+  assert.match(companyPage, /restoreTenantSessionFromSupabase\s*\(/, 'company login must restore only tenant sessions');
+
+  const indexPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(indexPage, /location\.replace\(target\.href\)/, 'root entry must redirect to the canonical company login');
+  assert.match(indexPage, /target\.search=location\.search/, 'root redirect must preserve the query string');
+  assert.match(indexPage, /target\.hash=location\.hash/, 'root redirect must preserve the hash');
+  assert.doesNotMatch(indexPage, /companyLoginForm|loginTenantWithSupabase/, 'root entry must not duplicate the company login flow');
 
   const platformPage = fs.readFileSync(path.join(root, 'platform-login.html'), 'utf8');
   assert.match(platformPage, /Platform Owner Login/, 'dedicated Platform Owner login must exist');
@@ -175,7 +179,7 @@ async function main() {
   const reset = await global.authService.requestPasswordRecovery('USER@Example.com');
   assert.equal(reset.ok, true, 'password recovery request must be accepted');
   assert.equal(resetRequest.email, 'user@example.com', 'recovery email must be normalized');
-  assert.equal(resetRequest.options.redirectTo, 'https://hrms.example.com/auth-callback.html', 'recovery must use the approved callback');
+  assert.equal(resetRequest.options.redirectTo, 'https://hrms.example.com/auth-callback.html?flow=recovery', 'recovery must use the approved typed callback');
   assert.match(reset.message, /if an account exists/i, 'recovery response must resist account enumeration');
 
   const invalidReset = await global.authService.requestPasswordRecovery('not-an-email');

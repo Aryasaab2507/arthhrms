@@ -7,15 +7,21 @@ import { parseEnv, requireHttpsOrigin } from './pilot-onboarding.mjs';
 export function buildHostedConfiguration(input = {}) {
   const origin = requireHttpsOrigin(input.appOrigin);
   const callbackUrl = `${origin}/auth-callback.html`;
+  const inviteCallbackUrl = `${callbackUrl}?flow=invite`;
+  const recoveryCallbackUrl = `${callbackUrl}?flow=recovery`;
+  const callbackAllowList = [callbackUrl, inviteCallbackUrl, recoveryCallbackUrl].join(',');
   const projectRef = String(input.projectRef || '').trim();
   if (!/^[a-z0-9]{20}$/i.test(projectRef)) throw new Error('SUPABASE_PROJECT_REF is invalid.');
   return {
     origin,
     callbackUrl,
+    inviteCallbackUrl,
+    recoveryCallbackUrl,
+    callbackAllowList,
     projectRef,
     authPatch: {
       site_url: origin,
-      uri_allow_list: callbackUrl
+      uri_allow_list: callbackAllowList
     }
   };
 }
@@ -64,10 +70,18 @@ export async function configureHostedPilot(input = {}, dependencies = {}) {
   if (secretResult?.status !== 0) throw new Error('Hosted ALLOWED_ORIGINS update failed.');
 
   const verified = await fetchImpl(endpoint, accessToken, { method: 'GET' });
-  if (verified?.site_url !== config.origin || String(verified?.uri_allow_list || '') !== config.callbackUrl) {
+  if (verified?.site_url !== config.origin || String(verified?.uri_allow_list || '') !== config.callbackAllowList) {
     throw new Error('Hosted Auth URL verification did not match the requested exact origin and callback.');
   }
-  return { ok: true, configured: true, origin: config.origin, callbackUrl: config.callbackUrl, projectRef: config.projectRef };
+  return {
+    ok: true,
+    configured: true,
+    origin: config.origin,
+    callbackUrl: config.callbackUrl,
+    inviteCallbackUrl: config.inviteCallbackUrl,
+    recoveryCallbackUrl: config.recoveryCallbackUrl,
+    projectRef: config.projectRef
+  };
 }
 
 async function loadEnvironment(argv) {

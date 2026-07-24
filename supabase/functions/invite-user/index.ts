@@ -2,7 +2,7 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
 const allowedCallerRoles = new Set(["hr", "hr_head", "admin", "super_admin"]);
-const assignableRoles = new Set(["employee", "manager", "admin", "hr", "hr_head", "director", "super_admin"]);
+const assignableRoles = new Set(["employee", "manager", "admin", "hr", "hr_head", "director"]);
 const allowedOrigins = new Set(
   (Deno.env.get("ALLOWED_ORIGINS") || "")
     .split(",")

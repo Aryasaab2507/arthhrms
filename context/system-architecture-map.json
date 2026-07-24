@@ -1038,7 +1038,7 @@
       "id": "authInviteProduction",
       "level": "HIGH",
       "area": "auth and invite delivery",
-      "evidence": "Production invite requires INVITE_USER_ENDPOINT and auth_user_id mapping; authService/authInviteService are cyclic.",
+      "evidence": "Production invite delivery uses the derived Edge Function endpoint and auth_user_id mapping. authCallbackService owns callback exchange, authInviteService owns invite activation, and passwordRecoveryService owns recovery state.",
       "impact": "Misconfiguration blocks onboarding or creates identity-linking risk."
     },
     {

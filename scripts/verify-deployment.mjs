@@ -13,6 +13,8 @@ const requiredFiles = [
   '.github/workflows/ci.yml', '.github/workflows/release.yml',
   'context/DEPLOYMENT_CHECKLIST.md', 'context/ROLLBACK_RUNBOOK.md',
   'scripts/configure-pilot.mjs', 'scripts/pilot-onboarding.mjs',
+  'scripts/runtime-config-contract.mjs',
+  'services/authCallbackService.js', 'services/passwordRecoveryService.js',
   'supabase/functions/invite-user/deno.lock',
   'dist/health.json', 'dist/runtime-config.js'
 ];
@@ -28,8 +30,11 @@ for (const page of sourcePages) {
   check(publicPages.has(page) || source.includes('services/authGuard.js'), `${page} lacks the shared authentication guard.`);
   check(built.includes('/runtime-config.js'), `${page} build lacks runtime configuration injection.`);
   check(!built.includes('@supabase/supabase-js@2"'), `${page} build contains an unpinned Supabase client.`);
-  check(built.indexOf('/runtime-config.js') < built.indexOf('@supabase/supabase-js@'), `${page} loads Supabase before runtime configuration.`);
+  if (built.includes('@supabase/supabase-js@')) {
+    check(built.indexOf('/runtime-config.js') < built.indexOf('@supabase/supabase-js@'), `${page} loads Supabase before runtime configuration.`);
+  }
   if (!publicPages.has(page)) {
+    check(!/id=["']loginScreen["']|loginWithSupabase|loginTenantWithSupabase|loginPlatformOwnerWithSupabase/.test(source), `${page} retains a page-local authentication flow.`);
     check(built.includes('services/rbacEnforcementService.js'), `${page} build lacks the RBAC enforcement boundary.`);
     check(built.includes('services/supabasePersistenceService.js'), `${page} build lacks authenticated persistence.`);
     check(built.indexOf('/runtime-config.js') < built.indexOf('services/authGuard.js'), `${page} runs its guard before runtime configuration.`);
@@ -44,11 +49,13 @@ const storageMigration = migrations.find(name => name.endsWith('_storage_policie
 const integrationMigration = migrations.find(name => name.endsWith('_harden_application_integration.sql'));
 const documentStorageMigration = migrations.find(name => name.endsWith('_integrate_document_storage.sql'));
 const employeeDocumentDeleteMigration = migrations.find(name => name.endsWith('_allow_employee_document_delete.sql'));
+const inviteActivationMigration = migrations.find(name => name.endsWith('_secure_auth_invite_activation.sql'));
 check(!!persistenceMigration, 'Canonical persistence migration is missing.');
 check(!!storageMigration, 'Canonical Storage migration is missing.');
 check(!!integrationMigration, 'Application integration hardening migration is missing.');
 check(!!documentStorageMigration, 'Document Storage integration migration is missing.');
 check(!!employeeDocumentDeleteMigration, 'Employee document delete policy migration is missing.');
+check(!!inviteActivationMigration, 'Secure invitation activation migration is missing.');
 if (persistenceMigration) {
   check(await read(path.join('supabase', 'migrations', persistenceMigration)) === await read('context/sql/authenticated_business_persistence.sql'), 'Persistence migration differs from its reviewed canonical SQL.');
 }
@@ -72,6 +79,14 @@ if (employeeDocumentDeleteMigration) {
   check(/subject_id\s*=\s*public\.arth_persistence_emp_id\(\)/i.test(deleteSql), 'Employee document delete is not restricted to the authenticated subject.');
   check(/payload\s*->>\s*'source'[\s\S]*'employee'/i.test(deleteSql), 'Employee document delete is not restricted to employee uploads.');
 }
+if (inviteActivationMigration) {
+  const inviteActivationSql = await read(path.join('supabase', 'migrations', inviteActivationMigration));
+  check(/security definer/i.test(inviteActivationSql), 'Invite activation RPC does not own its controlled transaction.');
+  check(/auth\.uid\(\)/i.test(inviteActivationSql), 'Invite activation RPC does not bind activation to the authenticated user.');
+  check(/tenant_id\s*=\s*caller_tenant[\s\S]*organization_id\s*=\s*caller_organization/i.test(inviteActivationSql), 'Invite activation RPC lacks tenant and organization validation.');
+  check(/hrms_audit_records/i.test(inviteActivationSql), 'Invite activation RPC does not persist an audit event.');
+  check(/revoke all on function public\.arth_complete_auth_invite_activation\(\) from public, anon/i.test(inviteActivationSql), 'Invite activation RPC is exposed to anonymous callers.');
+}
 
 const persistenceSql = await read('context/sql/authenticated_business_persistence.sql');
 check(/force row level security/i.test(persistenceSql), 'Canonical persistence does not force RLS.');
@@ -80,15 +95,44 @@ check(/revoke all on public\.%I from anon/i.test(persistenceSql), 'Canonical per
 
 const runtimeConfig = await read('dist/runtime-config.js');
 check(!runtimeConfig.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Built runtime config references the service role key.');
+check(runtimeConfig.includes("Object.defineProperty(window, 'ARTHHRMS_CONFIG'"), 'Runtime configuration is not installed as an immutable browser contract.');
+if (/"APP_ENV": "production"/.test(runtimeConfig)) {
+  for (const flag of [
+    'USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY', 'USE_SUPABASE_STORAGE',
+    'USE_SUPABASE_INVITES', 'USE_SUPABASE_PERSISTENCE'
+  ]) {
+    check(new RegExp(`"${flag}": true`).test(runtimeConfig), `Production runtime config did not default ${flag} to true.`);
+  }
+} else {
+  check(/"APP_ENV": "unconfigured"/.test(runtimeConfig), 'Build-time runtime placeholder is malformed.');
+}
 const authServiceSource = await read('services/authService.js');
+const authCallbackSource = await read('services/authCallbackService.js');
+const authInviteSource = await read('services/authInviteService.js');
+const passwordRecoverySource = await read('services/passwordRecoveryService.js');
+const supabaseClientSource = await read('services/supabaseClient.js');
 const recoveryPage = await read('password-recovery.html');
+const callbackPage = await read('auth-callback.html');
 const companyLoginPage = await read('ArthHRMS.html');
 check(authServiceSource.includes('resetPasswordForEmail'), 'Auth service lacks the Supabase password recovery request API.');
+check(authServiceSource.includes('authCallbackService.dispatchAuthCallback'), 'Auth service does not use the dedicated callback dispatcher.');
+check(authCallbackSource.includes('switch (type)'), 'Authentication callback types are not dispatched explicitly.');
+check(authCallbackSource.includes('exchangeCodeForSession'), 'PKCE callback exchange is missing.');
+check(!/linkAuthUserToEmployee/.test(authCallbackSource), 'Authentication callback dispatcher is coupled to employee linking.');
+check(!/updateUser\(\{\s*password/.test(authInviteSource), 'Invite onboarding still owns password recovery.');
+check(authInviteSource.includes("client.rpc('arth_complete_auth_invite_activation')"), 'Invite onboarding does not use the tenant-scoped activation transaction.');
+check(passwordRecoverySource.includes('updateUser({ password:'), 'Recovery service does not use the current Supabase password update API.');
+check(!/linkAuthUserToEmployee/.test(passwordRecoverySource), 'Password recovery is coupled to employee linking.');
+check(supabaseClientSource.includes('detectSessionInUrl: false'), 'Supabase client may race the explicit PKCE callback dispatcher.');
+check(!/process\.env|querySelector\(['"]meta/.test(supabaseClientSource), 'Browser Supabase initialization has conflicting runtime configuration sources.');
 const disabledRecoveryPlaceholder = ['Password recovery is unavailable.', 'Contact your administrator.'].join(' ');
 check(!authServiceSource.includes(disabledRecoveryPlaceholder), 'Auth service retains the disabled recovery placeholder.');
 check(recoveryPage.includes('services/passwordRecoveryUI.js'), 'Password recovery page does not load the reusable recovery component.');
 check(recoveryPage.includes('PasswordRecoveryUI.mountRequest'), 'Password recovery request component is not mounted.');
+check(callbackPage.includes('services/authCallbackService.js'), 'Auth callback page does not load the callback dispatcher.');
+check(callbackPage.includes('services/passwordRecoveryService.js'), 'Auth callback page does not load the recovery service.');
 check(companyLoginPage.includes('href="password-recovery.html?source=company"'), 'Company login does not open the password recovery page.');
+check(!/Platform Owner|platform_owner|platform-login\.html/i.test(companyLoginPage), 'Company login exposes Platform Owner authentication.');
 const dockerfile = await read('Dockerfile');
 check((dockerfile.match(/@sha256:/g) || []).length === 2, 'Docker base images must be digest pinned.');
 check(/USER nginx/.test(dockerfile), 'Production container must run as the unprivileged nginx user.');
@@ -96,6 +140,10 @@ check(/HEALTHCHECK[\s\S]*\/healthz/.test(dockerfile), 'Production container heal
 const headers = await read('_headers');
 check(headers.includes('Content-Security-Policy:'), 'Content Security Policy header is missing.');
 check(headers.includes('Strict-Transport-Security:'), 'HSTS header is missing.');
+const dockerRuntimeTemplate = await read('deploy/runtime-config.template.js');
+check(dockerRuntimeTemplate.includes('Object.defineProperty(window, "ARTHHRMS_CONFIG"'), 'Container runtime config does not use the immutable browser contract.');
+const databaseSource = await read('db.js');
+check(!/process\.env|querySelector\(`meta\[name="arthhrms:/.test(databaseSource), 'Database runtime flags have conflicting browser sources.');
 
 const packageManifest = JSON.parse(await read('package.json'));
 const packageLock = JSON.parse(await read('package-lock.json'));
@@ -125,25 +173,22 @@ const inviteFunction = await read('supabase/functions/invite-user/index.ts');
 check(inviteFunction.includes('allowedOrigins.has(origin)'), 'Invite function lacks exact origin allowlisting.');
 check(!inviteFunction.includes('Access-Control-Allow-Origin": "*"'), 'Invite function must not allow wildcard CORS.');
 check(!/assignableRoles[^\n]*platform_owner/.test(inviteFunction), 'Invite function must not provision Platform Owners.');
+check(!/assignableRoles[^\n]*super_admin/.test(inviteFunction), 'Tenant invitation function must not provision Super Admins.');
 const denoLock = JSON.parse(await read('supabase/functions/invite-user/deno.lock'));
 check(denoLock.version === '5', 'Deno dependency lock version 5 is required.');
 check(denoLock.specifiers?.['jsr:@supabase/supabase-js@2.110.8'] === '2.110.8', 'Supabase Edge Function client is not dependency locked.');
 
 const productionEnv = await read('deploy/production.env.example');
-for (const expected of [
-  'APP_ENV=production', 'PRODUCTION_MODE=true', 'DEMO_MODE=false',
-  'USE_SUPABASE_AUTH=true', 'USE_SUPABASE_PASSWORD_RECOVERY=true', 'USE_SUPABASE_STORAGE=true',
-  'USE_SUPABASE_INVITES=true', 'USE_SUPABASE_PERSISTENCE=true'
-]) {
-  check(productionEnv.includes(expected), `Production environment template lacks ${expected}.`);
-}
+check(/^SUPABASE_URL=https:\/\//m.test(productionEnv), 'Production environment template lacks required SUPABASE_URL.');
+check(/^SUPABASE_PUBLISHABLE_KEY=/m.test(productionEnv), 'Production environment template lacks a required public browser key.');
 check(!productionEnv.includes('SUPABASE_SERVICE_ROLE_KEY='), 'Browser-safe production environment template exposes a service-role variable.');
 const vercelConfig = JSON.parse(await read('vercel.json'));
 check(vercelConfig.outputDirectory === 'dist', 'Vercel must deploy the reviewed dist output.');
-check(
-  String(vercelConfig.buildCommand || '').includes('npm run config:production'),
-  'Vercel build must replace the unconfigured runtime placeholder from hosted environment variables.'
-);
+check(vercelConfig.buildCommand === 'npm run build:production', 'Vercel must run the complete production build and verification command.');
+const vercelHeaders = JSON.stringify(vercelConfig.headers || []);
+check(vercelHeaders.includes('Content-Security-Policy'), 'Vercel security headers lack Content Security Policy.');
+check(vercelHeaders.includes('Strict-Transport-Security'), 'Vercel security headers lack HSTS.');
+check(vercelHeaders.includes('/runtime-config.js') && vercelHeaders.includes('no-store'), 'Vercel runtime configuration is cacheable.');
 
 const pilotOnboarding = await read('scripts/pilot-onboarding.mjs');
 check(pilotOnboarding.includes('/auth/v1/invite'), 'Privileged onboarding must use invitation-based account creation.');
@@ -152,6 +197,7 @@ check(pilotOnboarding.includes('app_metadata'), 'Privileged onboarding must writ
 check(pilotOnboarding.includes('compensating rollback'), 'Privileged onboarding lacks partial-failure rollback.');
 const hostedConfig = await read('scripts/configure-pilot.mjs');
 check(hostedConfig.includes('site_url') && hostedConfig.includes('uri_allow_list'), 'Hosted Auth callback configuration is incomplete.');
+check(hostedConfig.includes('flow=invite') && hostedConfig.includes('flow=recovery'), 'Hosted Auth callback allowlist lacks typed invite or recovery routes.');
 check(hostedConfig.includes('ALLOWED_ORIGINS='), 'Hosted Edge Function origin configuration is incomplete.');
 
 const services = await readdir(path.join(root, 'services'));
