@@ -37,6 +37,7 @@
     <script src="services/organizationSetupService.js"></script>
     <script src="services/organizationInitializationWizardService.js"></script>
     <script src="services/enterpriseOrganizationSetupWizardService.js"></script>
+    <script src="services/companySetupOrchestrationService.js"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         :root{--p:#1a56db;--p2:#0ea5e9;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#d9e2ef;--r:#dc2626;--g:#047857;--o:#b45309}
@@ -175,10 +176,10 @@ PF,DEDUCTION</textarea></div>
                 <div class="fg"><label>MFA</label><select id="mfa"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
                 <div class="fg"><label>SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
                 <div class="fg"><label>SSO Provider</label><input id="ssoProvider" placeholder="Microsoft Entra ID"></div>
-                <div class="fg"><label>Authenticated Platform Owner</label><input id="ownerName" autocomplete="name" readonly></div>
+                <div class="fg"><label>Authenticated Setup Owner</label><input id="ownerName" autocomplete="name" readonly></div>
                 <div class="fg"><label>Verified Owner Email</label><input id="ownerEmail" type="email" autocomplete="email" readonly></div>
             </div>
-            <div class="notice">Platform Owner identity is supplied by secure authentication. Tenant administrators remain invite-pending until the server-side onboarding flow completes.</div>
+            <div class="notice">The setup owner identity is supplied by secure authentication. Tenant administrators remain invite-pending until the server-side onboarding flow completes.</div>
         </div>
         <div class="panel" id="step7">
             <div class="grid">
@@ -304,7 +305,19 @@ function renderStep(){
     if(step===5) renderEnterpriseSummary();
 }
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
-function authenticatedOwner(){const u=window.authService?.getCurrentUser?.();return u?.source==='supabase'&&u?.role==='platform_owner'&&u?.roleTrusted?u:null;}
+function orchestration(){return window.CompanySetupOrchestrationService||window.companySetupOrchestrationService;}
+function durableMode(){return !!orchestration()?.isEnabled?.();}
+function authenticatedOwner(){
+    const u=window.authService?.getCurrentUser?.();
+    if(!u||u.source!=='supabase'||!u.roleTrusted)return null;
+    return durableMode()
+        ? (u.role==='super_admin'&&u.tenantSlug&&u.organizationId?u:null)
+        : (u.role==='platform_owner'?u:null);
+}
+function wizardContext(){
+    const owner=authenticatedOwner();
+    return {actor:{role:owner?.role||'',id:owner?.id||'',email:owner?.email||'',tenantSlug:owner?.tenantSlug||''},draftId:draftId(),ignoreCurrentCompanySettings:durableMode()};
+}
 function validateStep(){
     if(step===1 && !val('companyName')) return 'Company name is required.';
     if(step===1 && !normalizeSlug(val('tenantSlug')||val('companyName'))) return 'Tenant slug is required.';
@@ -434,17 +447,17 @@ function applyDraft(draft){
 function show(msg){const e=node('setupError');e.textContent=msg;e.style.display='block';}
 function clear(){node('setupError').style.display='none';}
 function validationText(result){return Object.values(result?.inlineErrors||{}).concat((result?.failures||[]).map(x=>x.message||x.code||x.failureCode)).filter(Boolean).join('\n');}
-function ownerError(){if(enterpriseStep!==6)return'';const owner=authenticatedOwner();if(!owner)return'A validated Platform Owner session is required.';if(!validEmail(owner.email))return'The authenticated Platform Owner email is invalid.';return'';}
+function ownerError(){if(enterpriseStep!==6)return'';const owner=authenticatedOwner();if(!owner)return durableMode()?'A validated Company Owner session is required.':'A validated Platform Owner session is required.';if(!validEmail(owner.email))return'The authenticated owner email is invalid.';return'';}
 function validateCurrent(){
     const owner=ownerError();if(owner)return owner;
-    if(enterpriseStep===9){const review=service().generateReviewSummary(collectDraft(),{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});return review.readyToProvision?'':validationText({failures:review.validationErrors})||'Review has unresolved validation errors.';}
+    if(enterpriseStep===9){const review=service().generateReviewSummary(collectDraft(),wizardContext());return review.readyToProvision?'':validationText({failures:review.validationErrors})||'Review has unresolved validation errors.';}
     if(enterpriseStep>=10)return'';
-    const key=keys[enterpriseStep-1];const draft=collectDraft();const result=service().validateStep({stepKey:key,values:draft[key]},{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});
+    const key=keys[enterpriseStep-1];const draft=collectDraft();const result=service().validateStep({stepKey:key,values:draft[key]},wizardContext());
     return result.valid?'':validationText(result);
 }
 function metrics(id,items){node(id).innerHTML=items.map(x=>`<div class="metric"><b>${html(x.value)}</b><span>${html(x.label)}</span></div>`).join('');}
 function renderReview(){
-    const draft=collectDraft();const review=service().generateReviewSummary(draft,{actor:{role:'platform_owner',id:value('ownerEmail')},draftId:draftId()});const ready=service().calculateSetupReadiness(draft,{actor:{role:'platform_owner',id:value('ownerEmail')}});
+    const draft=collectDraft();const review=service().generateReviewSummary(draft,wizardContext());const ready=service().calculateSetupReadiness(draft,wizardContext());
     metrics('readinessMetrics',[{label:'Readiness',value:(ready.setupReadinessScore||0)+'%'},{label:'Scale Ready',value:(ready.scaleReadinessScore||0)+'%'},{label:'Errors',value:String((review.validationErrors||[]).length)},{label:'Warnings',value:String((review.warnings||[]).length)}]);
     const rows=(review.configurationSummary||[]).map(x=>[x.label,x.status+' - '+x.errorCount+' errors - '+x.warningCount+' warnings']).concat((review.missingRequiredFields||[]).map(x=>[x.stepKey,x.field+': '+x.message]));
     node('setupSummary').innerHTML=(rows.length?rows:[['Ready','No validation blockers found.']]).map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
@@ -452,7 +465,10 @@ function renderReview(){
 function renderProvisionPreview(){
     const draft=collectDraft();
     metrics('provisionMetrics',[{label:'Tenant',value:slug(draft.organizationInformation.organizationCode)},{label:'Departments',value:String((draft.organizationStructure.departments||[]).length)},{label:'Admin MFA',value:draft.administrator.mfa?'On':'Off'},{label:'Workflow Impact',value:'None'}]);
-    node('provisionSummary').innerHTML=[['Tenant Creation','Creates tenant metadata and routing-safe organization code.'],['Configuration Seeding','Stores working, leave, payroll, identity, notification, and structure setup by tenant.'],['Administrator','Creates invite-pending tenant administrator without changing employee records.'],['Audit','Writes setup, provisioning, and security audit entries.']].map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
+    const rows=durableMode()
+        ? [['Tenant Workspace','Completes the existing tenant core setup without creating another tenant.'],['Cross-device Resume','Stores validated setup progress in the tenant-scoped Supabase workspace.'],['Next Action','Returns the Company Owner to the setup home for policy and workforce tasks.'],['Audit','Versions each step and appends lifecycle evidence.']]
+        : [['Tenant Creation','Creates tenant metadata and routing-safe organization code.'],['Configuration Seeding','Stores working, leave, payroll, identity, notification, and structure setup by tenant.'],['Administrator','Creates invite-pending tenant administrator without changing employee records.'],['Audit','Writes setup, provisioning, and security audit entries.']];
+    node('provisionSummary').innerHTML=rows.map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
 }
 function renderEnterpriseStep(){
     clear();document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));node('step'+enterpriseStep).classList.add('on');
@@ -460,14 +476,33 @@ function renderEnterpriseStep(){
     node('stepTitle').textContent=titles[enterpriseStep][0];node('stepHelp').textContent=titles[enterpriseStep][1];node('backBtn').style.visibility=enterpriseStep===1?'hidden':'visible';node('nextBtn').textContent=enterpriseStep===10?'Provision Tenant':(enterpriseStep===9?'Continue to Provision':'Next');node('nextBtn').className=enterpriseStep===10?'btn good':'btn';node('setupProgress').style.width=(enterpriseStep*10)+'%';node('draftBadge').textContent=wizardDraftId?'Draft '+wizardDraftId:'Draft not saved';
     if(enterpriseStep===9)renderReview();if(enterpriseStep===10)renderProvisionPreview();
 }
-window.saveDraft=function(){
-    const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';const draft=collectDraft();const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},{actor:{role:'platform_owner',id:value('ownerEmail')}});
+window.saveDraft=async function(){
+    const draft=collectDraft();
+    if(durableMode()){
+        const key=keys[Math.min(enterpriseStep,9)-1]||'review';
+        const payload=key==='review'?{ready:true,reviewedAt:new Date().toISOString()}:draft[key];
+        const saved=await orchestration().saveStep({stepKey:key,payload},{actor:authenticatedOwner()});
+        if(!saved.success){show(saved.message||'Draft could not be saved.');return false;}
+        wizardDraftId=saved.workspace.id;
+        sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
+        node('draftBadge').textContent='Saved - '+saved.workspace.progress+'%';
+        return true;
+    }
+    const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';
+    const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},wizardContext());
     if(!result.success){show(validationText(result)||'Draft could not be saved.');return false;}
     wizardDraftId=result.draft.draftId;sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);node('draftBadge').textContent='Draft saved - '+wizardDraftId;return true;
 };
-window.nextStep=function(){
+window.nextStep=async function(){
     const err=validateCurrent();if(err){show(err);return;}
-    if(enterpriseStep<10){if(!window.saveDraft())return;enterpriseStep++;renderEnterpriseStep();return;}
+    if(enterpriseStep<10){if(!await window.saveDraft())return;enterpriseStep++;renderEnterpriseStep();return;}
+    if(durableMode()){
+        const completed=await orchestration().completeCoreSetup({}, {actor:authenticatedOwner()});
+        if(!completed.success){show(completed.message||'Core company setup could not be completed.');return;}
+        sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');
+        location.href='super-admin.html?section=company-setup';
+        return;
+    }
     const draft=collectDraft();let setupResult={ok:true,ownerUser:null};
     if(DB.isSetupRequired&&DB.isSetupRequired()){setupResult=DB.completeInitialSetup({company:{companyName:draft.organizationInformation.companyName,companyEmail:draft.administrator.email,timezone:draft.organizationInformation.timeZone,currency:draft.organizationInformation.currency,logoUrl:draft.organizationInformation.logoUpload.url},platformOwner:authenticatedOwner(),initialUser:{name:draft.administrator.name,email:draft.administrator.email,role:draft.administrator.role}});if(!setupResult.ok){show(setupResult.error||'Initial setup could not be completed.');return;}}
     const result=service().provisionTenant(draft,{actor:{role:'platform_owner',id:setupResult.ownerUser?.id||value('ownerEmail'),email:value('ownerEmail')}});
@@ -476,9 +511,26 @@ window.nextStep=function(){
 };
 window.backStep=function(){if(enterpriseStep>1){enterpriseStep--;renderEnterpriseStep();}};
 function syncAuthenticatedOwner(){const owner=authenticatedOwner();if(!owner)return;setValue('ownerName',owner.name||owner.email);setValue('ownerEmail',owner.email);}
-globalThis.addEventListener?.('arthhrms:auth-ready',syncAuthenticatedOwner);
+async function loadDurableWorkspace(){
+    if(!durableMode())return;
+    const owner=authenticatedOwner();
+    if(!owner){
+        if(window.authService?.getCurrentUser?.()?.role==='platform_owner')location.replace('platform-control.html');
+        return;
+    }
+    const loaded=await orchestration().loadWorkspace({actor:owner});
+    if(!loaded.success){show(loaded.message||'Company setup workspace could not be loaded.');return;}
+    wizardDraftId=loaded.workspace.id;
+    sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
+    applyDraft(loaded.workspace.draft_payload||{});
+    const savedStep=keys.indexOf(loaded.workspace.current_step);
+    if(savedStep>=0)enterpriseStep=savedStep+1;
+    syncAuthenticatedOwner();
+    renderEnterpriseStep();
+}
+globalThis.addEventListener?.('arthhrms:auth-ready',()=>{syncAuthenticatedOwner();loadDurableWorkspace();});
 syncAuthenticatedOwner();
-if(wizardDraftId&&service()?.resumeDraft){const resumed=service().resumeDraft({draftId:wizardDraftId},{actor:{role:'platform_owner',id:'setup-resume'}});if(resumed.success)applyDraft(resumed.draft);syncAuthenticatedOwner();}
+if(!durableMode()&&wizardDraftId&&service()?.resumeDraft){const resumed=service().resumeDraft({draftId:wizardDraftId},wizardContext());if(resumed.success)applyDraft(resumed.draft);syncAuthenticatedOwner();}
 renderEnterpriseStep();
 })();
 </script>

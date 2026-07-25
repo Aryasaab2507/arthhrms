@@ -183,7 +183,9 @@
     function rawData() {
         try {
             var source = db();
-            return source && typeof source.get === 'function' ? source.get() || {} : {};
+            var state = source && typeof source.get === 'function' ? source.get() || {} : {};
+            var projection = global.PlatformAggregateIntegrationService?.getProjection?.() || {};
+            return Object.assign({}, state, projection);
         } catch (error) {
             safeWarn('Database read failed safely.', error && error.message);
             return {};

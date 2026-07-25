@@ -21,6 +21,7 @@
 <script src="services/authService.js"></script>
 <script src="services/loginAttemptSecurityService.js"></script>
 <script src="services/authInviteService.js"></script>
+<script src="services/invitationCenterService.js"></script>
 <script src="services/platformGovernanceService.js"></script>
 <script src="services/migrationControlService.js"></script>
 <script src="services/deploymentSafetyService.js"></script>
@@ -45,6 +46,9 @@
 <script src="services/notificationDeliveryTrackingService.js"></script>
 <script src="services/inviteAcceptanceTrackingService.js"></script>
 <script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/companySetupOrchestrationService.js"></script>
+<script src="services/pendingActionService.js"></script>
+<script src="services/lifecycleExperienceService.js"></script>
 <script src="services/expenseService.js"></script>
 <script src="services/payrollService.js"></script>
 <script src="services/attendanceService.js"></script>
@@ -121,6 +125,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .perm-toggle.on:before{left:22px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.setup-progress{height:9px;background:#ede9fe;border-radius:999px;overflow:hidden}.setup-progress>span{display:block;height:100%;background:#7c3aed;border-radius:999px;transition:width .2s ease}
+.setup-task{display:grid;grid-template-columns:minmax(180px,1fr) 130px 110px 110px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--border)}
+.setup-task:first-child{border-top:0}.setup-task-title{font-weight:800;font-size:.82rem}.setup-task-meta{font-size:.7rem;color:var(--muted);margin-top:3px}
+.invite-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.invite-summary-item{padding:14px;border:1px solid var(--border);background:var(--bg);border-radius:8px}.invite-summary-value{font-family:'Nunito',sans-serif;font-size:1.25rem;font-weight:900}.invite-summary-label{font-size:.68rem;color:var(--muted);margin-top:3px;text-transform:uppercase;font-weight:800}
+@media(max-width:760px){.setup-task{grid-template-columns:1fr auto}.setup-task-owner,.setup-task-time{display:none}}
 #toast{position:fixed;bottom:22px;right:22px;background:#1e1040;color:#fff;padding:11px 18px;border-radius:9px;font-size:.82rem;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999;border-left:4px solid #7c3aed;max-width:260px}
 .modal-bg{position:fixed;inset:0;background:rgba(30,16,64,.55);z-index:200;display:none;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
@@ -148,6 +157,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   .menu-btn{display:inline-flex}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .two-col,.three-col{grid-template-columns:1fr}
+  .invite-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .form-grid{grid-template-columns:1fr}.full{grid-column:1}
   .content{padding:16px}
   .topbar{padding:0 14px}
@@ -176,12 +186,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   </div>
   <div class="snav-group">Overview</div>
   <div class="snav on" onclick="show('dashboard',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Dashboard</div>
+  <div class="snav" data-company-setup-nav style="display:none" onclick="show('company-setup',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Company Setup</div>
   <div class="snav" onclick="show('master',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg></span> Master Dashboard <span id="saCriticalBadge" style="background:var(--r);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
   <div class="snav" onclick="show('company-policy',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span> Company Policy Settings</div>
   <div class="snav" onclick="show('role-permissions',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span> Role Permissions</div>
   <div class="snav" onclick="show('audit-logs',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> System Audit Logs <span id="saAuditBadge" style="background:var(--ol);color:var(--o);font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:4px"></span></div>
   <div class="snav" onclick="show('broadcast',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11v2a1 1 0 0 0 1 1h3l7 4V6l-7 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a5 5 0 0 1 0 6"/></svg></span> Broadcast Center</div>
   <div class="snav-group">User Management</div>
+  <div class="snav" data-invitation-center-nav style="display:none" onclick="show('invitation-center',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 7 8 6 8-6"/></svg></span> Invitation Center</div>
   <div class="snav" onclick="show('users',this)"><span class="icon"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> All Users & Roles</div>
   <div class="snav" onclick="show('teams',this)"><span class="icon"><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/></svg></span> Team Management</div>
   <div class="snav-group">System Data</div>
@@ -212,6 +224,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- DASHBOARD -->
     <div class="section on" id="sec-dashboard">
+      <div id="saLifecycleExperience"></div>
       <div id="saOwnerLoop" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px"></div>
       <div class="stats" id="saStats"></div>
       <div class="two-col">
@@ -227,6 +240,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div class="card">
         <div class="card-hd"><div class="card-title"><svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Recent Activity</div></div>
         <div id="recentActivity"></div>
+      </div>
+    </div>
+
+    <!-- COMPANY SETUP HOME -->
+    <div class="section" id="sec-company-setup">
+      <div class="card">
+        <div class="card-hd">
+          <div>
+            <div class="card-title">Company Setup</div>
+            <div style="font-size:.76rem;color:var(--muted);margin-top:4px">Complete required configuration in order, then continue to readiness and pilot.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            <a class="btn" href="employee-migration-center.html">Employee Import</a>
+            <a class="btn" href="go-live-readiness-center.html">Readiness</a>
+            <a class="btn btn-primary" href="setup.html">Resume Guided Setup</a>
+          </div>
+        </div>
+        <div id="saCompanySetupSummary"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Setup Checklist</div><div id="saCompanySetupCount" style="font-size:.75rem;color:var(--muted)"></div></div>
+        <div id="saCompanySetupTasks"></div>
       </div>
     </div>
 
@@ -308,6 +343,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div class="card-hd"><div class="card-title">Recent Broadcast Notices</div></div>
           <div id="broadcastHistory"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- USERS & ROLES -->
+    <div class="section" id="sec-invitation-center">
+      <div class="card">
+        <div class="card-hd">
+          <div>
+            <div class="card-title">Invitation Center</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:3px">Company Owner active. Invite tenant administrators, HR, managers, and employees through the governed Supabase Auth flow.</div>
+          </div>
+          <button class="btn btn-ghost" onclick="renderInvitationCenter()">Refresh</button>
+        </div>
+        <div class="invite-summary" id="inviteSummary"></div>
+        <div style="display:grid;grid-template-columns:minmax(220px,1fr) 170px auto;gap:10px;align-items:end;margin-bottom:18px">
+          <div class="fg" style="margin:0">
+            <label for="inviteEmployee">Tenant Employee</label>
+            <select id="inviteEmployee" onchange="syncInvitationRole()"></select>
+          </div>
+          <div class="fg" style="margin:0">
+            <label for="inviteRole">Account Role</label>
+            <select id="inviteRole">
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
+              <option value="hr">HR</option>
+              <option value="hr_head">HR Head</option>
+              <option value="admin">Admin</option>
+              <option value="director">Director</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="sendCenterInviteBtn" onclick="sendCenterInvite()">Send Invitation</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <input id="inviteSearch" placeholder="Search invitations..." oninput="renderInvitationRows()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none;min-width:220px"/>
+          <select id="inviteStatusFilter" onchange="renderInvitationRows()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none">
+            <option value="">All Statuses</option>
+            <option value="QUEUED">Queued</option>
+            <option value="SENT">Sent</option>
+            <option value="ACTIVATED">Activated</option>
+            <option value="FAILED">Failed</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        <table class="tbl"><thead><tr><th>Recipient</th><th>Role</th><th>Status</th><th>Sent</th><th>Audit Reference</th><th>Actions</th></tr></thead><tbody id="invitationCenterTbody"></tbody></table>
       </div>
     </div>
 
@@ -504,7 +584,7 @@ function toggleSidebar(forceOpen){
 }
 function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
-ArthAuthGuard.ready.then((decision)=>{
+ArthAuthGuard.ready.then(async(decision)=>{
   if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='super_admin')return;
   __saCurrent=decision.user;
   sessionStorage.setItem('saUser',JSON.stringify(__saCurrent));
@@ -512,9 +592,24 @@ ArthAuthGuard.ready.then((decision)=>{
   document.getElementById('sidebar').style.display='flex';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('saName').textContent=__saCurrent.name;
+  const setupService=window.CompanySetupOrchestrationService||window.companySetupOrchestrationService;
+  if(setupService?.isEnabled?.()){
+    document.querySelectorAll('[data-company-setup-nav]').forEach(el=>{el.style.display='flex';});
+    await setupService.loadWorkspace({actor:__saCurrent});
+  }
+  const invitationService=window.InvitationCenterService||window.invitationCenterService;
+  if(invitationService?.isEnabled?.()){
+    document.querySelectorAll('[data-invitation-center-nav]').forEach(el=>{el.style.display='flex';});
+  }
   renderAll();
   refreshSABell();
   const d=document.getElementById('saAttDate'); if(d) d.value=today();
+  if(new URLSearchParams(location.search).get('section')==='company-setup'&&setupService?.isEnabled?.()){
+    show('company-setup',document.querySelector('[data-company-setup-nav]'));
+  }
+  if(new URLSearchParams(location.search).get('section')==='invitation-center'&&invitationService?.isEnabled?.()){
+    show('invitation-center',document.querySelector('[data-invitation-center-nav]'));
+  }
 });
 
 function show(id,el){
@@ -522,7 +617,7 @@ function show(id,el){
   document.getElementById('sec-'+id).classList.add('on');
   document.querySelectorAll('.snav').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
-  const titles={dashboard:'Dashboard',master:'Master Dashboard','company-policy':'Company Policy Settings','role-permissions':'Role Permissions','audit-logs':'System Audit Logs',broadcast:'Broadcast Center',users:'Users & Roles',teams:'Team Management',employees:'Employees',attendance:'Attendance',payroll:'Payroll',whatsapp:'WhatsApp',settings:'Settings'};
+  const titles={dashboard:'Dashboard','company-setup':'Company Setup','invitation-center':'Invitation Center',master:'Master Dashboard','company-policy':'Company Policy Settings','role-permissions':'Role Permissions','audit-logs':'System Audit Logs',broadcast:'Broadcast Center',users:'Users & Roles',teams:'Team Management',employees:'Employees',attendance:'Attendance',payroll:'Payroll',whatsapp:'WhatsApp',settings:'Settings'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
   if(isCompactLayout())closeSidebar();
   renderSection(id);
@@ -531,6 +626,8 @@ function show(id,el){
 function renderAll(){renderSection('dashboard');}
 function renderSection(id){
   if(id==='dashboard')renderSADash();
+  if(id==='company-setup')renderCompanySetup();
+  if(id==='invitation-center')renderInvitationCenter();
   if(id==='master')renderMasterDashboard();
   if(id==='company-policy')renderCompanyPolicySettings();
   if(id==='role-permissions')renderRolePermissions();
@@ -543,6 +640,111 @@ function renderSection(id){
   if(id==='payroll')renderSAPayroll();
   if(id==='whatsapp')renderWhatsapp();
   if(id==='settings')renderSASettings();
+}
+
+function invitationCenter(){
+  return window.InvitationCenterService||window.invitationCenterService;
+}
+function renderInvitationCenter(){
+  const service=invitationCenter();
+  if(!service?.isEnabled?.())return;
+  const summary=service.summary();
+  document.getElementById('inviteSummary').innerHTML=[
+    [summary.total,'Total Invitations'],
+    [summary.pending,'Awaiting Activation'],
+    [summary.activated,'Activated'],
+    [summary.attention,'Needs Attention']
+  ].map(([value,label])=>`<div class="invite-summary-item"><div class="invite-summary-value">${value}</div><div class="invite-summary-label">${label}</div></div>`).join('');
+  const employees=service.eligibleEmployees();
+  const select=document.getElementById('inviteEmployee');
+  select.innerHTML=employees.length
+    ? employees.map(employee=>`<option value="${saEsc(employee.id)}" data-role="${saEsc(employee.role)}">${saEsc(employee.name)} (${saEsc(employee.id)}) - ${saEsc(employee.email||'email required')}</option>`).join('')
+    : '<option value="">No eligible employees</option>';
+  syncInvitationRole();
+  renderInvitationRows();
+}
+function syncInvitationRole(){
+  const select=document.getElementById('inviteEmployee');
+  const role=select?.selectedOptions?.[0]?.dataset?.role||'employee';
+  const roleSelect=document.getElementById('inviteRole');
+  if(roleSelect&&Array.from(roleSelect.options).some(option=>option.value===role))roleSelect.value=role;
+}
+function renderInvitationRows(){
+  const service=invitationCenter();
+  const tbody=document.getElementById('invitationCenterTbody');
+  if(!service||!tbody)return;
+  const rows=service.list({
+    query:document.getElementById('inviteSearch')?.value||'',
+    status:document.getElementById('inviteStatusFilter')?.value||''
+  });
+  tbody.innerHTML=rows.length?rows.map(row=>{
+    const terminal=['ACTIVATED','ACTIVE'].includes(row.normalizedStatus);
+    const statusColor=row.normalizedStatus==='ACTIVATED'?'var(--gl)':row.normalizedStatus==='FAILED'||row.normalizedStatus==='EXPIRED'?'var(--rl)':row.normalizedStatus==='CANCELLED'?'#f1f5f9':'var(--ol)';
+    const textColor=row.normalizedStatus==='ACTIVATED'?'#047857':row.normalizedStatus==='FAILED'||row.normalizedStatus==='EXPIRED'?'var(--r)':row.normalizedStatus==='CANCELLED'?'#475569':'var(--o)';
+    return `<tr>
+      <td><div style="font-weight:800">${saEsc(row.name||row.email)}</div><div style="font-size:.7rem;color:var(--muted)">${saEsc(row.email)} · ${saEsc(row.empId||'')}</div></td>
+      <td><span class="badge role-${saEsc(row.role||'employee')}">${saEsc(String(row.role||'employee').replace('_',' ').toUpperCase())}</span></td>
+      <td><span class="badge" style="background:${statusColor};color:${textColor}">${saEsc(row.normalizedStatus)}</span>${row.failureReason?`<div style="font-size:.66rem;color:var(--r);margin-top:4px">${saEsc(row.failureReason)}</div>`:''}</td>
+      <td style="font-size:.72rem;color:var(--muted)">${saEsc((row.sentAt||row.createdAt||'').replace('T',' ').slice(0,19)||'—')}</td>
+      <td style="font-size:.72rem">${saEsc(row.inviteId||row.id||'')}</td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn btn-ghost btn-sm" ${terminal?'disabled':''} onclick="resendCenterInvite('${saEsc(row.inviteId||row.id)}')">Resend</button>
+        <button class="btn btn-sm" style="background:var(--rl);color:var(--r);border:none" ${terminal||row.normalizedStatus==='CANCELLED'?'disabled':''} onclick="cancelCenterInvite('${saEsc(row.inviteId||row.id)}')">Cancel</button>
+      </div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">No invitations found. Add employees, then send their first account invitations.</td></tr>';
+}
+async function sendCenterInvite(){
+  const service=invitationCenter();
+  const button=document.getElementById('sendCenterInviteBtn');
+  const empId=document.getElementById('inviteEmployee')?.value||'';
+  if(!empId){toast('No eligible employee is available for invitation.','warn');return;}
+  const label=button.textContent;
+  button.disabled=true;button.textContent='Sending...';
+  try{
+    const result=await service.send({empId,role:document.getElementById('inviteRole').value});
+    toast(result.ok?'Invitation sent successfully.':'Invitation failed: '+(result.error||result.errors?.join(', ')||'Unknown error'),result.ok?'ok':'warn');
+  }finally{
+    button.disabled=false;button.textContent=label;renderInvitationCenter();
+  }
+}
+async function resendCenterInvite(inviteId){
+  const result=await invitationCenter().resend(inviteId);
+  toast(result.ok?'Invitation resent successfully.':'Resend failed: '+(result.error||'Unknown error'),result.ok?'ok':'warn');
+  renderInvitationCenter();
+}
+async function cancelCenterInvite(inviteId){
+  if(!confirm('Cancel this pending invitation? The unused Supabase Auth invitation will be revoked.'))return;
+  const result=await invitationCenter().cancel(inviteId);
+  toast(result.ok?'Invitation cancelled.':'Cancellation failed: '+(result.error||'Unknown error'),result.ok?'ok':'warn');
+  renderInvitationCenter();
+}
+
+function saEsc(value){
+  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function renderCompanySetup(){
+  const service=window.CompanySetupOrchestrationService||window.companySetupOrchestrationService;
+  const summary=document.getElementById('saCompanySetupSummary');
+  const tasksBox=document.getElementById('saCompanySetupTasks');
+  if(!service?.isEnabled?.()){
+    summary.innerHTML='<div style="font-size:.8rem;color:var(--muted)">Company setup orchestration is not enabled for this environment.</div>';
+    tasksBox.innerHTML='';
+    return;
+  }
+  const home=service.getSetupHome();
+  const progress=Number(home.overallProgress||0);
+  summary.innerHTML=`<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center">
+    <div><div class="setup-progress"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><div style="font-size:.72rem;color:var(--muted);margin-top:7px">${progress}% complete - core wizard ${Number(home.coreProgress||0)}%</div></div>
+    <div style="text-align:right"><div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem">${Number(home.estimatedMinutesRemaining||0)} min</div><div style="font-size:.68rem;color:var(--muted)">estimated remaining</div></div>
+  </div>`;
+  document.getElementById('saCompanySetupCount').textContent=`${Number(home.completedTasks||0)} of ${Number(home.totalTasks||0)} complete`;
+  tasksBox.innerHTML=(home.tasks||[]).map(task=>`<div class="setup-task">
+    <div><div class="setup-task-title">${saEsc(task.order+'. '+task.label)}</div><div class="setup-task-meta">${task.completed?'Completed':task.drafted?'Draft prepared - publish in module':'Required before Go Live'}</div></div>
+    <div class="setup-task-owner">${saEsc(task.owner)}</div>
+    <div class="setup-task-time">${task.minutes?saEsc(task.minutes+' min'):'Complete'}</div>
+    <div><a class="btn ${task.completed?'btn-ghost':'btn-primary'} btn-sm" href="${saEsc(task.route)}">${task.completed?'Review':'Open'}</a></div>
+  </div>`).join('');
 }
 
 // DASHBOARD
@@ -621,6 +823,7 @@ function renderSADash(){
   const att=DB.getTodayAttendance();
   const present=att.filter(a=>a.status==='Present'||a.status==='Late').length;
   renderSAOwnerLoop();
+  void window.LifecycleExperienceService?.mountDashboard?.('saLifecycleExperience');
   document.getElementById('saStats').innerHTML=`
     ${sc('<svg style="width:14px;height:14px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>','#7c3aed','#f5f3ff',users.length,'Total Users','All roles')}
     ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>','#059669','#d1fae5',emps.length,'Employees','Active')}

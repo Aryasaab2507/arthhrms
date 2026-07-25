@@ -16,6 +16,18 @@ const requiredFiles = [
   'scripts/runtime-config-contract.mjs',
   'services/authCallbackService.js', 'services/passwordRecoveryService.js',
   'supabase/functions/invite-user/deno.lock',
+  'services/platformCompanyRegistryService.js',
+  'services/companySetupOrchestrationService.js',
+  'services/invitationCenterService.js',
+  'services/workforceDataHubService.js',
+  'services/lifecycleExperienceService.js',
+  'services/companyReadinessOrchestrationService.js',
+  'services/companyReadinessPage.js',
+  'services/platformAggregateIntegrationService.js',
+  'services/platformModuleLoaderService.js',
+  'supabase/functions/invite-company-owner/deno.json',
+  'supabase/functions/invite-company-owner/deno.lock',
+  'supabase/functions/invite-company-owner/index.ts',
   'dist/health.json', 'dist/runtime-config.js'
 ];
 for (const file of requiredFiles) {
@@ -50,12 +62,18 @@ const integrationMigration = migrations.find(name => name.endsWith('_harden_appl
 const documentStorageMigration = migrations.find(name => name.endsWith('_integrate_document_storage.sql'));
 const employeeDocumentDeleteMigration = migrations.find(name => name.endsWith('_allow_employee_document_delete.sql'));
 const inviteActivationMigration = migrations.find(name => name.endsWith('_secure_auth_invite_activation.sql'));
+const platformLifecycleMigration = migrations.find(name => name.endsWith('_platform_company_lifecycle.sql'));
+const companySetupMigration = migrations.find(name => name.endsWith('_company_setup_orchestration.sql'));
+const companyReadinessMigration = migrations.find(name => name.endsWith('_company_readiness_handoff.sql'));
 check(!!persistenceMigration, 'Canonical persistence migration is missing.');
 check(!!storageMigration, 'Canonical Storage migration is missing.');
 check(!!integrationMigration, 'Application integration hardening migration is missing.');
 check(!!documentStorageMigration, 'Document Storage integration migration is missing.');
 check(!!employeeDocumentDeleteMigration, 'Employee document delete policy migration is missing.');
 check(!!inviteActivationMigration, 'Secure invitation activation migration is missing.');
+check(!!platformLifecycleMigration, 'Platform company lifecycle migration is missing.');
+check(!!companySetupMigration, 'Company setup orchestration migration is missing.');
+check(!!companyReadinessMigration, 'Company readiness handoff migration is missing.');
 if (persistenceMigration) {
   check(await read(path.join('supabase', 'migrations', persistenceMigration)) === await read('context/sql/authenticated_business_persistence.sql'), 'Persistence migration differs from its reviewed canonical SQL.');
 }
@@ -86,6 +104,42 @@ if (inviteActivationMigration) {
   check(/tenant_id\s*=\s*caller_tenant[\s\S]*organization_id\s*=\s*caller_organization/i.test(inviteActivationSql), 'Invite activation RPC lacks tenant and organization validation.');
   check(/hrms_audit_records/i.test(inviteActivationSql), 'Invite activation RPC does not persist an audit event.');
   check(/revoke all on function public\.arth_complete_auth_invite_activation\(\) from public, anon/i.test(inviteActivationSql), 'Invite activation RPC is exposed to anonymous callers.');
+}
+if (platformLifecycleMigration) {
+  const lifecycleSql = await read(path.join('supabase', 'migrations', platformLifecycleMigration));
+  for (const table of [
+    'platform_companies', 'platform_tenant_lifecycle',
+    'platform_lifecycle_events', 'platform_company_invitations'
+  ]) {
+    check(new RegExp(`alter table public\\.${table} force row level security`, 'i').test(lifecycleSql), `${table} does not force RLS.`);
+    check(new RegExp(`grant select on public\\.${table} to authenticated`, 'i').test(lifecycleSql), `${table} lacks Platform Owner read access.`);
+    check(!new RegExp(`grant [^;]*(insert|update|delete)[^;]* on public\\.${table} to authenticated`, 'i').test(lifecycleSql), `${table} allows unaudited client mutations.`);
+  }
+  check(!/user_metadata/i.test(lifecycleSql), 'Platform lifecycle authorization uses mutable user metadata.');
+  check(/arth_complete_company_owner_activation/i.test(lifecycleSql), 'Company Owner activation transaction is missing.');
+  check(/revision is stale/i.test(lifecycleSql), 'Platform lifecycle lacks optimistic concurrency.');
+  check(/Idempotency key is already assigned/i.test(lifecycleSql), 'Platform lifecycle lacks idempotency conflict detection.');
+}
+if (companySetupMigration) {
+  const setupSql = await read(path.join('supabase', 'migrations', companySetupMigration));
+  for (const table of ['company_setup_workspaces', 'company_setup_step_versions']) {
+    check(new RegExp(`alter table public\\.${table} force row level security`, 'i').test(setupSql), `${table} does not force RLS.`);
+    check(new RegExp(`grant select on public\\.${table} to authenticated`, 'i').test(setupSql), `${table} lacks tenant-scoped read access.`);
+    check(!new RegExp(`grant [^;]*(insert|update|delete)[^;]* on public\\.${table} to authenticated`, 'i').test(setupSql), `${table} allows unaudited client mutations.`);
+  }
+  check(/arth_persistence_tenant_allowed\(tenant_id\)/i.test(setupSql), 'Company setup reads are not tenant scoped.');
+  check(/owner_auth_user_id = caller_id/i.test(setupSql), 'Company setup mutations are not bound to the Company Owner.');
+  check(/Company setup revision is stale/i.test(setupSql), 'Company setup lacks optimistic concurrency.');
+  check(/CompanySetupStepSaved/i.test(setupSql), 'Company setup step saves are not lifecycle audited.');
+  check(!/user_metadata/i.test(setupSql), 'Company setup authorization uses mutable user metadata.');
+}
+if (companyReadinessMigration) {
+  const readinessSql = await read(path.join('supabase', 'migrations', companyReadinessMigration));
+  check(/alter table public\.platform_company_readiness_requests force row level security/i.test(readinessSql), 'Company readiness requests do not force RLS.');
+  check(/owner_auth_user_id = caller_id/i.test(readinessSql), 'Readiness submission is not bound to the authenticated Company Owner.');
+  check(/status <> 'READY_FOR_APPROVAL'/i.test(readinessSql), 'Readiness submission lacks a passing validation gate.');
+  check(/not public\.arth_is_platform_owner\(\)/i.test(readinessSql), 'Pilot review is not restricted to the Platform Owner.');
+  check(/arth_enforce_certified_lifecycle_activation/i.test(readinessSql), 'Pilot and production lifecycle activation lack a database certification gate.');
 }
 
 const persistenceSql = await read('context/sql/authenticated_business_persistence.sql');
@@ -119,6 +173,11 @@ if (/"APP_ENV": "production"/.test(runtimeConfig)) {
 const authServiceSource = await read('services/authService.js');
 const authCallbackSource = await read('services/authCallbackService.js');
 const authInviteSource = await read('services/authInviteService.js');
+const workforceDataHubSource = await read('services/workforceDataHubService.js');
+const lifecycleExperienceSource = await read('services/lifecycleExperienceService.js');
+const companyReadinessSource = await read('services/companyReadinessOrchestrationService.js');
+const platformAggregateSource = await read('services/platformAggregateIntegrationService.js');
+const persistenceServiceSource = await read('services/supabasePersistenceService.js');
 const passwordRecoverySource = await read('services/passwordRecoveryService.js');
 const supabaseClientSource = await read('services/supabaseClient.js');
 const recoveryPage = await read('password-recovery.html');
@@ -137,6 +196,68 @@ check(authCallbackSource.includes('exchangeCodeForSession'), 'PKCE callback exch
 check(!/linkAuthUserToEmployee/.test(authCallbackSource), 'Authentication callback dispatcher is coupled to employee linking.');
 check(!/updateUser\(\{\s*password/.test(authInviteSource), 'Invite onboarding still owns password recovery.');
 check(authInviteSource.includes("client.rpc('arth_complete_auth_invite_activation')"), 'Invite onboarding does not use the tenant-scoped activation transaction.');
+check(authInviteSource.includes("client.rpc('arth_complete_company_owner_activation')"), 'Company Owner onboarding does not use its lifecycle activation transaction.');
+check(workforceDataHubSource.includes('EmployeeMasterImportService'), 'Workforce Data Hub does not reuse the reviewed employee import engine.');
+check(workforceDataHubSource.includes('supabasePersistenceService?.flush'), 'Workforce Data Hub does not confirm durable persistence.');
+check(workforceDataHubSource.includes("run.state !== 'READY'"), 'Workforce Data Hub lacks a validation commit gate.');
+check(lifecycleExperienceSource.includes('PendingActionService'), 'Lifecycle experience does not reuse pending-action intelligence.');
+check(lifecycleExperienceSource.includes('notificationService.pushNotification'), 'Lifecycle experience does not reuse the notification boundary.');
+check(lifecycleExperienceSource.includes('supabasePersistenceService?.flush'), 'Lifecycle tasks do not confirm durable persistence.');
+check(lifecycleExperienceSource.includes('trusted tenant scope'), 'Lifecycle task access does not fail closed across tenants.');
+check(persistenceServiceSource.includes("stateKey: 'lifecycleTimelineEvents'"), 'Tenant lifecycle timeline lacks a Supabase persistence projection.');
+check(companyReadinessSource.includes("rpc('arth_submit_company_readiness_review'"), 'Company readiness does not use the audited tenant handoff RPC.');
+check(companyReadinessSource.includes("role !== 'super_admin'"), 'Company readiness is not restricted to the Company Owner compatibility role.');
+check(persistenceServiceSource.includes("stateKey: 'goLiveValidationRuns'"), 'Go-live validation runs lack a Supabase persistence projection.');
+check(persistenceServiceSource.includes("stateKey: 'launchCertificationAuditHistory'"), 'Launch certification audit history lacks a Supabase persistence projection.');
+check(platformAggregateSource.includes("from('platform_lifecycle_events')"), 'Platform aggregates are not connected to the durable lifecycle event stream.');
+check(platformAggregateSource.includes('tenantBusinessRecordsQueried: false'), 'Platform aggregates do not explicitly preserve tenant business-data confidentiality.');
+check(platformAggregateSource.includes("role) !== 'platform_owner'"), 'Platform aggregates are not restricted to the Platform Owner.');
+for (const servicePath of [
+  'services/platformAnalyticsService.js',
+  'services/tenantGovernanceService.js',
+  'services/tenantBillingService.js',
+  'services/platformHealthMonitoringService.js'
+]) {
+  const integrationSource = await read(servicePath);
+  check(integrationSource.includes('PlatformAggregateIntegrationService?.getProjection'), `${servicePath} does not consume the durable aggregate projection.`);
+}
+const platformControlSource = await read('platform-control.html');
+check(platformControlSource.includes('services/platformAggregateIntegrationService.js'), 'Platform Control does not load durable platform aggregates.');
+check(platformControlSource.includes('platformAggregateSvc()?.load'), 'Platform Control does not initialize aggregate integrations after authentication.');
+check(platformControlSource.includes("'Enterprise Operations Center':'Operations Summary'"), 'Platform Operations lacks focused lazy initialization.');
+check(platformControlSource.includes('tasks=preferred===summary?[summary]:[summary,preferred]'), 'Platform module navigation still schedules every center.');
+check(platformControlSource.includes('const renderKey=`${resolvedPanelId}:${resolvedHeading}`'), 'Platform render cache is not isolated by module.');
+check(platformControlSource.includes('services/platformModuleLoaderService.js'), 'Platform Control lacks its authenticated module loader.');
+check(platformControlSource.includes('PlatformModuleLoaderService?.loadForPanel'), 'Platform Control does not lazy-load opened modules.');
+check((platformControlSource.match(/data-platform-src=/g) || []).length >= 120, 'Platform Control still eagerly initializes heavy service modules.');
+check((platformControlSource.match(/<script\s+src=/g) || []).length <= 40, 'Platform Control startup script budget is exceeded.');
+for (const tenantOperation of ['Employee Bulk Import', 'Employee Profile', 'Payroll Governance', 'Leave and Attendance']) {
+  const monitoringStart = platformControlSource.indexOf('function platformMonitoringRenderTasks(){');
+  const monitoringEnd = platformControlSource.indexOf('function platformAuditRenderTasks(){', monitoringStart);
+  check(!platformControlSource.slice(monitoringStart, monitoringEnd).includes(tenantOperation), `${tenantOperation} still initializes in Platform Control monitoring.`);
+}
+const readinessPageSource = await read('go-live-readiness-center.html');
+check(readinessPageSource.includes('services/companyReadinessOrchestrationService.js'), 'Go-live readiness does not load tenant orchestration.');
+check(!readinessPageSource.includes('id="tenantInput"'), 'Go-live readiness still trusts an editable tenant scope.');
+check(readinessPageSource.includes('Submit for Pilot'), 'Go-live readiness lacks the Platform Owner pilot handoff.');
+check(!readinessPageSource.includes('function initCenter'), 'Go-live readiness retains its duplicate legacy controller.');
+const companyAdminSource = await read('super-admin.html');
+check(companyAdminSource.includes('href="employee-migration-center.html"'), 'Company Administration does not route to Workforce Data Hub.');
+check(companyAdminSource.includes('href="go-live-readiness-center.html"'), 'Company Administration does not route to readiness.');
+const authGuardSource = await read('services/authGuard.js');
+check(/'go-live-certification-center\.html': \['platform_owner'\]/.test(authGuardSource), 'Final certification is not isolated to the Platform Owner.');
+check(/'go-live-readiness-center\.html': \['super_admin'\]/.test(authGuardSource), 'Company readiness is not isolated to the Company Owner.');
+for (const [page, mount] of [
+  ['super-admin.html', 'saLifecycleExperience'],
+  ['hr-dashboard.html', 'hrLifecycleExperience'],
+  ['manager.html', 'mgLifecycleExperience'],
+  ['employee-portal.html', 'empLifecycleExperience'],
+  ['admin.html', 'adLifecycleExperience']
+]) {
+  const pageSource = await read(page);
+  check(pageSource.includes('services/lifecycleExperienceService.js'), `${page} does not load the centralized lifecycle experience.`);
+  check(pageSource.includes(mount), `${page} lacks its role-specific lifecycle mount.`);
+}
 check(passwordRecoverySource.includes('updateUser({ password:'), 'Recovery service does not use the current Supabase password update API.');
 check(!/linkAuthUserToEmployee/.test(passwordRecoverySource), 'Password recovery is coupled to employee linking.');
 check(supabaseClientSource.includes('detectSessionInUrl: false'), 'Supabase client may race the explicit PKCE callback dispatcher.');
@@ -189,14 +310,27 @@ check(releaseWorkflow.includes('RepoDigests'), 'Release workflow must record the
 
 const supabaseConfig = await read('supabase/config.toml');
 check(/\[functions\.invite-user\][\s\S]*?verify_jwt\s*=\s*true/.test(supabaseConfig), 'Invite function must verify JWTs at the gateway.');
+check(/\[functions\.invite-company-owner\][\s\S]*?verify_jwt\s*=\s*true/.test(supabaseConfig), 'Company Owner invite function must verify JWTs at the gateway.');
 const inviteFunction = await read('supabase/functions/invite-user/index.ts');
 check(inviteFunction.includes('allowedOrigins.has(origin)'), 'Invite function lacks exact origin allowlisting.');
 check(!inviteFunction.includes('Access-Control-Allow-Origin": "*"'), 'Invite function must not allow wildcard CORS.');
 check(!/assignableRoles[^\n]*platform_owner/.test(inviteFunction), 'Invite function must not provision Platform Owners.');
 check(!/assignableRoles[^\n]*super_admin/.test(inviteFunction), 'Tenant invitation function must not provision Super Admins.');
+check(inviteFunction.includes('["send", "resend", "cancel"]'), 'Tenant invitation function lacks the governed lifecycle action dispatcher.');
+check(inviteFunction.includes('admin.auth.admin.deleteUser(authUserId)'), 'Tenant invite cancellation lacks Auth revocation.');
+check(inviteFunction.includes('record_type: "auditLogs"'), 'Tenant invite cancellation is not durably audited.');
 const denoLock = JSON.parse(await read('supabase/functions/invite-user/deno.lock'));
 check(denoLock.version === '5', 'Deno dependency lock version 5 is required.');
 check(denoLock.specifiers?.['jsr:@supabase/supabase-js@2.110.8'] === '2.110.8', 'Supabase Edge Function client is not dependency locked.');
+const companyOwnerInviteFunction = await read('supabase/functions/invite-company-owner/index.ts');
+check(companyOwnerInviteFunction.includes('callerData.user.app_metadata?.role'), 'Company Owner invitation does not authorize from trusted app metadata.');
+check(companyOwnerInviteFunction.includes('!== "platform_owner"'), 'Company Owner invitation is not restricted to Platform Owners.');
+check(companyOwnerInviteFunction.includes('arth_platform_record_owner_invite'), 'Company Owner invitation does not persist the audited lifecycle transaction.');
+check(companyOwnerInviteFunction.includes('deleteUser(authUserId)'), 'Company Owner invitation lacks compensating Auth rollback.');
+check(!/password\s*:/i.test(companyOwnerInviteFunction), 'Company Owner invitation creates a bootstrap password.');
+const companyOwnerDenoLock = JSON.parse(await read('supabase/functions/invite-company-owner/deno.lock'));
+check(companyOwnerDenoLock.version === '5', 'Company Owner Edge Function dependency lock version 5 is required.');
+check(companyOwnerDenoLock.specifiers?.['jsr:@supabase/supabase-js@2.110.8'] === '2.110.8', 'Company Owner Edge Function client is not dependency locked.');
 
 const productionEnv = await read('deploy/production.env.example');
 check(/^SUPABASE_URL=https:\/\//m.test(productionEnv), 'Production environment template lacks required SUPABASE_URL.');

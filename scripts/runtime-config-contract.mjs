@@ -17,6 +17,17 @@ export const CANONICAL_SUPABASE_FLAGS = Object.freeze([
   'USE_SUPABASE_PERSISTENCE'
 ]);
 
+export const PRODUCT_TRANSFORMATION_FLAGS = Object.freeze([
+  'USE_PLATFORM_COMPANY_REGISTRY',
+  'USE_COMPANY_ADMIN_SHELL',
+  'USE_COMPANY_SETUP_ORCHESTRATION',
+  'USE_INVITATION_CENTER',
+  'USE_WORKFORCE_DATA_HUB',
+  'USE_LIFECYCLE_TASKS',
+  'USE_READINESS_CENTER',
+  'USE_PLATFORM_AGGREGATES'
+]);
+
 function booleanValue(env, name, fallback = false) {
   const raw = env[name];
   if (raw === undefined || raw === null || raw === '') return fallback;
@@ -118,7 +129,8 @@ export function createUnconfiguredRuntimeConfig() {
     REQUIRE_EMAIL_VERIFIED: true,
     flags: Object.fromEntries([
       ...LEGACY_SUPABASE_FLAGS,
-      ...CANONICAL_SUPABASE_FLAGS
+      ...CANONICAL_SUPABASE_FLAGS,
+      ...PRODUCT_TRANSFORMATION_FLAGS
     ].map((name) => [name, false]))
   };
 }
@@ -142,6 +154,9 @@ export function resolveRuntimeConfig(env = process.env, requestedMode = 'product
   const flags = Object.fromEntries(LEGACY_SUPABASE_FLAGS.map((name) => [name, booleanValue(env, name, false)]));
   for (const name of CANONICAL_SUPABASE_FLAGS) {
     flags[name] = booleanValue(env, name, isProduction);
+  }
+  for (const name of PRODUCT_TRANSFORMATION_FLAGS) {
+    flags[name] = booleanValue(env, name, false);
   }
 
   const productionFlags = {

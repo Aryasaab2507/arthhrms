@@ -197,6 +197,7 @@
             tenantId: rawTenantId,
             tenantSlug,
             organizationId: appMetadata.organizationId || appMetadata.organization_id || '',
+            companyOwner: appMetadata.company_owner === true,
             emailVerifiedAt: user.email_confirmed_at || user.confirmed_at || '',
             emailVerified: !!(user.email_confirmed_at || user.confirmed_at),
             source: 'supabase',

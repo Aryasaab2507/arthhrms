@@ -21,7 +21,9 @@ const variableNames = [
   'USE_SUPABASE_EMPLOYEES', 'USE_SUPABASE_ATTENDANCE', 'USE_SUPABASE_LEAVE',
   'USE_SUPABASE_EXPENSES', 'USE_SUPABASE_PAYROLL', 'USE_SUPABASE_IMPORTS',
   'USE_SUPABASE_AUTH', 'USE_SUPABASE_PASSWORD_RECOVERY', 'USE_SUPABASE_STORAGE', 'USE_SUPABASE_INVITES',
-  'USE_SUPABASE_PERSISTENCE'
+  'USE_SUPABASE_PERSISTENCE', 'USE_PLATFORM_COMPANY_REGISTRY', 'USE_COMPANY_ADMIN_SHELL',
+  'USE_COMPANY_SETUP_ORCHESTRATION', 'USE_INVITATION_CENTER', 'USE_WORKFORCE_DATA_HUB',
+  'USE_LIFECYCLE_TASKS', 'USE_READINESS_CENTER', 'USE_PLATFORM_AGGREGATES'
 ];
 
 function generate(output, mode, environment, envPath = '') {
@@ -66,6 +68,7 @@ try {
     'USE_SUPABASE_STORAGE=true',
     'USE_SUPABASE_INVITES=true',
     'USE_SUPABASE_PERSISTENCE=true',
+    'USE_PLATFORM_COMPANY_REGISTRY=true',
     ''
   ].join('\n'));
 
@@ -105,6 +108,7 @@ try {
   assert.equal(config.flags.USE_SUPABASE_PASSWORD_RECOVERY, true);
   assert.equal(config.flags.USE_SUPABASE_PERSISTENCE, true);
   assert.equal(config.flags.USE_SUPABASE_STORAGE, true);
+  assert.equal(config.flags.USE_PLATFORM_COMPANY_REGISTRY, true);
   assert.equal(config.AUTH_INVITE_REDIRECT_URL, 'http://localhost:3000/auth-callback.html');
   assert.equal(config.PASSWORD_RECOVERY_REDIRECT_URL, 'http://localhost:3000/auth-callback.html?flow=recovery');
 
@@ -202,6 +206,7 @@ try {
   const localDefaultSource = fs.readFileSync(localDefaultOutput, 'utf8');
   assert.match(localDefaultSource, /"USE_SUPABASE_AUTH": false/, 'local auth should remain opt-in');
   assert.match(localDefaultSource, /"USE_SUPABASE_PASSWORD_RECOVERY": false/, 'local recovery should remain opt-in');
+  assert.match(localDefaultSource, /"USE_PLATFORM_COMPANY_REGISTRY": false/, 'product transformation flags should remain opt-in');
 
   const missingRequired = generate(path.join(tempDirectory, 'runtime-config.invalid.js'), 'production', childEnvironment);
   assert.notEqual(missingRequired.status, 0, 'production generation must fail when required Supabase configuration is missing');

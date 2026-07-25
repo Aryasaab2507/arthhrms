@@ -15,8 +15,8 @@
         'employee-uat-center.html': ['employee'],
         'end-to-end-validation-center.html': ['platform_owner', 'super_admin', 'admin', 'hr_head', 'director'],
         'enterprise-test-lab.html': ['platform_owner'],
-        'go-live-certification-center.html': ['platform_owner', 'super_admin'],
-        'go-live-readiness-center.html': ['platform_owner', 'super_admin'],
+        'go-live-certification-center.html': ['platform_owner'],
+        'go-live-readiness-center.html': ['super_admin'],
         'hr-dashboard.html': ['hr', 'hr_head'],
         'hr-uat-center.html': ['hr', 'hr_head'],
         'leave-policy-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
@@ -30,7 +30,7 @@
         'platform-control.html': ['platform_owner'],
         'qa-validation.html': ['platform_owner', 'super_admin', 'admin'],
         'security-validation-center.html': ['platform_owner', 'super_admin'],
-        'setup.html': ['platform_owner'],
+        'setup.html': ['platform_owner', 'super_admin'],
         'shift-roster-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
         'super-admin.html': ['super_admin'],
         'working-calendar-center.html': ['super_admin', 'admin', 'hr', 'hr_head']
@@ -50,6 +50,13 @@
 
     function policyFor(pathname) {
         return ROUTE_POLICIES[pageName(pathname)] || null;
+    }
+
+    function runtimePolicyFor(route, configuredRoles) {
+        if (route !== 'setup.html') return configuredRoles;
+        return global.supabaseClientService?.isEnabled?.('USE_COMPANY_SETUP_ORCHESTRATION')
+            ? ['super_admin']
+            : ['platform_owner'];
     }
 
     function isPublic(pathname) {
@@ -122,7 +129,9 @@
     function loginUrl(code) {
         const currentPage = pageName();
         const allowedRoles = policyFor(currentPage) || [];
-        const loginPage = allowedRoles.length === 1 && allowedRoles[0] === 'platform_owner'
+        const legacyPlatformSetup = currentPage === 'setup.html'
+            && !global.supabaseClientService?.isEnabled?.('USE_COMPANY_SETUP_ORCHESTRATION');
+        const loginPage = (allowedRoles.length === 1 && allowedRoles[0] === 'platform_owner') || legacyPlatformSetup
             ? 'platform-login.html'
             : 'ArthHRMS.html';
         return `${loginPage}?reason=${encodeURIComponent(code || 'session_required')}&returnTo=${encodeURIComponent(currentPage)}`;
@@ -151,13 +160,14 @@
             revealDocument();
             return { authenticated: false, authorized: true, status: 200, code: 'PUBLIC_ROUTE' };
         }
-        const roles = policyFor(route);
+        let roles = policyFor(route);
         if (!roles) {
             redirectToForbidden({ code: 'ROUTE_POLICY_MISSING' });
             return { authenticated: false, authorized: false, status: 403, code: 'ROUTE_POLICY_MISSING' };
         }
         try {
             await ensureRuntime();
+            roles = runtimePolicyFor(route, roles);
             const decision = await global.authService.authorizePage(roles);
             if (!decision.authenticated) {
                 redirectToLogin(decision.code);

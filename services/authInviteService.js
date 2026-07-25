@@ -4,6 +4,7 @@
     const OFFICIAL_ROLES = Object.freeze(['employee', 'manager', 'admin', 'hr', 'hr_head', 'director', 'super_admin', 'platform_owner']);
     const TENANT_INVITE_ROLES = Object.freeze(['employee', 'manager', 'admin', 'hr', 'hr_head', 'director']);
     const PRIVILEGED_ONBOARDING_METHOD = 'release_operator_invite';
+    const COMPANY_OWNER_ONBOARDING_METHOD = 'company_owner_invite';
     const INVITE_STATES = {
         NOT_INVITED: 'Not Invited',
         PENDING: 'Invite Pending',
@@ -12,7 +13,8 @@
         ACTIVE: 'Active',
         SUSPENDED: 'Suspended',
         FAILED: 'Invite Failed',
-        EXPIRED: 'Invite Expired'
+        EXPIRED: 'Invite Expired',
+        CANCELLED: 'Cancelled'
     };
     function db() { return global.DB; }
 
@@ -204,7 +206,7 @@
             if (!OFFICIAL_ROLES.includes(role)) return { ok: false, error: 'Invite role is not allowed for tenant activation' };
             if (!(user.email_confirmed_at || user.confirmed_at)) return { ok: false, error: 'Invite email must be verified before activation' };
             const onboardingMethod = String(user.app_metadata?.onboarding_method || '').trim().toLowerCase();
-            if (onboardingMethod === PRIVILEGED_ONBOARDING_METHOD) {
+            if ([PRIVILEGED_ONBOARDING_METHOD, COMPANY_OWNER_ONBOARDING_METHOD].includes(onboardingMethod)) {
                 if (!['platform_owner', 'super_admin'].includes(role)) {
                     return { ok: false, error: 'Privileged onboarding metadata is invalid' };
                 }
@@ -212,6 +214,16 @@
                 const organizationId = user.app_metadata?.organization_id || user.app_metadata?.organizationId || '';
                 if (role === 'super_admin' && (!tenantId || !organizationId)) {
                     return { ok: false, error: 'Super Admin onboarding requires trusted tenant and organization metadata' };
+                }
+                if (
+                    onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD &&
+                    (role !== 'super_admin' || user.app_metadata?.company_owner !== true)
+                ) {
+                    return { ok: false, error: 'Company Owner onboarding metadata is invalid' };
+                }
+                let companyOwnerActivation = null;
+                if (onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD) {
+                    companyOwnerActivation = await completePersistedCompanyOwnerActivation();
                 }
                 const mapped = {
                     id: user.id,
@@ -238,7 +250,7 @@
                     ok: true,
                     user: mapped,
                     employee: null,
-                    invite: null,
+                    invite: companyOwnerActivation,
                     redirectTo: global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html'
                 };
             }
@@ -334,18 +346,90 @@
         return result.data;
     }
 
+    async function completePersistedCompanyOwnerActivation() {
+        const client = global.supabaseClientService?.getClient?.();
+        if (!client?.rpc) throw new Error('Company Owner activation transaction is unavailable');
+        const result = await client.rpc('arth_complete_company_owner_activation');
+        if (result?.error) throw result.error;
+        if (!result?.data?.ok) throw new Error('Company Owner activation was not confirmed by the database');
+        return result.data;
+    }
+
     async function resendInvite(inviteOrEmpId) {
         const existing = db().getAuthInvite(inviteOrEmpId) || db().getLatestAuthInviteForEmployee(inviteOrEmpId);
         if (!existing) return { ok: false, error: 'No invite found to resend' };
-        return sendInvite({
-            empId: existing.empId,
-            email: existing.email,
-            role: existing.role,
-            name: existing.name,
-            redirectTo: existing.redirectTo || redirectTo(),
-            invitedBy: global.authService?.getCurrentUser?.()?.id || existing.invitedBy || '',
-            invitedByRole: global.authService?.getCurrentUser?.()?.role || existing.invitedByRole || 'system'
-        });
+        if (!inviteEnabled()) return { ok: false, error: 'Live Supabase invite endpoint is not configured' };
+        try {
+            const result = await callInviteEndpoint({
+                action: 'resend',
+                inviteId: existing.inviteId,
+                redirectTo: existing.redirectTo || redirectTo()
+            });
+            const now = new Date().toISOString();
+            const updated = db().updateAuthInvite(existing.inviteId, {
+                status: INVITE_STATES.SENT,
+                inviteStatus: INVITE_STATES.SENT,
+                activationStatus: INVITE_STATES.SENT,
+                authUserId: result.authUserId || result.userId || '',
+                sentAt: now,
+                lastResentAt: now,
+                resendCount: Number(existing.resendCount || 0) + 1,
+                cancelledAt: '',
+                failureReason: ''
+            });
+            if (updated?.empId && updated.authUserId) db().linkAuthUserToEmployee(updated.empId, updated.authUserId, 'Invite Sent');
+            db().writeAuditLog(
+                global.authService?.getCurrentUser?.()?.role || existing.invitedByRole || 'system',
+                global.authService?.getCurrentUser?.()?.id || existing.invitedBy || '',
+                'invite resent',
+                'Auth Invite',
+                existing.inviteId,
+                `Invite resent to ${existing.email}`
+            );
+            return { ok: true, mode: 'live', invite: updated, result };
+        } catch (error) {
+            const message = global.errorService?.formatError?.(error) || error.message || String(error);
+            const failed = db().updateAuthInvite(existing.inviteId, {
+                status: INVITE_STATES.FAILED,
+                inviteStatus: INVITE_STATES.FAILED,
+                activationStatus: INVITE_STATES.FAILED,
+                failureReason: message
+            });
+            return { ok: false, invite: failed, error: message };
+        }
+    }
+
+    async function cancelInvite(inviteOrEmpId) {
+        const existing = db().getAuthInvite(inviteOrEmpId) || db().getLatestAuthInviteForEmployee(inviteOrEmpId);
+        if (!existing) return { ok: false, error: 'No invite found to cancel' };
+        if (['active', 'activated'].includes(String(existing.activationStatus || existing.inviteStatus || existing.status || '').toLowerCase())) {
+            return { ok: false, error: 'Activated invitations cannot be cancelled' };
+        }
+        if (!inviteEnabled()) return { ok: false, error: 'Live Supabase invite endpoint is not configured' };
+        try {
+            const result = await callInviteEndpoint({ action: 'cancel', inviteId: existing.inviteId });
+            const now = new Date().toISOString();
+            const updated = db().updateAuthInvite(existing.inviteId, {
+                status: INVITE_STATES.CANCELLED,
+                inviteStatus: INVITE_STATES.CANCELLED,
+                activationStatus: INVITE_STATES.CANCELLED,
+                authUserId: '',
+                cancelledAt: now,
+                cancelledBy: global.authService?.getCurrentUser?.()?.id || '',
+                failureReason: ''
+            });
+            db().writeAuditLog(
+                global.authService?.getCurrentUser?.()?.role || existing.invitedByRole || 'system',
+                global.authService?.getCurrentUser?.()?.id || existing.invitedBy || '',
+                'invite cancelled',
+                'Auth Invite',
+                existing.inviteId,
+                `Invite cancelled for ${existing.email}`
+            );
+            return { ok: true, mode: 'live', invite: updated, result };
+        } catch (error) {
+            return { ok: false, invite: existing, error: global.errorService?.formatError?.(error) || error.message || String(error) };
+        }
     }
 
     function recordActivationFromUser(user, employee) {
@@ -400,6 +484,7 @@
         validateInvitePayload,
         sendInvite,
         resendInvite,
+        cancelInvite,
         handleInviteCallback,
         hasMatchingInvite: (user) => !!matchingInviteForUser(user),
         recordActivationFromUser,

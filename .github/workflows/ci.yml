@@ -41,6 +41,8 @@ jobs:
         run: |
           deno check --frozen --config supabase/functions/invite-user/deno.json supabase/functions/invite-user/index.ts
           deno lint --config supabase/functions/invite-user/deno.json supabase/functions/invite-user/index.ts
+          deno check --frozen --config supabase/functions/invite-company-owner/deno.json supabase/functions/invite-company-owner/index.ts
+          deno lint --config supabase/functions/invite-company-owner/deno.json supabase/functions/invite-company-owner/index.ts
 
       - name: Run tests and deployment verification
         run: npm run ci

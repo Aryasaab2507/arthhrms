@@ -308,6 +308,12 @@
                 output: failure('EMPLOYEE_IMPORT_ACCESS_DENIED', 'Employee master imports require HR, admin, director, or platform governance access.', input, context, { operation: operation, role: actor.role })
             };
         }
+        if (actor.role === 'PLATFORM_OWNER' && global.supabaseClientService && global.supabaseClientService.isEnabled && global.supabaseClientService.isEnabled('USE_WORKFORCE_DATA_HUB')) {
+            return {
+                allowed: false,
+                output: failure('PLATFORM_OWNER_WORKFORCE_IMPORT_BLOCKED', 'Employee imports belong to Company Administration and cannot be executed from the Platform Control Plane.', input, context, { operation: operation })
+            };
+        }
         if (actor.role !== 'PLATFORM_OWNER' && actorTenant && tenantSlug && normalizeTenant(actorTenant) !== normalizeTenant(tenantSlug)) {
             return {
                 allowed: false,

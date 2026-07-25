@@ -45,6 +45,8 @@
 <script src="services/notificationDeliveryTrackingService.js"></script>
 <script src="services/inviteAcceptanceTrackingService.js"></script>
 <script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/pendingActionService.js"></script>
+<script src="services/lifecycleExperienceService.js"></script>
 <script src="services/expenseService.js"></script>
 <script src="services/payrollService.js"></script>
 <script src="services/attendanceService.js"></script>
@@ -191,6 +193,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- DASHBOARD -->
     <div class="section on" id="sec-dashboard">
+      <div id="adLifecycleExperience"></div>
       <div id="adOpsQueueLoop" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px"></div>
       <div class="stats" id="adStats"></div>
       <div class="two-col">
@@ -495,6 +498,7 @@ function renderAdDash(){
   const shifts=DB.getShifts();
   refreshAdPendingBadges();
   renderAdOpsQueueLoop();
+  void window.LifecycleExperienceService?.mountDashboard?.('adLifecycleExperience');
   document.getElementById('adStats').innerHTML=`
     ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>','#1d4ed8','#eff6ff',emps.length,'Employees','')}
     ${sc('<svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>','#059669','#d1fae5',present,'Present','Today')}

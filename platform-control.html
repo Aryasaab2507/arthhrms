@@ -6,6 +6,7 @@
 <meta name="referrer" content="no-referrer">
 <script src="services/frontendSecurityService.js"></script>
 <script src="services/loadingService.js"></script>
+<script src="services/platformModuleLoaderService.js"></script>
 <script src="services/authGuard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,133 +25,135 @@
     <script src="services/scimProvisioningService.js"></script>
     <script src="services/workflowTelemetryService.js"></script>
     <script src="services/auditService.js"></script>
-    <script src="services/exportService.js"></script>
-    <script src="services/tenantBackupExportService.js"></script>
-    <script src="services/backupIntegrityVerificationService.js"></script>
-<script src="services/enterpriseRedisCacheService.js"></script>
-<script src="services/enterpriseAssetDeliveryService.js"></script>
-<script src="services/distributedQueueService.js"></script>
-<script src="services/apiGatewayGovernanceService.js"></script>
-<script src="services/webhookPlatformService.js"></script>
-<script src="services/developerPlatformService.js"></script>
-<script src="services/integrationMarketplaceService.js"></script>
-<script src="services/noCodeWorkflowAutomationService.js"></script>
-<script src="services/horizontalScalabilityService.js"></script>
-<script src="services/infrastructureObservabilityService.js"></script>
-<script src="services/enterpriseLoggingPipelineService.js"></script>
-<script src="services/multiRegionArchitectureService.js"></script>
-<script src="services/tenantScopedRagService.js"></script>
-<script src="services/aiHrAssistantGovernanceService.js"></script>
-<script src="services/aiOperationsCopilotService.js"></script>
-<script src="services/advancedEnterpriseAiPlatformService.js"></script>
-    <script src="services/dataRetentionGovernanceService.js"></script>
-    <script src="services/apiPayloadValidationService.js"></script>
-    <script src="services/notificationService.js"></script>
-    <script src="services/notificationRoutingService.js"></script>
-    <script src="services/notificationOrchestrationService.js"></script>
-    <script src="services/notificationCenterService.js"></script>
-    <script src="services/smartSearchService.js"></script>
-    <script src="services/globalActivityFeedService.js"></script>
-    <script src="services/asyncJobService.js"></script>
-    <script src="services/payrollGovernanceService.js"></script>
-    <script src="services/leaveAttendanceGovernanceService.js"></script>
-    <script src="services/expenseGovernanceService.js"></script>
-    <script src="services/documentGovernanceService.js"></script>
-    <script src="services/fileAttachmentGovernanceService.js"></script>
-    <script src="services/uploadValidationService.js"></script>
-    <script src="services/documentVisibilityService.js"></script>
-    <script src="services/storageHardeningService.js"></script>
-    <script src="services/attachmentAuditTrailService.js"></script>
-    <script src="services/fileRetentionService.js"></script>
-    <script src="services/documentClassificationService.js"></script>
-    <script src="services/signedUrlGovernanceService.js"></script>
-    <script src="services/threatGovernanceService.js"></script>
-    <script src="services/performanceGovernanceService.js"></script>
-    <script src="services/recruitmentGovernanceService.js"></script>
-    <script src="services/communicationGovernanceService.js"></script>
-    <script src="services/policyGovernanceService.js"></script>
-    <script src="services/announcementHubService.js"></script>
-    <script src="services/workflowDiscussionService.js"></script>
-    <script src="services/teamWorkspaceService.js"></script>
-    <script src="services/communicationAnalyticsService.js"></script>
-    <script src="services/importPipelineService.js"></script>
-    <script src="services/employeeBulkImportService.js"></script>
-    <script src="services/excelValidationService.js"></script>
-    <script src="services/inviteMailDeliveryService.js"></script>
-    <script src="services/employeeActivationWizardService.js"></script>
-    <script src="services/employeeProfileCompletionService.js"></script>
-    <script src="services/passwordResetGovernanceService.js"></script>
-    <script src="services/managerHierarchyService.js"></script>
-    <script src="services/tenantDepartmentSetupService.js"></script>
-    <script src="services/organizationInitializationWizardService.js"></script>
-    <script src="services/companyHolidayImportService.js"></script>
-    <script src="services/initialLeaveBalanceImportService.js"></script>
-    <script src="services/auditInvestigationService.js"></script>
-    <script src="services/featureFlagValidator.js"></script>
-    <script src="services/featureRolloutService.js"></script>
-    <script src="services/pilotRolloutGovernanceService.js"></script>
-    <script src="services/launchReadinessService.js"></script>
-    <script src="services/rlsValidationService.js"></script>
-    <script src="services/environmentGovernanceService.js"></script>
-    <script src="services/stagingValidationService.js"></script>
-    <script src="services/environmentActivationService.js"></script>
-    <script src="services/orchestrationMetricsService.js"></script>
-    <script src="services/eventReplayService.js"></script>
-    <script src="services/escalationPolicyService.js"></script>
-    <script src="services/strategicReviewService.js"></script>
-    <script src="services/authInviteService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/exportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/tenantBackupExportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/backupIntegrityVerificationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseRedisCacheService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseAssetDeliveryService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/distributedQueueService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/apiGatewayGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/webhookPlatformService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/developerPlatformService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/integrationMarketplaceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/noCodeWorkflowAutomationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/horizontalScalabilityService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/infrastructureObservabilityService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseLoggingPipelineService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/multiRegionArchitectureService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/tenantScopedRagService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/aiHrAssistantGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/aiOperationsCopilotService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/advancedEnterpriseAiPlatformService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/dataRetentionGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/apiPayloadValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/notificationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/notificationRoutingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/notificationOrchestrationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/notificationCenterService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/smartSearchService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/globalActivityFeedService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/asyncJobService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/payrollGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/leaveAttendanceGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/expenseGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/documentGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/fileAttachmentGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/uploadValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/documentVisibilityService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/storageHardeningService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/attachmentAuditTrailService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/fileRetentionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/documentClassificationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/signedUrlGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/threatGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/performanceGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/recruitmentGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/communicationGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/policyGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/announcementHubService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/workflowDiscussionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/teamWorkspaceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/communicationAnalyticsService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/importPipelineService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/employeeBulkImportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/excelValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/inviteMailDeliveryService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/employeeActivationWizardService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/employeeProfileCompletionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/passwordResetGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/managerHierarchyService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/tenantDepartmentSetupService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/organizationInitializationWizardService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/companyHolidayImportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/initialLeaveBalanceImportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/auditInvestigationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/featureFlagValidator.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/featureRolloutService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/pilotRolloutGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/launchReadinessService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/rlsValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/environmentGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/stagingValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/environmentActivationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/orchestrationMetricsService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/eventReplayService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/escalationPolicyService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/strategicReviewService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/authInviteService.js"></script>
     <script src="services/platformGovernanceService.js"></script>
     <script src="services/platformAccessService.js"></script>
     <script src="services/tenantProvisioningService.js"></script>
+    <script src="services/platformCompanyRegistryService.js"></script>
+    <script src="services/platformAggregateIntegrationService.js"></script>
     <script src="services/tenantIsolationService.js"></script>
     <script src="services/sessionGovernanceService.js"></script>
     <script src="services/permissionMatrixService.js"></script>
-    <script src="services/organizationSetupService.js"></script>
-    <script src="services/companyProfileConfigurationService.js"></script>
-    <script src="services/organizationImportService.js"></script>
-    <script src="services/migrationControlService.js"></script>
-    <script src="services/deploymentSafetyService.js"></script>
-    <script src="services/qaValidationService.js"></script>
-    <script src="services/enterpriseTestLabService.js"></script>
-    <script src="services/pilotOnboardingService.js"></script>
-    <script src="services/operationsMonitoringService.js"></script>
-    <script src="services/workflowRecoveryService.js"></script>
-    <script src="services/softDeleteRestoreGovernanceService.js"></script>
-    <script src="services/disasterRecoverySimulationService.js"></script>
-<script src="services/notificationDeliveryTrackingService.js"></script>
-<script src="services/inviteAcceptanceTrackingService.js"></script>
-<script src="services/employeeStatusLifecycleService.js"></script>
-    <script src="services/incidentTimelineService.js"></script>
-    <script src="services/escalationCommandService.js"></script>
-    <script src="services/deliverableTimelineService.js"></script>
-    <script src="services/strategicDependencyService.js"></script>
-    <script src="services/departmentExecutionBoardService.js"></script>
-    <script src="services/quarterlyGoalService.js"></script>
-    <script src="services/leadershipAccountabilityService.js"></script>
-    <script src="services/strategicBottleneckService.js"></script>
-    <script src="services/executionHeatmapService.js"></script>
-    <script src="services/strategicDelayPredictionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/organizationSetupService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/companyProfileConfigurationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/organizationImportService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/migrationControlService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/deploymentSafetyService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/qaValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseTestLabService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/pilotOnboardingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/operationsMonitoringService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/workflowRecoveryService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/softDeleteRestoreGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/disasterRecoverySimulationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/notificationDeliveryTrackingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/inviteAcceptanceTrackingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/employeeStatusLifecycleService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/incidentTimelineService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/escalationCommandService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/deliverableTimelineService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/strategicDependencyService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/departmentExecutionBoardService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/quarterlyGoalService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/leadershipAccountabilityService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/strategicBottleneckService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/executionHeatmapService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/strategicDelayPredictionService.js"></script>
     <script src="services/platformAnalyticsService.js"></script>
     <script src="services/tenantUsageIntelligenceService.js"></script>
     <script src="services/platformCostMonitoringService.js"></script>
     <script src="services/tenantBillingService.js"></script>
     <script src="services/tenantGovernanceService.js"></script>
-    <script src="services/globalIncidentService.js"></script>
-    <script src="services/platformHealthMonitoringService.js"></script>
-    <script src="services/globalAuditVisibilityService.js"></script>
-    <script src="services/emergencyOverrideService.js"></script>
-    <script src="services/deploymentValidationService.js"></script>
-    <script src="services/productionReadinessService.js"></script>
-    <script src="services/enterpriseProductionCertificationService.js"></script>
-    <script src="services/enterpriseCertificationSuiteService.js"></script>
-    <script src="services/complianceGovernanceService.js"></script>
-    <script src="services/privacyComplianceService.js"></script>
-    <script src="services/safeReleaseGovernanceService.js"></script>
-    <script src="services/configurationDriftService.js"></script>
-    <script src="services/environmentSnapshotService.js"></script>
-    <script src="services/cicdGovernanceService.js"></script>
-    <script src="services/zeroDowntimeDeploymentService.js"></script>
-    <script src="services/runtimeEnvironmentHealthService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/globalIncidentService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/platformHealthMonitoringService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/globalAuditVisibilityService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/emergencyOverrideService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/deploymentValidationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/productionReadinessService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseProductionCertificationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/enterpriseCertificationSuiteService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/complianceGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/privacyComplianceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/safeReleaseGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/configurationDriftService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/environmentSnapshotService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/cicdGovernanceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/zeroDowntimeDeploymentService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/runtimeEnvironmentHealthService.js"></script>
     <script src="services/dashboardPerformanceService.js"></script>
     <script src="services/mobileResponsivenessService.js"></script>
     <script src="services/renderOptimizationService.js"></script>
@@ -158,16 +161,16 @@
     <script src="services/accessibilityGovernanceService.js"></script>
     <script src="services/brandingGovernanceService.js"></script>
     <script src="services/userPreferenceService.js"></script>
-    <script src="services/aiRiskPredictionService.js"></script>
-    <script src="services/aiKpiForecastingService.js"></script>
-    <script src="services/smartEscalationPredictionService.js"></script>
-    <script src="services/organizationPerformanceForecastingService.js"></script>
-    <script src="services/advancedOkrService.js"></script>
-    <script src="services/crossDepartmentDependencyService.js"></script>
-    <script src="services/workflowSimulationService.js"></script>
-    <script src="services/executiveDecisionIntelligenceService.js"></script>
-    <script src="services/strategicAIAssistantService.js"></script>
-    <script src="services/predictiveWorkforceAnalyticsService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/aiRiskPredictionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/aiKpiForecastingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/smartEscalationPredictionService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/organizationPerformanceForecastingService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/advancedOkrService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/crossDepartmentDependencyService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/workflowSimulationService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/executiveDecisionIntelligenceService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/strategicAIAssistantService.js"></script>
+<script type="application/x-arthhrms-module" data-platform-src="services/predictiveWorkforceAnalyticsService.js"></script>
     <link rel="stylesheet" href="styles/mobileResponsiveness.css">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -990,6 +993,8 @@
                         <div><label>Plan Type<select id="tenantPlanType"><option value="enterprise">Enterprise</option><option value="pilot">Pilot</option><option value="standard">Standard</option></select></label></div>
                         <div><label>Timezone<input id="tenantTimezone" value="Asia/Kolkata"></label></div>
                         <div><label>Country<input id="tenantCountry" value="India"></label></div>
+                        <div><label>Company Owner Name<input id="tenantOwnerName" autocomplete="name" placeholder="Primary company owner"></label></div>
+                        <div><label>Company Owner Email<input id="tenantOwnerEmail" type="email" autocomplete="email" placeholder="owner@company.com"></label></div>
                     </div>
                     <button class="btn" onclick="createTenantFromForm()" style="margin-top:12px">Provision Tenant</button>
                 </div>
@@ -5334,7 +5339,10 @@ function apiPayloadValidationSvc(){return window.ApiPayloadValidationService||wi
 function frontendRuntimeBoundarySvc(){return window.FrontendRuntimeErrorBoundaryService||window.frontendRuntimeErrorBoundaryService;}
 function stagingSvc(){return window.StagingValidationService||window.stagingValidationService;}
 function activationSvc(){return window.EnvironmentActivationService||window.environmentActivationService;}
-function tenantProvisioningSvc(){return window.TenantProvisioningService||window.tenantProvisioningService;}
+function tenantProvisioningSvc(){
+    const durable=window.PlatformCompanyRegistryService||window.platformCompanyRegistryService;
+    return durable?.isEnabled?.()?durable:(window.TenantProvisioningService||window.tenantProvisioningService);
+}
 function tenantIsolationSvc(){return window.TenantIsolationService||window.tenantIsolationService;}
 function sessionGovernanceSvc(){return window.SessionGovernanceService||window.sessionGovernanceService;}
 function loginAttemptSecuritySvc(){return window.LoginAttemptSecurityService||window.loginAttemptSecurityService;}
@@ -5412,6 +5420,7 @@ function announcementHubSvc(){return window.AnnouncementHubService||window.annou
 function teamWorkspaceSvc(){return window.TeamWorkspaceService||window.teamWorkspaceService;}
 function communicationAnalyticsSvc(){return window.CommunicationAnalyticsService||window.communicationAnalyticsService;}
 function platformAnalyticsSvc(){return window.PlatformAnalyticsService||window.platformAnalyticsService;}
+function platformAggregateSvc(){return window.PlatformAggregateIntegrationService||window.platformAggregateIntegrationService;}
 function tenantUsageSvc(){return window.TenantUsageIntelligenceService||window.tenantUsageIntelligenceService;}
 function platformCostSvc(){return window.PlatformCostMonitoringService||window.platformCostMonitoringService;}
 function tenantBillingSvc(){return window.TenantBillingService||window.tenantBillingService;}
@@ -11019,9 +11028,9 @@ function renderTenantGovernance(){
         acc.activated+=Number(t.activatedUserCount||0);
         return acc;
     },{employees:0,active:0,invites:0,activated:0});
-    const created=tenants.filter(t=>t.lifecycleState==='CREATED').length;
-    const pilot=tenants.filter(t=>t.lifecycleState==='PILOT_ACTIVE').length;
-    const production=tenants.filter(t=>t.lifecycleState==='PRODUCTION_ACTIVE').length;
+    const created=tenants.filter(t=>['DRAFT','PROVISIONED','CREATED'].includes(t.lifecycleState)).length;
+    const pilot=tenants.filter(t=>['PILOT','PILOT_ACTIVE'].includes(t.lifecycleState)).length;
+    const production=tenants.filter(t=>['LIVE','PRODUCTION_ACTIVE'].includes(t.lifecycleState)).length;
     if(document.getElementById('tenantGovernanceIntelligenceCards')){
         const severity=String(governanceReport?.classification||'INFO');
         const tone=severity==='CRITICAL_BLOCKER'?'red':severity==='HIGH_RISK'||severity==='WARNING'?'warn':'green';
@@ -11056,14 +11065,16 @@ function renderTenantGovernance(){
         modeLine('Subdomain Pattern','tenant_slug.arthhrms.com'),
         modeLine('Reserved Slugs','admin, platform, api, root, owner, system, support, auth')
     ].join('');
-    document.getElementById('tenantTable').innerHTML=`<thead><tr><th>Tenant</th><th>Subdomain</th><th>Lifecycle</th><th>Onboarding Stage</th><th>Departments</th><th>Role Matrix</th><th>Activation</th></tr></thead><tbody>${
+    document.getElementById('tenantTable').innerHTML=`<thead><tr><th>Tenant</th><th>Lifecycle</th><th>Progress</th><th>Owner</th><th>Next Action</th><th>Pilot Review</th><th>Activation</th></tr></thead><tbody>${
         tenants.length?tenants.map(t=>`<tr>
             <td><b>${esc(t.companyName||t.tenantName||t.tenantId)}</b><div class="muted">${esc(t.tenantSlug||t.tenantId)}</div></td>
-            <td>${esc(t.subdomain||'')}</td>
             <td>${migrationBadge(t.lifecycleState||t.deploymentHealth||'CREATED')}</td>
-            <td>${esc(t.onboardingStage||'setup_only')}</td>
-            <td>${esc((t.departments||[]).join(', ')||'Metadata-only')}</td>
-            <td>${esc((t.roleMatrix||[]).join(', ')||'Tenant roles only')}</td>
+            <td>${esc(t.progress||0)}%</td>
+            <td><b>${esc(t.ownerEmail||'Pending')}</b><div class="muted">${esc(t.currentOwnerRole||'platform_owner')}</div></td>
+            <td>${esc((t.nextAction||'Review lifecycle').replace(/_/g,' '))}</td>
+            <td>${t.readinessStatus==='PENDING_REVIEW'
+                ? `<div class="action-row"><button class="btn mini" onclick="reviewPilotRequest('${esc(t.readinessRequestId)}','APPROVE')">Approve</button><button class="btn mini secondary" onclick="reviewPilotRequest('${esc(t.readinessRequestId)}','RETURN')">Return</button></div><div class="muted">${esc(t.readinessScore||0)}% readiness</div>`
+                : `${migrationBadge(t.readinessStatus||'NOT_SUBMITTED')}<div class="muted">${t.readinessRequestedAt?esc(t.readinessRequestedAt):'Company Owner submits after validation'}</div>`}</td>
             <td>
                 <select class="mini-select" onchange="updateTenantStage('${esc(t.tenantSlug||t.tenantId)}',this.value)">
                     ${(tenantProvisioningSvc()?.ONBOARDING_STAGES||['setup_only','pilot_group','limited_activation','full_activation']).map(stage=>`<option value="${stage}" ${(t.onboardingStage||'setup_only')===stage?'selected':''}>${stage.replace(/_/g,' ')}</option>`).join('')}
@@ -20752,6 +20763,7 @@ const PLATFORM_HEADING_RENDERERS=Object.freeze({
     'Identity Federation Center':'renderIdentityFederationCenter',
     'Platform Health + Tenant Intelligence':'renderPlatformHealthCenter',
     'Environment Health':'renderRuntimeEnvironmentHealthCenter',
+    'Enterprise Operations Center':'Operations Summary',
     'Enterprise Notification Center':'renderNotificationCommandCenter',
     'Integration Marketplace':'renderIntegrationMarketplaceCenter',
     'Enterprise Multi-Tenant Usage Command Center':'renderTenantUsageIntelligenceCenter',
@@ -20775,17 +20787,7 @@ function platformOverviewRenderTasks(){
         platformRenderTask('Render Optimization',renderRenderOptimizationPanel),
         platformRenderTask('UX Governance',renderUXGovernancePanel),
         platformRenderTask('Accessibility Governance',renderAccessibilityGovernancePanel),
-        platformRenderTask('User Preferences',renderUserPreferenceCenter),
-        platformRenderTask('AI Risk Intelligence',renderAIRiskIntelligenceCenter),
-        platformRenderTask('AI KPI Forecasting',renderAIKPIForecastingCenter),
-        platformRenderTask('Smart Escalation',renderSmartEscalationIntelligenceCenter),
-        platformRenderTask('Organization Performance',renderOrganizationPerformanceIntelligenceCenter),
-        platformRenderTask('Advanced OKR',renderAdvancedOkrCommandCenter),
-        platformRenderTask('Cross Department Dependencies',renderCrossDepartmentDependencyCenter),
-        platformRenderTask('Workflow Simulation',renderWorkflowSimulationCommandCenter),
-        platformRenderTask('Executive Decisions',renderExecutiveDecisionIntelligenceCenter),
-        platformRenderTask('Strategic AI Assistant',renderStrategicAIAssistantCenter),
-        platformRenderTask('Predictive Workforce',renderPredictiveWorkforceIntelligenceCenter)
+        platformRenderTask('User Preferences',renderUserPreferenceCenter)
     ];
 }
 function platformMonitoringRenderTasks(){
@@ -20809,53 +20811,12 @@ function platformMonitoringRenderTasks(){
         platformRenderTask('Escalation Command',renderEscalationCommand),
         platformRenderTask('Notification Command',renderNotificationCommandCenter),
         platformRenderTask('Async Operations',renderAsyncOperationsCenter),
-        platformRenderTask('Employee Bulk Import',renderEmployeeBulkImportCenter),
-        platformRenderTask('Excel Validation',renderExcelValidationCenter),
-        platformRenderTask('Invite Delivery',renderInviteDeliveryCenter),
-        platformRenderTask('Onboarding Conversion',renderOnboardingConversionCenter),
-        platformRenderTask('Employee Activation',renderEmployeeActivationCenter),
-        platformRenderTask('Employee Lifecycle',renderEmployeeLifecycleCenter),
-        platformRenderTask('Employee Profile',renderEmployeeProfileCenter),
-        platformRenderTask('Credential Recovery',renderCredentialRecoveryCenter),
-        platformRenderTask('Manager Hierarchy',renderManagerHierarchyCenter),
-        platformRenderTask('Department Setup',renderDepartmentSetupCenter),
-        platformRenderTask('Organization Initialization',renderOrganizationInitializationCenter),
-        platformRenderTask('Company Holidays',renderCompanyHolidayCenter),
-        platformRenderTask('Initial Leave Migration',renderInitialLeaveMigrationCenter),
-        platformRenderTask('Import Pipeline',renderImportPipelineCenter),
-        platformRenderTask('Payroll Governance',renderPayrollGovernanceCenter),
-        platformRenderTask('Leave and Attendance',renderLeaveAttendanceGovernanceCenter),
-        platformRenderTask('Expense Governance',renderExpenseGovernanceCenter),
-        platformRenderTask('Document Governance',renderDocumentGovernanceCenter),
-        platformRenderTask('File Attachments',renderFileAttachmentGovernanceCenter),
-        platformRenderTask('Upload Validation',renderUploadValidationCenter),
-        platformRenderTask('Document Visibility',renderDocumentVisibilityCenter),
         platformRenderTask('Storage Hardening',renderStorageHardeningCenter),
-        platformRenderTask('Attachment Audit Trail',renderAttachmentAuditTrailCenter),
-        platformRenderTask('File Retention',renderFileRetentionCenter),
-        platformRenderTask('Document Classification',renderDocumentClassificationCenter),
-        platformRenderTask('Signed Access',renderSignedAccessGovernanceCenter),
         platformRenderTask('Threat Governance',renderThreatGovernanceCenter),
-        platformRenderTask('Deliverable Timeline',renderDeliverableTimelineCenter),
-        platformRenderTask('Strategic Dependencies',renderStrategicDependencyCenter),
-        platformRenderTask('Department Execution',renderDepartmentExecutionCenter),
-        platformRenderTask('Quarterly Goals',renderQuarterlyGoalCenter),
-        platformRenderTask('Leadership Accountability',renderLeadershipAccountabilityCenter),
-        platformRenderTask('Strategic Bottlenecks',renderStrategicBottleneckCenter),
-        platformRenderTask('Execution Heatmap',renderExecutionHeatmapCenter),
-        platformRenderTask('Strategic Delay Prediction',renderStrategicDelayPredictionCenter),
         platformRenderTask('Platform Analytics',renderPlatformAnalyticsCenter),
         platformRenderTask('Tenant Usage Intelligence',renderTenantUsageIntelligenceCenter),
         platformRenderTask('Platform Cost Monitoring',renderPlatformCostMonitoringCenter),
-        platformRenderTask('Tenant Billing',renderTenantBillingCenter),
-        platformRenderTask('Performance Governance',renderPerformanceGovernanceCenter),
-        platformRenderTask('Recruitment Governance',renderRecruitmentGovernanceCenter),
-        platformRenderTask('Communication Governance',renderCommunicationGovernanceCenter),
-        platformRenderTask('Workflow Discussion',renderWorkflowDiscussionCenter),
-        platformRenderTask('Policy Governance',renderPolicyGovernanceCenter),
-        platformRenderTask('Announcement Hub',renderAnnouncementHubCenter),
-        platformRenderTask('Team Workspace',renderTeamWorkspaceCenter),
-        platformRenderTask('Communication Analytics',renderCommunicationAnalyticsCenter)
+        platformRenderTask('Tenant Billing',renderTenantBillingCenter)
     ];
 }
 function platformAuditRenderTasks(){
@@ -20875,10 +20836,6 @@ function platformAuditRenderTasks(){
         platformRenderTask('Infrastructure Observability',renderInfrastructureObservabilityCenter),
         platformRenderTask('Enterprise Logging',renderEnterpriseLogCenter),
         platformRenderTask('Global Infrastructure',renderGlobalInfrastructureCenter),
-        platformRenderTask('Knowledge Intelligence',renderKnowledgeIntelligenceCenter),
-        platformRenderTask('AI HR Assistant',renderAiHrAssistantCenter),
-        platformRenderTask('AI Operations',renderAiOperationsCenter),
-        platformRenderTask('Enterprise AI',renderEnterpriseAiCenter),
         platformRenderTask('Data Retention',renderDataRetentionGovernanceCenter),
         platformRenderTask('Record Recovery',renderRecoveryGovernanceCenter),
         platformRenderTask('Validation Registry',renderValidationRegistryCenter),
@@ -20921,11 +20878,14 @@ function platformPanelRenderTasks(panelId,heading=''){
     }
     const preferredName=PLATFORM_HEADING_RENDERERS[heading];
     if(preferredName){
-        const preferredIndex=tasks.findIndex(task=>task.run?.name===preferredName);
-        if(preferredIndex>1){
-            const [preferred]=tasks.splice(preferredIndex,1);
-            tasks.splice(1,0,preferred);
+        const preferredIndex=tasks.findIndex(task=>task.name===preferredName||task.run?.name===preferredName);
+        if(preferredIndex>=0){
+            const summary=tasks[0];
+            const preferred=tasks[preferredIndex];
+            tasks=preferred===summary?[summary]:[summary,preferred];
         }
+    }else if(panelId==='monitoring'||panelId==='audit'){
+        tasks=tasks.slice(0,3);
     }
     return [platformRenderTask('Refresh Platform View',refreshPlatformView),...tasks];
 }
@@ -21011,9 +20971,7 @@ function platformRenderState(panelId){
 }
 function markPlatformPanelsDirty(){
     _platformViewDirty=true;
-    document.querySelectorAll('.section[id^="panel-"]').forEach(panel=>{
-        platformRenderState(panel.id.replace(/^panel-/,'')).dirty=true;
-    });
+    _platformPanelRenderState.forEach(state=>{state.dirty=true});
 }
 function recordPlatformRenderMetric(panelId,taskName,durationMs){
     const metric=Object.freeze({
@@ -21042,7 +21000,9 @@ window.getArthHRMSPlatformPerformance=platformPerformanceSnapshot;
 
 async function schedulePlatformPanelRender(panelId,options={}){
     const resolvedPanelId=panelId||'overview';
-    const state=platformRenderState(resolvedPanelId);
+    const resolvedHeading=String(options.heading||_activePlatformModuleHeading||'default');
+    const renderKey=`${resolvedPanelId}:${resolvedHeading}`;
+    const state=platformRenderState(renderKey);
     if(options.reason==='navigation'&&state.rendered&&!state.dirty)return {skipped:true,panelId:resolvedPanelId};
     if(_platformRenderJob)_platformRenderJob.cancelled=true;
     const job={panelId:resolvedPanelId,cancelled:false};
@@ -21060,6 +21020,7 @@ async function schedulePlatformPanelRender(panelId,options={}){
         buttonLabel:platformButtonLoadingLabel(activeButton)
     });
     loading?.showSkeleton?.(panel,{rows:4});
+    await window.PlatformModuleLoaderService?.loadForPanel?.(resolvedPanelId,resolvedHeading);
     const tasks=platformPanelRenderTasks(resolvedPanelId,options.heading||_activePlatformModuleHeading);
     const started=performance.now();
     let completed=0;
@@ -26271,7 +26232,7 @@ function runBrandingGovernanceReview(){
     toast(_brandingGovernanceReport.success?`Branding governance readiness ${_brandingGovernanceReport.brandingReadinessScore}%`:'Branding governance review blocked');
     renderAll();
 }
-function createTenantFromForm(){
+async function createTenantFromForm(){
     const svc=tenantProvisioningSvc();
     if(!svc?.provisionTenant){toast('Tenant provisioning service unavailable');return;}
     const payload={
@@ -26285,20 +26246,62 @@ function createTenantFromForm(){
         timezone:document.getElementById('tenantTimezone').value.trim()||'Asia/Kolkata',
         country:document.getElementById('tenantCountry').value.trim()||'India'
     };
-    const result=svc.provisionTenant(payload,{actor:actor()});
-    toast(result.success?'Tenant provisioned':(result.failures?.[0]?.message||'Tenant provisioning blocked'));
+    const owner={
+        name:document.getElementById('tenantOwnerName')?.value.trim()||'',
+        email:document.getElementById('tenantOwnerEmail')?.value.trim()||''
+    };
+    const durable=svc===window.PlatformCompanyRegistryService||svc===window.platformCompanyRegistryService;
+    if(durable&&(!owner.name||!owner.email)){
+        toast('Company Owner name and email are required');
+        return;
+    }
+    const result=await Promise.resolve(svc.provisionTenant(payload,{actor:actor()}));
+    let ownerInvite=null;
+    if(result.success&&durable&&svc.inviteCompanyOwner){
+        ownerInvite=await svc.inviteCompanyOwner(result.company?.id||result.tenant?.companyId,owner,{actor:actor()});
+    }
+    const successMessage=ownerInvite?.success?'Tenant provisioned and Company Owner invited':'Tenant provisioned';
+    const failureMessage=result.failures?.[0]?.message||result.message||'Tenant provisioning blocked';
+    toast(result.success?(ownerInvite&&!ownerInvite.success?`Tenant provisioned; ${ownerInvite.message}`:successMessage):failureMessage);
     if(result.success){
         ['tenantCompanyName','tenantSlug','tenantCompanyEmail','tenantCompanyPhone','tenantCompanySize'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        if(!ownerInvite||ownerInvite.success){
+            ['tenantOwnerName','tenantOwnerEmail'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        }
+        await platformAggregateSvc()?.refresh?.({actor:actor()});
     }
     renderAll();
 }
-function updateTenantStage(slug,stage){
+async function updateTenantStage(slug,stage){
     const svc=tenantProvisioningSvc();
     if(!svc?.updateTenantActivation){toast('Tenant provisioning service unavailable');return;}
+    if(stage==='pilot_group'){
+        toast('Pilot activation requires an approved Company Owner readiness request.');
+        renderAll();
+        return;
+    }
+    if(stage==='full_activation'&&!globalThis.confirm('Activate this successfully piloted tenant in production? This action is permanently audited.')){
+        renderAll();
+        return;
+    }
     const lifecycle=stage==='full_activation'?'PRODUCTION_ACTIVE':stage==='pilot_group'?'PILOT_ACTIVE':stage==='limited_activation'?'CONFIGURING':'CREATED';
     const readiness=_stagingValidationReport||{readiness:'NOT_RUN',passed:false};
-    const result=svc.updateTenantActivation(slug,{onboarding_stage:stage,lifecycleState:lifecycle},{actor:actor(),readiness});
-    toast(result.success?'Tenant activation stage updated':(result.failures?.[0]?.message||'Tenant activation blocked'));
+    const result=await Promise.resolve(svc.updateTenantActivation(slug,{onboarding_stage:stage,lifecycleState:lifecycle},{actor:actor(),readiness}));
+    toast(result.success?'Tenant activation stage updated':(result.failures?.[0]?.message||result.message||'Tenant activation blocked'));
+    if(result.success)await platformAggregateSvc()?.refresh?.({actor:actor()});
+    renderAll();
+}
+async function reviewPilotRequest(requestId,decision){
+    const svc=tenantProvisioningSvc();
+    if(!svc?.reviewReadinessRequest){toast('Readiness review service unavailable');return;}
+    const approved=decision==='APPROVE';
+    const reason=approved
+        ? 'Platform Owner approved the validated company for controlled pilot activation.'
+        : globalThis.prompt('Reason for returning this readiness request:','Resolve the listed validation findings before resubmitting.');
+    if(!reason)return;
+    const result=await Promise.resolve(svc.reviewReadinessRequest(requestId,decision,reason,{actor:actor()}));
+    toast(result.success?(approved?'Pilot activated':'Readiness request returned'):(result.message||'Readiness review failed'));
+    if(result.success)await platformAggregateSvc()?.refresh?.({actor:actor()});
     renderAll();
 }
 function rollback(snapshotId){
@@ -26308,7 +26311,7 @@ function rollback(snapshotId){
     renderAll();
 }
 async function logout(){if(window.authService?.logout)await authService.logout();else sessionStorage.clear();location.href='platform-login.html';}
-ArthAuthGuard.ready.then((decision)=>{
+ArthAuthGuard.ready.then(async(decision)=>{
     if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='platform_owner')return;
     currentUser=decision.user;
     platformAccess=window.PlatformAccessService?.validatePlatformAccess
@@ -26321,6 +26324,11 @@ ArthAuthGuard.ready.then((decision)=>{
         return;
     }
     if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
+    const durableRegistry=window.PlatformCompanyRegistryService||window.platformCompanyRegistryService;
+    if(durableRegistry?.isEnabled?.()){
+        await durableRegistry.loadRegistry({actor:currentUser});
+        await platformAggregateSvc()?.load?.({actor:currentUser});
+    }
     initializePlatformShell();
 });
 </script>

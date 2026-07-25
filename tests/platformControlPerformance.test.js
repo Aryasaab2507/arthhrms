@@ -1,91 +1,62 @@
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
-const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
+const root = path.resolve(__dirname, '..');
+const platformControl = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
+const companyAdmin = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 
-function functionBody(name) {
-    const marker = `function ${name}(`;
-    const start = html.indexOf(marker);
-    assert.ok(start >= 0, `${name} should exist`);
-    const parametersOpen = html.indexOf('(', start);
-    let parameterDepth = 0;
-    let parametersClose = -1;
-    for (let index = parametersOpen; index < html.length; index += 1) {
-        if (html[index] === '(') parameterDepth += 1;
-        if (html[index] === ')' && --parameterDepth === 0) {
-            parametersClose = index;
-            break;
-        }
-    }
-    const open = html.indexOf('{', parametersClose);
-    let depth = 0;
-    let quote = '';
-    let escaped = false;
-    for (let index = open; index < html.length; index += 1) {
-        const character = html[index];
-        if (quote) {
-            if (escaped) {
-                escaped = false;
-                continue;
-            }
-            if (character === '\\') {
-                escaped = true;
-                continue;
-            }
-            if (character === quote) quote = '';
-            continue;
-        }
-        if (character === '"' || character === "'" || character === '`') {
-            quote = character;
-            continue;
-        }
-        if (character === '{') depth += 1;
-        if (character === '}' && --depth === 0) return html.slice(open + 1, index);
-    }
-    throw new Error(`Unable to parse ${name}`);
+function section(start, end) {
+  const from = platformControl.indexOf(start);
+  const to = platformControl.indexOf(end, from + start.length);
+  assert.notEqual(from, -1, `Missing ${start}`);
+  assert.notEqual(to, -1, `Missing ${end}`);
+  return platformControl.slice(from, to);
 }
 
-assert.ok(html.includes('<script src="services/loadingService.js"></script>'));
-assert.ok(html.includes('<link rel="stylesheet" href="styles/loading-system.css">'));
+const overviewTasks = section(
+  'function platformOverviewRenderTasks(){',
+  'function platformMonitoringRenderTasks(){'
+);
+const monitoringTasks = section(
+  'function platformMonitoringRenderTasks(){',
+  'function platformAuditRenderTasks(){'
+);
+const scheduler = section(
+  'async function schedulePlatformPanelRender(',
+  'function renderAll('
+);
 
-const renderAll = functionBody('renderAll');
-assert.ok(renderAll.includes('markPlatformPanelsDirty()'));
-assert.ok(renderAll.includes('schedulePlatformPanelRender('));
-assert.ok(!/\brender(?:Overview|TenantGovernance|PlatformMonitoring|Audit)\s*\(/.test(renderAll),
-    'renderAll must not synchronously redraw every platform center');
+assert.ok(!overviewTasks.includes('Predictive Workforce'));
+assert.ok(!overviewTasks.includes('Advanced OKR'));
+for (const tenantOperation of [
+  'Employee Bulk Import',
+  'Employee Profile',
+  'Payroll Governance',
+  'Leave and Attendance',
+  'Recruitment Governance',
+  'Team Workspace'
+]) {
+  assert.ok(
+    !monitoringTasks.includes(tenantOperation),
+    `${tenantOperation} must not initialize in the Platform Control plane`
+  );
+}
 
-const showPanel = functionBody('showPanel');
-assert.ok(showPanel.includes('schedulePlatformPanelRender('));
-assert.ok(showPanel.includes('_activePlatformPanelId='));
-
-const scheduler = functionBody('schedulePlatformPanelRender');
-assert.ok(scheduler.includes('await (loading?.nextFrame?.()'));
-assert.ok(scheduler.includes('yieldToBrowser'));
+assert.ok(platformControl.includes("'Enterprise Operations Center':'Operations Summary'"));
+assert.ok(platformControl.includes('task.name===preferredName||task.run?.name===preferredName'));
+assert.ok(platformControl.includes('tasks=preferred===summary?[summary]:[summary,preferred]'));
+assert.ok(platformControl.includes('tasks=tasks.slice(0,3)'));
+assert.ok(scheduler.includes('const renderKey=`${resolvedPanelId}:${resolvedHeading}`'));
+assert.ok(scheduler.includes('loading?.yieldToBrowser?.()'));
 assert.ok(scheduler.includes('performance.now()-sliceStarted>=12'));
-assert.ok(scheduler.includes('job.cancelled'));
-assert.ok(scheduler.includes('taskErrors'));
+assert.ok(platformControl.includes('services/loadingService.js'));
+assert.ok(platformControl.includes('services/platformModuleLoaderService.js'));
+assert.ok(platformControl.includes('PlatformModuleLoaderService?.loadForPanel'));
+assert.ok((platformControl.match(/data-platform-src=/g) || []).length >= 120);
+assert.ok((platformControl.match(/<script\s+src=/g) || []).length <= 40);
 
-for (const name of ['renderPlatformMonitoring', 'renderSecurityGovernance', 'renderAudit']) {
-    const body = functionBody(name);
-    assert.ok(body.includes('if(!options.deferCenters)'), `${name} should defer nested centers`);
-}
-
-const shell = functionBody('initializePlatformShell');
-assert.ok(shell.includes('ArthLoadingService.debounce'));
-assert.ok(shell.includes('installPlatformActionLoading()'));
-
-const actionLoading = functionBody('installPlatformActionLoading');
-assert.ok(actionLoading.includes("document.querySelectorAll('button[onclick]')"));
-assert.ok(actionLoading.includes('ArthLoadingService.run'));
-assert.ok(actionLoading.includes('__ARTHHRMS_PLATFORM_OPERATION_DEPTH__'));
-
-assert.ok(html.includes('window.getArthHRMSPlatformPerformance=platformPerformanceSnapshot'));
-assert.ok(html.includes("loading?.showSkeleton?.(panel,{rows:4})"));
-assert.ok(html.includes("loading?.hideSkeleton?.(panel)"));
-
-const directGlobalRenderPattern = /function renderAll\(\)\s*\{\s*refreshPlatformView\(\);\s*renderOverview\(\)/;
-assert.ok(!directGlobalRenderPattern.test(html), 'legacy synchronous global render must not return');
+assert.ok(companyAdmin.includes('href="employee-migration-center.html"'));
+assert.ok(companyAdmin.includes('href="go-live-readiness-center.html"'));
 
 console.log('platformControlPerformance.test.js passed');

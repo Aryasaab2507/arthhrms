@@ -147,7 +147,9 @@
     function rawData() {
         try {
             var source = db();
-            return source && typeof source.get === 'function' ? source.get() || {} : {};
+            var state = source && typeof source.get === 'function' ? source.get() || {} : {};
+            var projection = global.PlatformAggregateIntegrationService?.getProjection?.() || {};
+            return Object.assign({}, state, projection);
         } catch (error) {
             safeWarn('Database read failed safely.', error && error.message);
             return {};
@@ -613,6 +615,7 @@
     function calculateTenantIntelligence(data, context) {
         var tenants = tenantRows(data);
         var employees = employeeRows(data);
+        var aggregateEmployeeCount = Number(data?.platformAggregateSnapshot?.employeeCount);
         var activeTenants = tenants.filter(isActiveTenant).length;
         var inactiveOrganizations = tenants.length - activeTenants + tenants.filter(function stale(row) {
             return isActiveTenant(row) && olderThanDays(row.lastActiveAt || row.updatedAt || row.createdAt, 30, context);
@@ -640,7 +643,7 @@
         return {
             activeTenants: activeTenants,
             totalTenants: tenants.length,
-            activeEmployeesCount: employees.length,
+            activeEmployeesCount: Number.isFinite(aggregateEmployeeCount) ? aggregateEmployeeCount : employees.length,
             tenantGrowthAnalytics: tenants.length,
             tenantActivityTrends: activity,
             inactiveOrganizations: Math.max(0, inactiveOrganizations),

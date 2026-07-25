@@ -13,11 +13,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Migration Center - ARTHHRMS</title>
     <script src="db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="services/workflowTelemetryService.js"></script>
     <script src="services/auditService.js"></script>
     <script src="services/orchestrationMetricsService.js"></script>
     <script src="services/tenantIsolationService.js"></script>
     <script src="services/employeeMasterImportService.js"></script>
+    <script src="services/workforceDataHubService.js"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         :root{--ink:#102033;--muted:#65758b;--bg:#f6f8fb;--panel:#fff;--line:#dbe4ef;--blue:#1d4ed8;--cyan:#0891b2;--green:#047857;--amber:#b45309;--red:#b91c1c}
@@ -54,12 +56,13 @@
             <button onclick="showSection('validation',this)">Validation Results</button>
             <button onclick="showSection('duplicates',this)">Duplicate Review</button>
             <button onclick="showSection('conflicts',this)">Conflict Resolution</button>
+            <button onclick="showSection('managers',this)">Manager Assignment</button>
             <button onclick="showSection('queue',this)">Import Queue</button>
             <button onclick="showSection('rollback',this)">Rollback History</button>
             <button onclick="showSection('analytics',this)">Import Analytics</button>
             <a href="employees.html">Employees</a>
             <a href="organization-import-center.html">Organization Import</a>
-            <a href="platform-control.html">Platform Control</a>
+            <a href="super-admin.html?section=company-setup">Company Setup</a>
         </nav>
     </aside>
     <main class="content">
@@ -70,8 +73,8 @@
             </div>
             <div class="toolbar">
                 <span class="pill" id="tenantBadge">tenant</span>
-                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
                 <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn alt" onclick="downloadTemplate()">Download Template</button>
                 <button class="btn good" onclick="runDryRun()">Dry Run</button>
                 <button class="btn warn" onclick="commitImport()">Import</button>
             </div>
@@ -83,6 +86,7 @@
             <div class="panel">
                 <h3>Upload File</h3>
                 <div class="grid">
+                    <label class="full">Employee File<input type="file" id="employeeFile" accept=".csv,.tsv,.xlsx,.xls" onchange="readEmployeeFile()"></label>
                     <label>File Name<input id="fileName" value="employees.csv"></label>
                     <label>Source Type<select id="fileType"><option>CSV</option><option>TSV</option><option>JSON</option><option>XLSX</option><option>XLS</option></select></label>
                     <label>Conflict Strategy<select id="conflictStrategy"><option>MERGE</option><option>SKIP</option><option>OVERWRITE</option><option>CREATE_NEW</option><option>MANUAL_REVIEW</option></select></label>
@@ -120,6 +124,14 @@
             </div>
         </section>
 
+        <section class="section" id="section-managers">
+            <div class="panel">
+                <h3>Reporting Manager Assignment</h3>
+                <p class="muted" style="margin-bottom:10px">Rows with missing or inactive managers must be assigned to an existing active tenant employee before import.</p>
+                <div class="table-wrap"><table id="managerTable"></table></div>
+            </div>
+        </section>
+
         <section class="section" id="section-queue">
             <div class="panel">
                 <h3>Import Queue</h3>
@@ -151,9 +163,14 @@
 <script>
 let lastPayload = null;
 let lastReport = null;
+let lastRun = null;
+let selectedRecords = null;
 
 function currentTenant() {
-    try { return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim() || undefined); }
+    try {
+        const user = authService.getCurrentUser() || {};
+        return rbacEnforcementService.resolveTenant(user.tenantId || user.tenantSlug || undefined);
+    }
     catch (error) { return ''; }
 }
 
@@ -175,6 +192,20 @@ function showError(message) {
     node.classList.toggle('on', !!message);
 }
 
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[character]));
+}
+
+function hub() {
+    return window.WorkforceDataHubService || window.workforceDataHubService;
+}
+
+function hubEnabled() {
+    return !!hub()?.isEnabled?.();
+}
+
 function showSection(name, button) {
     document.querySelectorAll('.section').forEach(node => node.classList.remove('on'));
     document.getElementById('section-' + name).classList.add('on');
@@ -183,7 +214,7 @@ function showSection(name, button) {
 }
 
 function buildPayload() {
-    return {
+    const payload = {
         tenantSlug: currentTenant(),
         fileName: document.getElementById('fileName').value.trim() || 'employees.csv',
         fileType: document.getElementById('fileType').value,
@@ -191,13 +222,15 @@ function buildPayload() {
         fileContent: document.getElementById('sourceText').value,
         metadata: { sourceSystem: 'Employee Migration Center' }
     };
+    if (Array.isArray(selectedRecords)) payload.records = selectedRecords;
+    return payload;
 }
 
 function renderTable(id, columns, rows) {
     const table = document.getElementById(id);
     const safeRows = rows || [];
-    table.innerHTML = '<thead><tr>' + columns.map(c => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
-        safeRows.map(row => '<tr>' + columns.map(c => '<td>' + (c.render ? c.render(row) : (row[c.key] ?? '')) + '</td>').join('') + '</tr>').join('') +
+    table.innerHTML = '<thead><tr>' + columns.map(c => '<th>' + escapeHtml(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
+        safeRows.map(row => '<tr>' + columns.map(c => '<td>' + (c.render ? c.render(row) : escapeHtml(row[c.key] ?? '')) + '</td>').join('') + '</tr>').join('') +
         (safeRows.length ? '' : '<tr><td colspan="' + columns.length + '">No records yet.</td></tr>') +
         '</tbody>';
 }
@@ -226,37 +259,97 @@ function previewMapping() {
     toast('Mapping preview generated');
 }
 
-function runDryRun() {
+async function runDryRun() {
     lastPayload = buildPayload();
-    lastReport = EmployeeMasterImportService.runDryRun(lastPayload, actorContext());
+    if (hubEnabled()) {
+        const review = await hub().createReview(lastPayload, actorContext());
+        if (!review.success) return showError((review.issues || []).map(i => i.message).join('\n') || review.error);
+        lastRun = review.run;
+        lastReport = review.report;
+    } else {
+        lastReport = EmployeeMasterImportService.runDryRun(lastPayload, actorContext());
+    }
     if (!lastReport.success) return showError((lastReport.issues || []).map(i => i.message).join('\n'));
     showError('');
+    renderReviewReport();
+    toast(lastRun?.state === 'READY' ? 'Dry run passed and is ready to import' : 'Dry run completed with review items');
+}
+
+function renderReviewReport() {
+    const report = lastReport || {};
     renderMetrics(lastReport);
     renderTable('validationTable', [
         { label: 'Row', key: 'rowNumber' },
         { label: 'Employee Code', key: 'employeeCode' },
         { label: 'Email', key: 'email' },
         { label: 'Status', render: row => '<span class="badge ' + (row.status === 'VALID' ? 'ok' : row.status === 'WARNING' ? 'warnb' : 'err') + '">' + row.status + '</span>' },
-        { label: 'Issues', render: row => (row.issues || []).map(issue => issue.code).join(', ') }
-    ], lastReport.validation.records || []);
+        { label: 'Issues', render: row => escapeHtml((row.issues || []).map(issue => issue.code).join(', ')) }
+    ], report.validation?.records || lastRun?.validation?.records || []);
     renderTable('duplicateTable', [
         { label: 'Row', key: 'rowNumber' },
         { label: 'Match Type', key: 'matchType' },
         { label: 'Employee Code', key: 'employeeCode' },
-        { label: 'Email', key: 'email' }
-    ], lastReport.duplicates.duplicates || []);
+        { label: 'Email', key: 'email' },
+        { label: 'Resolution', render: row => hubEnabled() && lastRun
+            ? `<select class="mini-input" onchange="resolveDuplicateRow(${Number(row.rowNumber)||0},this.value)"><option value="">Review required</option><option value="SKIP">Skip duplicate row</option><option value="MERGE_EXISTING">Merge existing</option><option value="UPDATE_EXISTING">Update existing</option></select>`
+            : escapeHtml('Use conflict strategy') }
+    ], report.duplicates?.duplicates || lastRun?.duplicates || []);
     renderTable('conflictTable', [
         { label: 'Row', key: 'rowNumber' },
         { label: 'Employee Code', key: 'employeeCode' },
         { label: 'Action', key: 'action' },
         { label: 'Issues', key: 'issueCount' }
-    ], lastReport.conflicts.resolutions || []);
-    toast('Dry run completed');
+    ], report.conflicts?.resolutions || lastRun?.conflicts || []);
+    renderManagerAssignments();
 }
 
-function commitImport() {
-    if (!lastPayload) lastPayload = buildPayload();
-    const result = EmployeeMasterImportService.executeImport(lastPayload, actorContext());
+async function resolveDuplicateRow(rowNumber, action) {
+    if (!action || !lastRun) return;
+    const response = await hub().resolveDuplicate({ runId: lastRun.runId, rowNumber, action }, actorContext());
+    if (!response.success) return showError(response.error);
+    lastRun = response.run;
+    showError(lastRun.blockers?.join('\n') || '');
+    refreshCenter();
+}
+
+function activeManagers() {
+    return (DB.getEmployees() || []).filter(employee => !/inactive|terminated|resigned|archived|suspended/i.test(String(employee.employmentStatus || employee.status || '')));
+}
+
+function renderManagerAssignments() {
+    const rows = (lastRun?.validation?.records || lastReport?.validation?.records || []).filter(row =>
+        (row.issues || []).some(issue => ['MANAGER_NOT_FOUND', 'INACTIVE_MANAGER'].includes(issue.code))
+    );
+    const managers = activeManagers();
+    renderTable('managerTable', [
+        { label: 'Row', key: 'rowNumber' },
+        { label: 'Employee Code', key: 'employeeCode' },
+        { label: 'Issue', render: row => escapeHtml((row.issues || []).map(issue => issue.code).join(', ')) },
+        { label: 'Assign Manager', render: row => `<select class="mini-input" onchange="assignManagerRow(${Number(row.rowNumber)||0},this.value)"><option value="">Select manager</option>${managers.map(manager => `<option value="${escapeHtml(manager.id)}">${escapeHtml(manager.name)} (${escapeHtml(manager.id)})</option>`).join('')}</select>` }
+    ], rows);
+}
+
+async function assignManagerRow(rowNumber, managerId) {
+    if (!managerId || !lastRun) return;
+    const response = await hub().assignManager({ runId: lastRun.runId, rowNumber, managerId }, actorContext());
+    if (!response.success) return showError(response.error);
+    lastRun = response.run;
+    showError(lastRun.blockers?.join('\n') || '');
+    refreshCenter();
+}
+
+async function commitImport() {
+    let result;
+    if (hubEnabled()) {
+        if (!lastRun) return showError('Run a dry run and complete review before importing.');
+        const committed = await hub().commit({ runId: lastRun.runId }, actorContext());
+        if (!committed.success) return showError(committed.error || 'Import is blocked.');
+        lastRun = committed.run;
+        result = committed.result;
+    } else {
+        if (!lastPayload) lastPayload = buildPayload();
+        result = EmployeeMasterImportService.executeImport(lastPayload, actorContext());
+    }
     if (!result.success) return showError((result.issues || []).map(i => i.message).join('\n'));
     showError('');
     toast('Import committed with snapshot ' + result.transaction.snapshotId);
@@ -265,6 +358,20 @@ function commitImport() {
 
 function refreshCenter() {
     document.getElementById('tenantBadge').textContent = currentTenant();
+    if (hubEnabled()) {
+        const hubDashboard = hub().dashboard(actorContext());
+        if (hubDashboard.activeRun) {
+            lastRun = hubDashboard.activeRun;
+            lastReport = {
+                summary: lastRun.summary,
+                validation: lastRun.validation,
+                duplicates: { duplicates: lastRun.duplicates || [] },
+                conflicts: { resolutions: lastRun.conflicts || [] },
+                riskScore: lastRun.riskScore
+            };
+            renderReviewReport();
+        }
+    }
     const dashboard = EmployeeMasterImportService.generateMigrationDashboard({ tenantSlug: currentTenant() }, actorContext());
     if (!dashboard.success) return;
     renderMetrics(dashboard);
@@ -274,7 +381,8 @@ function refreshCenter() {
         { label: 'Status', key: 'status' },
         { label: 'Imported', key: 'importedEmployees' },
         { label: 'Updated', key: 'updatedEmployees' },
-        { label: 'Skipped', key: 'skippedRecords' }
+        { label: 'Skipped', key: 'skippedRecords' },
+        { label: 'Action', render: row => `<button class="btn bad" onclick="rollbackCommittedImport('${escapeHtml(row.importId)}')">Rollback</button>` }
     ], dashboard.importQueue || []);
     renderTable('rollbackTable', [
         { label: 'Rollback ID', key: 'rollbackId' },
@@ -294,7 +402,60 @@ function refreshCenter() {
         ' | Payroll calculations unaffected: ' + dashboard.compatibility.payrollCalculationsUnaffected;
 }
 
+async function rollbackCommittedImport(importId) {
+    if (!confirm('Rollback this employee import? Created employees will be removed and updated records restored from the transaction snapshot.')) return;
+    if (hubEnabled()) {
+        const run = (hub().dashboard(actorContext()).runs || []).find(row => row.importId === importId);
+        if (!run) return showError('Workforce review run was not found for this import.');
+        const response = await hub().rollback({ runId: run.runId, reason: 'Administrator rollback from Workforce Data Hub' }, actorContext());
+        if (!response.success) return showError(response.error);
+    } else {
+        const response = EmployeeMasterImportService.rollbackImport({ tenantSlug: currentTenant(), importId, reason: 'Administrator rollback from Employee Migration Center' }, actorContext());
+        if (!response.success) return showError((response.issues || []).map(item => item.message).join('\n'));
+    }
+    toast('Employee import rolled back successfully');
+    refreshCenter();
+}
+
+async function readEmployeeFile() {
+    const file = document.getElementById('employeeFile').files[0];
+    selectedRecords = null;
+    if (!file) return;
+    const validation = await FrontendSecurityService.validateFile(file, 'spreadsheet');
+    if (!validation.valid) return showError(validation.errors.join('\n'));
+    document.getElementById('fileName').value = validation.fileName;
+    const extension = validation.extension.toUpperCase();
+    document.getElementById('fileType').value = extension;
+    if (extension === 'XLSX' || extension === 'XLS') {
+        if (!window.XLSX) return showError('Excel parser is unavailable.');
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: false });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        selectedRecords = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
+        document.getElementById('sourceText').value = '';
+    } else {
+        document.getElementById('sourceText').value = await file.text();
+    }
+    previewMapping();
+}
+
+function downloadTemplate() {
+    const content = [
+        'Employee Code,First Name,Middle Name,Last Name,Preferred Name,Email,Phone,Date of Birth,Date of Joining,Employment Type,Employment Status,Department,Designation,Reporting Manager,Branch,Location,Cost Center,Salary Grade',
+        'EMP-001,First,,Last,,employee@company.example,+910000000000,1990-01-01,2026-01-01,Full Time,ACTIVE,Department,Designation,,Branch,Location,CC-001,G1'
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'arthhrms-employee-import-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
 function loadSample() {
+    selectedRecords = null;
     document.getElementById('fileType').value = 'CSV';
     document.getElementById('fileName').value = 'employee-master-sample.csv';
     document.getElementById('sourceText').value = [
@@ -307,7 +468,6 @@ function loadSample() {
 
 document.addEventListener('DOMContentLoaded', function init() {
     try { DB.init(); DB.migrate(); } catch (error) {}
-    document.getElementById('tenantScope').value = currentTenant();
     refreshCenter();
 });
 </script>

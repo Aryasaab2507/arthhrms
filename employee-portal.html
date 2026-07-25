@@ -46,6 +46,8 @@
 <script src="services/notificationDeliveryTrackingService.js"></script>
 <script src="services/inviteAcceptanceTrackingService.js"></script>
 <script src="services/employeeStatusLifecycleService.js"></script>
+<script src="services/pendingActionService.js"></script>
+<script src="services/lifecycleExperienceService.js"></script>
 <script src="services/expenseService.js"></script>
 <script src="services/payrollService.js"></script>
 <script src="services/attendanceService.js"></script>
@@ -267,6 +269,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- HOME -->
     <div class="section on" id="sec-home">
+      <div id="empLifecycleExperience"></div>
       <div class="welcome-banner">
         <div class="wb-txt"><h2 id="wbName">Welcome!</h2><p id="wbSub">Live employee profile</p></div>
         <div class="wb-stats" id="wbStats"></div>
@@ -949,6 +952,7 @@ function renderEmployeeDailyLoop(emp){
 
 async function renderHome(){
   const emp=DB.getEmployee(ME.id);if(!emp)return;
+  void window.LifecycleExperienceService?.mountDashboard?.('empLifecycleExperience');
   if(window.attendanceService?.isSupabaseAttendanceEnabled?.()){
     await window.attendanceService.fetchAttendanceByEmployee(emp.id);
   }

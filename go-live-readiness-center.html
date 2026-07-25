@@ -17,6 +17,7 @@
     <script src="services/auditService.js"></script>
     <script src="services/orchestrationMetricsService.js"></script>
     <script src="services/goLiveValidationService.js"></script>
+    <script src="services/companyReadinessOrchestrationService.js"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         :root{--ink:#172033;--muted:#667085;--bg:#f4f6f9;--line:#d8dee8;--nav:#17212f;--blue:#1769aa;--teal:#087f6f;--amber:#a85d00;--red:#b42318;--white:#fff}
@@ -48,10 +49,9 @@
         <header class="top">
             <div class="heading"><h2>Organization Go-Live Assessment</h2><p id="statusLine">No validation run loaded.</p></div>
             <div class="actions">
-                <input id="tenantInput" aria-label="Tenant scope" placeholder="tenant slug">
                 <button class="btn secondary" id="refreshBtn">Refresh</button>
                 <button class="btn" id="runBtn">Run Validation</button>
-                <button class="btn approve" id="approveBtn" disabled>Approve</button>
+                <button class="btn approve" id="approveBtn" disabled>Submit for Pilot</button>
             </div>
         </header>
         <div class="notice" id="notice" role="status"></div>
@@ -61,31 +61,10 @@
         <section class="view" id="view-results"><div class="band"><h3>Validation Results</h3><div class="table-wrap"><table id="resultsTable"></table></div></div></section>
         <section class="view" id="view-risks"><div class="band"><h3>Blocking Issues and Recommendations</h3><div class="table-wrap"><table id="riskTable"></table></div></div></section>
         <section class="view" id="view-scores"><div class="band"><h3>Readiness Scorecards</h3><div class="score-grid" id="scoreGrid"></div></div></section>
-        <section class="view" id="view-certification"><div class="band"><h3>Production Certificate</h3><div id="certificateArea" class="certificate empty">No active certificate.</div></div></section>
+        <section class="view" id="view-certification"><div class="band"><h3>Pilot Handoff</h3><div id="certificateArea" class="certificate empty">No pilot review request.</div></div></section>
         <section class="view" id="view-history"><div class="band"><h3>Validation History</h3><div class="table-wrap"><table id="historyTable"></table></div></div></section>
     </main>
 </div>
-<script>
-(function initCenter(){
-    'use strict';
-    var latestDashboard=null;
-    function esc(value){return String(value===null||value===undefined?'':value).replace(/[&<>'"]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]})}
-    function currentTenant(){var input=document.getElementById('tenantInput').value.trim();if(input)return input;try{var data=DB.get();return data.companySettings&& (data.companySettings.tenantSlug||data.companySettings.tenantId)||'default'}catch(error){return'default'}}
-    function currentActor(){try{var user=DB.AuthService&&DB.AuthService.getCurrentUser&&DB.AuthService.getCurrentUser();if(user)return{id:user.id||user.userId||user.empId||'',role:user.role||'UNAUTHENTICATED',tenantSlug:currentTenant()}}catch(error){}return{id:'',role:'UNAUTHENTICATED',tenantSlug:currentTenant()}}
-    function context(){return{tenantSlug:currentTenant(),actor:currentActor()}}
-    function notice(message,isError){var node=document.getElementById('notice');node.textContent=message||'';node.classList.toggle('show',!!message);node.classList.toggle('error',!!isError)}
-    function status(value){var text=String(value||'UNKNOWN');return'<span class="status '+esc(text.toLowerCase())+'">'+esc(text)+'</span>'}
-    function table(id,columns,rows){var node=document.getElementById(id);var data=rows||[];node.innerHTML='<thead><tr>'+columns.map(function(c){return'<th>'+esc(c.label)+'</th>'}).join('')+'</tr></thead><tbody>'+(data.length?data.map(function(row){return'<tr>'+columns.map(function(c){return'<td>'+(c.render?c.render(row):esc(row[c.key]))+'</td>'}).join('')+'</tr>'}).join(''):'<tr><td class="empty" colspan="'+columns.length+'">No records.</td></tr>')+'</tbody>'}
-    function renderMetrics(d){var scores=d.scorecards||{};var items=[['Overall',d.readinessScore||0,d.readinessScore>=95?'good':d.readinessScore>=80?'warn':'bad'],['Organization',scores.organizationReadiness||0,'good'],['Data Quality',scores.dataQuality||0,'good'],['Security',scores.security||0,'good'],['Infrastructure',scores.infrastructure||0,'good'],['Open Risks',d.blockingIssues&&d.blockingIssues.length||0,d.blockingIssues&&d.blockingIssues.length?'bad':'good']];document.getElementById('metrics').innerHTML=items.map(function(item){return'<div class="metric '+item[2]+'"><strong>'+esc(item[1])+(item[0]==='Open Risks'?'':'%')+'</strong><span>'+esc(item[0])+'</span></div>'}).join('')}
-    function renderCertificate(rows){var active=(rows||[]).find(function(row){return row.status!=='REVOKED'});var node=document.getElementById('certificateArea');if(!active){node.className='certificate empty';node.textContent='No active certificate.';return}node.className='certificate';node.innerHTML='<dl><dt>Certification ID</dt><dd>'+esc(active.certificationId)+'</dd><dt>Company</dt><dd>'+esc(active.companyName)+'</dd><dt>Environment</dt><dd>'+esc(active.environment)+'</dd><dt>Readiness Score</dt><dd>'+esc(active.readinessScore)+'%</dd><dt>Validation Date</dt><dd>'+esc(active.validationDate)+'</dd><dt>Certified By</dt><dd>'+esc(active.certifiedBy)+'</dd><dt>Signature Key</dt><dd>'+esc(active.signingKeyId)+'</dd><dt>Status</dt><dd>'+status(active.status||active.certificationStatus)+'</dd></dl>'}
-    function render(d){latestDashboard=d;document.getElementById('statusLine').textContent='Status: '+String(d.certificationStatus||'NOT_VALIDATED').replace(/_/g,' ')+' | Tenant: '+d.tenantSlug;document.getElementById('approveBtn').disabled=d.certificationStatus!=='READY_FOR_APPROVAL';renderMetrics(d);table('checklistTable',[{label:'Check',key:'item'},{label:'Status',render:function(row){return status(row.status)}},{label:'Score',render:function(row){return esc(row.score)+'%'}}],d.checklist);table('resultsTable',[{label:'Domain',key:'domain'},{label:'Status',render:function(row){return status(row.status)}},{label:'Score',render:function(row){return esc(row.score)+'%'}},{label:'Failed',key:'failedCount'}],d.validationResults);table('riskTable',[{label:'Domain',key:'domain'},{label:'Severity',render:function(row){return status(row.severity)}},{label:'Issue',key:'summary'},{label:'Recommendation',key:'recommendation'}],d.riskAnalysis&&d.riskAnalysis.risks||[]);var scores=d.scorecards||{};document.getElementById('scoreGrid').innerHTML=[['Organization',scores.organizationReadiness],['Data Quality',scores.dataQuality],['Security',scores.security],['Performance',scores.performance],['Compliance',scores.compliance],['Infrastructure',scores.infrastructure],['Overall',scores.overallReadinessScore]].map(function(row){return'<div class="score-row"><b>'+esc(row[1]||0)+'%</b><span>'+esc(row[0])+'</span></div>'}).join('');renderCertificate(d.certificates);table('historyTable',[{label:'Run ID',key:'runId'},{label:'Status',render:function(row){return status(row.status)}},{label:'Score',render:function(row){return esc(row.readinessScore)+'%'}},{label:'Generated',key:'generatedAt'}],d.validationHistory)}
-    function refresh(){var response=GoLiveValidationService.generateDashboard({tenantSlug:currentTenant()},context());if(!response.success){notice(response.message,true);return}notice('');render(response)}
-    function run(){notice('Validation in progress...',false);setTimeout(function(){var response=GoLiveValidationService.runValidation({tenantSlug:currentTenant(),mode:'FULL'},context());if(!response.success){notice(response.message,true);return}notice(response.status==='READY_FOR_APPROVAL'?'Validation passed. Administrator approval is required before certificate generation.':'Go-live is blocked. Resolve every required check and run validation again.',response.status==='BLOCKED');refresh()},0)}
-    function approve(){if(!latestDashboard||latestDashboard.certificationStatus!=='READY_FOR_APPROVAL')return;var run=latestDashboard.validationHistory&&latestDashboard.validationHistory[0];if(!run)return;if(!globalThis.confirm('Confirm administrator approval for this passing validation run?'))return;var approval=GoLiveValidationService.approveGoLive({tenantSlug:currentTenant(),runId:run.runId,administratorConfirmed:true,reason:'Approved from Go-Live Readiness Center.'},context());if(!approval.success){notice(approval.message,true);return}var certificate=GoLiveValidationService.generateCertificate({tenantSlug:currentTenant(),runId:run.runId,approvalId:approval.approval.approvalId,environment:'PRODUCTION'},context());if(!certificate.success){notice(certificate.message,true);refresh();return}notice('Signed go-live certificate generated.',false);refresh()}
-    document.querySelectorAll('nav button').forEach(function(button){button.addEventListener('click',function(){document.querySelectorAll('nav button').forEach(function(node){node.classList.remove('active')});document.querySelectorAll('.view').forEach(function(node){node.classList.remove('active')});button.classList.add('active');document.getElementById('view-'+button.dataset.view).classList.add('active')})});
-    document.getElementById('refreshBtn').addEventListener('click',refresh);document.getElementById('runBtn').addEventListener('click',run);document.getElementById('approveBtn').addEventListener('click',approve);
-    document.addEventListener('DOMContentLoaded',function(){try{DB.init();DB.migrate()}catch(error){}document.getElementById('tenantInput').value=currentTenant();refresh()});
-})();
-</script>
+<script src="services/companyReadinessPage.js"></script>
 </body>
 </html>
