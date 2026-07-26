@@ -137,7 +137,15 @@ try {
     'USE_SUPABASE_PASSWORD_RECOVERY',
     'USE_SUPABASE_PERSISTENCE',
     'USE_SUPABASE_STORAGE',
-    'USE_SUPABASE_INVITES'
+    'USE_SUPABASE_INVITES',
+    'USE_PLATFORM_COMPANY_REGISTRY',
+    'USE_COMPANY_ADMIN_SHELL',
+    'USE_COMPANY_SETUP_ORCHESTRATION',
+    'USE_INVITATION_CENTER',
+    'USE_WORKFORCE_DATA_HUB',
+    'USE_LIFECYCLE_TASKS',
+    'USE_READINESS_CENTER',
+    'USE_PLATFORM_AGGREGATES'
   ]) {
     assert.equal(productionConfig.flags[flag], true, `${flag} should default true in production`);
   }
@@ -190,11 +198,13 @@ try {
   const overrideOutput = path.join(tempDirectory, 'runtime-config.override.js');
   const override = generate(overrideOutput, 'production', {
     ...productionEnvironment,
-    USE_SUPABASE_STORAGE: 'false'
+    USE_SUPABASE_STORAGE: 'false',
+    USE_PLATFORM_COMPANY_REGISTRY: 'false'
   });
   assert.equal(override.status, 0, override.stderr || override.stdout);
   const overrideSource = fs.readFileSync(overrideOutput, 'utf8');
   assert.match(overrideSource, /"USE_SUPABASE_STORAGE": false/, 'explicit optional feature overrides must be respected');
+  assert.match(overrideSource, /"USE_PLATFORM_COMPANY_REGISTRY": false/, 'explicit product feature overrides must be respected');
 
   const localDefaultOutput = path.join(tempDirectory, 'runtime-config.local-default.js');
   const localDefault = generate(localDefaultOutput, 'local', {

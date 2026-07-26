@@ -156,7 +156,7 @@ export function resolveRuntimeConfig(env = process.env, requestedMode = 'product
     flags[name] = booleanValue(env, name, isProduction);
   }
   for (const name of PRODUCT_TRANSFORMATION_FLAGS) {
-    flags[name] = booleanValue(env, name, false);
+    flags[name] = booleanValue(env, name, isProduction);
   }
 
   const productionFlags = {

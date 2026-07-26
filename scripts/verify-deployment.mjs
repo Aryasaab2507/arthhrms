@@ -224,6 +224,9 @@ for (const servicePath of [
 const platformControlSource = await read('platform-control.html');
 check(platformControlSource.includes('services/platformAggregateIntegrationService.js'), 'Platform Control does not load durable platform aggregates.');
 check(platformControlSource.includes('platformAggregateSvc()?.load'), 'Platform Control does not initialize aggregate integrations after authentication.');
+check(platformControlSource.includes("label:'Continue Setup',wizard:true"), 'Company Registry lacks the CREATED-to-Company-Setup action.');
+check(platformControlSource.includes('_tenantRegistryRows.get(registryKey)'), 'Company Registry actions are not bound to the rendered tenant identity.');
+check(platformControlSource.includes('tenantRegistryKeys(tenant)'), 'Company Registry does not normalize durable and compatibility tenant identities.');
 check(platformControlSource.includes("'Enterprise Operations Center':'Operations Summary'"), 'Platform Operations lacks focused lazy initialization.');
 check(platformControlSource.includes('tasks=preferred===summary?[summary]:[summary,preferred]'), 'Platform module navigation still schedules every center.');
 check(platformControlSource.includes('const renderKey=`${resolvedPanelId}:${resolvedHeading}`'), 'Platform render cache is not isolated by module.');
