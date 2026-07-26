@@ -11065,7 +11065,7 @@ function renderTenantGovernance(){
         modeLine('Subdomain Pattern','tenant_slug.arthhrms.com'),
         modeLine('Reserved Slugs','admin, platform, api, root, owner, system, support, auth')
     ].join('');
-    document.getElementById('tenantTable').innerHTML=`<thead><tr><th>Tenant</th><th>Lifecycle</th><th>Progress</th><th>Owner</th><th>Next Action</th><th>Pilot Review</th><th>Activation</th></tr></thead><tbody>${
+    document.getElementById('tenantTable').innerHTML=`<thead><tr><th>Tenant</th><th>Lifecycle</th><th>Progress</th><th>Owner</th><th>Next Action</th><th>Pilot Review</th><th>Activation</th><th>Actions</th></tr></thead><tbody>${
         tenants.length?tenants.map(t=>`<tr>
             <td><b>${esc(t.companyName||t.tenantName||t.tenantId)}</b><div class="muted">${esc(t.tenantSlug||t.tenantId)}</div></td>
             <td>${migrationBadge(t.lifecycleState||t.deploymentHealth||'CREATED')}</td>
@@ -11080,7 +11080,8 @@ function renderTenantGovernance(){
                     ${(tenantProvisioningSvc()?.ONBOARDING_STAGES||['setup_only','pilot_group','limited_activation','full_activation']).map(stage=>`<option value="${stage}" ${(t.onboardingStage||'setup_only')===stage?'selected':''}>${stage.replace(/_/g,' ')}</option>`).join('')}
                 </select>
             </td>
-        </tr>`).join(''):'<tr><td colspan="7" class="muted">No tenant metadata available.</td></tr>'
+            <td>${renderTenantRegistryActions(t)}</td>
+        </tr>`).join(''):'<tr><td colspan="8" class="muted">No tenant metadata available.</td></tr>'
     }</tbody>`;
     const setupRows=setupView.setups||[];
     document.getElementById('organizationSetupBox').innerHTML=setupRows.length
@@ -26271,6 +26272,73 @@ async function createTenantFromForm(){
         await platformAggregateSvc()?.refresh?.({actor:actor()});
     }
     renderAll();
+}
+function tenantRegistryActionFor(tenant){
+    const state=String(tenant?.lifecycleState||tenant?.deploymentHealth||'CREATED').trim().toUpperCase();
+    const invitation=String(tenant?.invitationStatus||'').trim().toUpperCase();
+    const hasActiveInvitation=['DRAFT','QUEUED','SENT','DELIVERED','OPENED','PENDING'].includes(invitation);
+    if(['DRAFT','PROVISIONED','CREATED'].includes(state)){
+        return hasActiveInvitation
+            ? {kind:'view-invitation',label:'View Invitation'}
+            : {kind:'invite-owner',label:'Invite Owner'};
+    }
+    if(state==='OWNER_INVITED')return {kind:'view-invitation',label:'View Invitation'};
+    if(state==='OWNER_ACCEPTED')return {kind:'company-admin',label:'Continue Setup',focus:'companyProfile'};
+    if(state==='CONFIGURING')return {kind:'company-admin',label:'Resume Setup',focus:'companyProfile'};
+    if(['ORG_STRUCTURE','POLICIES'].includes(state))return {kind:'company-admin',label:'Open Setup',focus:state==='ORG_STRUCTURE'?'departments':'attendanceRules'};
+    if(['HR_READY','EMPLOYEE_IMPORT'].includes(state))return {kind:'company-admin',label:'Employee Import',focus:'employeeImport'};
+    if(state==='VALIDATION')return {kind:'company-admin',label:'Review Validation',focus:'validation'};
+    if(state==='READY_FOR_REVIEW')return {kind:'company-admin',label:'Open Readiness',focus:'readiness'};
+    if(['PILOT','PILOT_ACTIVE'].includes(state))return {kind:'company-admin',label:'Monitor Pilot',focus:'pilot'};
+    if(['LIVE','PRODUCTION_ACTIVE'].includes(state))return {kind:'company-admin',label:'Open Company',dashboard:true};
+    return {kind:'company-admin',label:'Company Administration',focus:'companyProfile'};
+}
+function renderTenantRegistryActions(tenant){
+    const action=tenantRegistryActionFor(tenant);
+    const companyId=esc(tenant?.companyId||tenant?.id||'');
+    return `<div class="action-row"><button class="btn mini" type="button" onclick="openTenantRegistryAction('${companyId}')">${esc(action.label)}</button></div>`;
+}
+function registryTenantById(companyId){
+    const response=tenantProvisioningSvc()?.getTenantProvisioningView?.({actor:currentUser});
+    return (response?.tenants||[]).find(tenant=>String(tenant.companyId||tenant.id)===String(companyId))||null;
+}
+async function inviteRegistryCompanyOwner(tenant){
+    const svc=tenantProvisioningSvc();
+    if(!svc?.inviteCompanyOwner){toast('Company Owner invitation service unavailable');return;}
+    const ownerName=String(globalThis.prompt('Company Owner name:','')||'').trim();
+    if(!ownerName)return;
+    const ownerEmail=String(tenant.ownerEmail||globalThis.prompt('Company Owner email:','')||'').trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)){
+        toast('Enter a valid Company Owner email address');
+        return;
+    }
+    const result=await svc.inviteCompanyOwner(tenant.companyId||tenant.id,{name:ownerName,email:ownerEmail},{actor:actor()});
+    toast(result.success?'Company Owner invitation sent':(result.message||'Company Owner invitation failed'));
+    if(result.success)await platformAggregateSvc()?.refresh?.({actor:actor()});
+    renderAll();
+}
+function viewRegistryCompanyOwnerInvitation(tenant){
+    const status=String(tenant.invitationStatus||'Not sent').replace(/_/g,' ');
+    globalThis.alert(`Company Owner: ${tenant.ownerEmail||'Not assigned'}\nInvitation status: ${status}\nLifecycle: ${tenant.lifecycleState||'CREATED'}`);
+}
+async function handoffToCompanyAdministration(tenant,action){
+    const companyName=tenant.companyName||tenant.tenantName||tenant.tenantSlug||'this company';
+    const confirmed=globalThis.confirm(`Continue as the Company Owner for ${companyName}?\n\nPlatform Control will sign out. Company Setup remains protected by Company Owner authentication and tenant RBAC.`);
+    if(!confirmed)return;
+    const target=action.dashboard
+        ? 'super-admin.html'
+        : `super-admin.html?section=company-setup${action.focus?`&focus=${encodeURIComponent(action.focus)}`:''}`;
+    if(window.authService?.logout)await authService.logout();
+    else sessionStorage.clear();
+    location.href=`ArthHRMS.html?reason=company_handoff&returnTo=${encodeURIComponent(target)}`;
+}
+async function openTenantRegistryAction(companyId){
+    const tenant=registryTenantById(companyId);
+    if(!tenant){toast('Company registry entry is unavailable');return;}
+    const action=tenantRegistryActionFor(tenant);
+    if(action.kind==='invite-owner'){await inviteRegistryCompanyOwner(tenant);return;}
+    if(action.kind==='view-invitation'){viewRegistryCompanyOwnerInvitation(tenant);return;}
+    await handoffToCompanyAdministration(tenant,action);
 }
 async function updateTenantStage(slug,stage){
     const svc=tenantProvisioningSvc();

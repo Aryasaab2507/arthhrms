@@ -286,13 +286,28 @@
             loginButton.textContent = busy ? 'Signing In...' : 'Sign In';
         }
 
+        function resolveTenantLoginTarget(user, defaultTarget) {
+            const requested = new URLSearchParams(window.location.search).get('returnTo');
+            if (!requested || !user || !defaultTarget) return defaultTarget;
+            try {
+                const requestedUrl = new URL(requested, window.location.origin);
+                const defaultUrl = new URL(defaultTarget, window.location.origin);
+                if (requestedUrl.origin !== window.location.origin) return defaultTarget;
+                if (requestedUrl.pathname !== defaultUrl.pathname) return defaultTarget;
+                return `${requestedUrl.pathname.replace(/^\//, '')}${requestedUrl.search}${requestedUrl.hash}`;
+            } catch (_error) {
+                return defaultTarget;
+            }
+        }
+
         (async function autoRedirectIfLoggedIn() {
             try {
                 authService?.startAuthStateTracking?.();
                 const restored = await authService.restoreTenantSessionFromSupabase();
-                const target = restored?.user
+                const defaultTarget = restored?.user
                     ? authService.getTenantRoleRedirect(restored.user.role)
                     : null;
+                const target = resolveTenantLoginTarget(restored?.user, defaultTarget);
                 if (target) window.location.replace(target);
             } catch (_error) {}
         })();
@@ -318,7 +333,7 @@
                     setLoginStatus('Invalid email or password.', 'error');
                     return;
                 }
-                window.location.replace(result.redirectTo);
+                window.location.replace(resolveTenantLoginTarget(result.user, result.redirectTo));
             } catch (_error) {
                 setLoginStatus('Authentication failed. Verify your credentials and try again.', 'error');
             } finally {

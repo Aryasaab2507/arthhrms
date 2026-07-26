@@ -586,6 +586,7 @@ function closeSidebar(){toggleSidebar(false);}
 window.addEventListener('resize',()=>{if(!isCompactLayout())closeSidebar();});
 ArthAuthGuard.ready.then(async(decision)=>{
   if(!decision?.authenticated||!decision?.authorized||decision.user?.role!=='super_admin')return;
+  const requestedSection=new URLSearchParams(location.search).get('section')||'';
   __saCurrent=decision.user;
   sessionStorage.setItem('saUser',JSON.stringify(__saCurrent));
   if(window.authService?.startAuthStateTracking)authService.startAuthStateTracking();
@@ -595,7 +596,12 @@ ArthAuthGuard.ready.then(async(decision)=>{
   const setupService=window.CompanySetupOrchestrationService||window.companySetupOrchestrationService;
   if(setupService?.isEnabled?.()){
     document.querySelectorAll('[data-company-setup-nav]').forEach(el=>{el.style.display='flex';});
-    await setupService.loadWorkspace({actor:__saCurrent});
+    const setupResult=await setupService.loadWorkspace({actor:__saCurrent});
+    const setupHome=setupService.getSetupHome?.();
+    if(setupResult?.success&&Number(setupHome?.coreProgress||0)<100&&!requestedSection){
+      location.replace('setup.html?source=company-owner-login');
+      return;
+    }
   }
   const invitationService=window.InvitationCenterService||window.invitationCenterService;
   if(invitationService?.isEnabled?.()){
@@ -604,10 +610,10 @@ ArthAuthGuard.ready.then(async(decision)=>{
   renderAll();
   refreshSABell();
   const d=document.getElementById('saAttDate'); if(d) d.value=today();
-  if(new URLSearchParams(location.search).get('section')==='company-setup'&&setupService?.isEnabled?.()){
+  if(requestedSection==='company-setup'&&setupService?.isEnabled?.()){
     show('company-setup',document.querySelector('[data-company-setup-nav]'));
   }
-  if(new URLSearchParams(location.search).get('section')==='invitation-center'&&invitationService?.isEnabled?.()){
+  if(requestedSection==='invitation-center'&&invitationService?.isEnabled?.()){
     show('invitation-center',document.querySelector('[data-invitation-center-nav]'));
   }
 });
