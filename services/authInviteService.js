@@ -39,6 +39,16 @@
         return !!(cfg.flags?.USE_SUPABASE_INVITES && inviteEndpoint());
     }
 
+    function companyOwnerInviteEnabled() {
+        const cfg = config();
+        return !!(
+            cfg.flags?.USE_SUPABASE_INVITES &&
+            cfg.SUPABASE_URL &&
+            cfg.AUTH_INVITE_REDIRECT_URL &&
+            global.PlatformCompanyRegistryService?.inviteCompanyOwner
+        );
+    }
+
     function redirectTo() {
         const configured = config().AUTH_INVITE_REDIRECT_URL || '';
         const base = configured || (
@@ -432,6 +442,40 @@
         }
     }
 
+    async function sendCompanyOwnerInvite(companyId, profile = {}, context = {}) {
+        if (!companyOwnerInviteEnabled()) {
+            return { ok: false, success: false, error: 'Company Owner invitation configuration is incomplete.' };
+        }
+        const result = await global.PlatformCompanyRegistryService.inviteCompanyOwner(companyId, profile, context);
+        return { ...result, ok: !!result?.ok, success: !!result?.success };
+    }
+
+    async function resendCompanyOwnerInvite(companyId, invitationId, profile = {}, context = {}) {
+        if (!companyOwnerInviteEnabled()) {
+            return { ok: false, success: false, error: 'Company Owner invitation configuration is incomplete.' };
+        }
+        const result = await global.PlatformCompanyRegistryService.resendCompanyOwnerInvitation(
+            companyId,
+            invitationId,
+            profile,
+            context
+        );
+        return { ...result, ok: !!result?.ok, success: !!result?.success };
+    }
+
+    async function revokeCompanyOwnerInvite(companyId, invitationId, options = {}, context = {}) {
+        if (!companyOwnerInviteEnabled()) {
+            return { ok: false, success: false, error: 'Company Owner invitation configuration is incomplete.' };
+        }
+        const result = await global.PlatformCompanyRegistryService.revokeCompanyOwnerInvitation(
+            companyId,
+            invitationId,
+            options,
+            context
+        );
+        return { ...result, ok: !!result?.ok, success: !!result?.success };
+    }
+
     function recordActivationFromUser(user, employee) {
         if (!user) return null;
         const email = normalizeEmail(user.email);
@@ -481,10 +525,14 @@
         TENANT_INVITE_ROLES,
         INVITE_STATES,
         isInviteEnabled: inviteEnabled,
+        isCompanyOwnerInviteEnabled: companyOwnerInviteEnabled,
         validateInvitePayload,
         sendInvite,
         resendInvite,
         cancelInvite,
+        sendCompanyOwnerInvite,
+        resendCompanyOwnerInvite,
+        revokeCompanyOwnerInvite,
         handleInviteCallback,
         hasMatchingInvite: (user) => !!matchingInviteForUser(user),
         recordActivationFromUser,

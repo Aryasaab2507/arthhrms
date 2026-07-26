@@ -7,28 +7,36 @@ const root = path.resolve(__dirname, '..');
 const platformControl = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
 const companyAdmin = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 const companySetup = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
+const platformOnboarding = fs.readFileSync(path.join(root, 'company-setup.html'), 'utf8');
 const companyLogin = fs.readFileSync(path.join(root, 'ArthHRMS.html'), 'utf8');
 const authGuard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
 
 assert.match(platformControl, /renderTenantRegistryActions\(t\)/, 'Company Registry must render lifecycle-aware actions.');
 assert.match(
   platformControl,
-  /return \[\s*\{kind:'invite-owner',label:'Invite Owner'\},\s*\{kind:'company-admin',label:'Continue Setup',wizard:true\}/,
+  /return \[\s*\{kind:'invite-owner',label:'Invite Owner',focus:'owner-invitation'\},\s*\{kind:'company-onboarding',label:'Continue Setup',focus:'company-information'\}/,
   'CREATED companies must show both Invite Owner and Continue Setup.'
 );
 assert.match(platformControl, /tenantRegistryKeys\(tenant\)/, 'Company Registry must resolve every supported tenant identity shape.');
 assert.match(platformControl, /_tenantRegistryRows\.get\(registryKey\)/, 'Actions must resolve from the exact rendered Registry snapshot.');
 assert.match(platformControl, /Continue Setup/, 'Company Registry must expose the Company Setup handoff.');
-assert.match(platformControl, /Resume Setup/, 'Company Registry must expose setup resume behavior.');
-assert.match(platformControl, /Employee Import/, 'Company Registry must expose the employee-import next action.');
+assert.match(platformControl, /Monitor Setup/, 'Company Registry must expose setup monitoring behavior.');
+assert.match(platformControl, /Monitor Import/, 'Company Registry must expose employee-import monitoring.');
 assert.match(platformControl, /Open Readiness/, 'Company Registry must expose the readiness next action.');
 assert.match(platformControl, /Monitor Pilot/, 'Company Registry must expose the pilot next action.');
-assert.match(platformControl, /Open Company/, 'Company Registry must expose the live company action.');
+assert.match(platformControl, /Monitor Company/, 'Company Registry must expose the live company monitoring action.');
 assert.match(
   platformControl,
-  /authService\.logout\(\)[\s\S]+ArthHRMS\.html\?reason=company_handoff&tenant=/,
-  'Platform Owner handoff must end the platform session and return through company authentication.'
+  /new URL\('company-setup\.html',location\.href\)[\s\S]+searchParams\.set\('companyId',companyId\)/,
+  'Platform Owner actions must open the isolated control-plane onboarding workspace.'
 );
+assert.match(platformControl, /async function resolveRegistryTenantByKey/, 'Registry actions must recover from stale rendered state.');
+assert.doesNotMatch(platformControl, /reason=company_handoff/, 'Platform Owner must not impersonate Company Owner onboarding.');
+assert.match(platformOnboarding, /createCompanyDraft/, 'Platform onboarding must create persisted company registry drafts.');
+assert.match(platformOnboarding, /provisionCompany/, 'Platform onboarding must provision the selected tenant.');
+assert.match(platformOnboarding, /sendCompanyOwnerInvite/, 'Platform onboarding must use the real Company Owner invitation boundary.');
+assert.match(platformOnboarding, /getCompanyWorkspace/, 'Platform onboarding must render persisted lifecycle state.');
+assert.doesNotMatch(platformOnboarding, /location\.href\s*=\s*['"]setup\.html/, 'Platform Owner must never enter tenant setup.');
 
 assert.match(
   companyAdmin,
@@ -44,12 +52,17 @@ assert.match(
 );
 assert.match(
   authGuard,
-  /if \(route !== 'setup\.html'\) return configuredRoles;[\s\S]+isEnabled\?\.\('USE_COMPANY_SETUP_ORCHESTRATION'\)[\s\S]+ \? \['super_admin'\]/,
-  'Durable Company Setup must remain restricted to the Company Owner role.'
+  /'setup\.html': \['super_admin'\]/,
+  'Company Setup must remain restricted to the Company Owner role in every environment.'
+);
+assert.doesNotMatch(
+  authGuard,
+  /'setup\.html': \[[^\]]*platform_owner/,
+  'Platform Owner must never be authorized for tenant setup.'
 );
 
 const actionBlock = platformControl.match(
-  /function tenantRegistryActionsFor\(tenant\)\{[\s\S]+?(?=async function updateTenantStage)/
+  /function tenantRegistryActionsFor\(tenant\)\{[\s\S]+?(?=async function ensureDurableRegistryTenant)/
 )?.[0];
 assert.ok(actionBlock, 'Company Registry action implementation must be discoverable.');
 const legacyTenant = {
@@ -74,6 +87,7 @@ const actionContext = {
   globalThis: {},
   sessionStorage: { clear() {} },
   location: { href: '' },
+  URL,
   toast() {},
   actor() { return { id: 'platform-owner', role: 'platform_owner' }; },
   platformAggregateSvc() { return null; }
@@ -96,12 +110,12 @@ assert.strictEqual(
   'A rendered compatibility row must resolve by tenantId without a companyId.'
 );
 assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'OWNER_INVITED' })[0].label, 'Resend Invite');
-assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'OWNER_ACCEPTED' })[0].label, 'Resume Setup');
-assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'CONFIGURING' })[0].label, 'Resume Setup');
-assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'HR_READY' })[0].label, 'Employee Import');
-assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'VALIDATION' })[0].label, 'Review Validation');
+assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'OWNER_ACCEPTED' })[0].label, 'Monitor Setup');
+assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'CONFIGURING' })[0].label, 'Monitor Setup');
+assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'HR_READY' })[0].label, 'Monitor Import');
+assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'VALIDATION' })[0].label, 'Monitor Validation');
 assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'READY_FOR_REVIEW' })[0].label, 'Open Readiness');
 assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'PILOT' })[0].label, 'Monitor Pilot');
-assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'LIVE' })[0].label, 'Open Company');
+assert.equal(actionContext.tenantRegistryActionsFor({ lifecycleState: 'LIVE' })[0].label, 'Monitor Company');
 
 console.log('Company onboarding navigation tests passed.');

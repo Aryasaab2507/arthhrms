@@ -170,6 +170,7 @@
 
     var PLATFORM_ROUTES = Object.freeze([
         'platform-control.html',
+        'company-setup.html',
         'owner-console.html',
         'platform-login.html'
     ]);

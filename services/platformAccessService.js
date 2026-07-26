@@ -41,6 +41,7 @@
 
     const PREFIX = '[PlatformAccessService]';
     const DEFAULT_ROUTE = 'platform-control.html';
+    const PLATFORM_ROUTES = Object.freeze(['platform-control.html', 'company-setup.html']);
 
     const GOVERNANCE_SECTIONS = Object.freeze([
         'Tenant Management',
@@ -210,7 +211,7 @@
             const explicitPath = pathname !== undefined && pathname !== null;
             const path = currentPathname(pathname).toLowerCase();
             const host = currentHostname(locationLike);
-            const valid = path === DEFAULT_ROUTE || (!explicitPath && (
+            const valid = PLATFORM_ROUTES.includes(path) || (!explicitPath && (
                 host.indexOf('owner.') === 0 ||
                 host.indexOf('platform.') === 0
             ));

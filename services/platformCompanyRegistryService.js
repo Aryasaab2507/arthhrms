@@ -18,6 +18,7 @@
         companies: [],
         lifecycle: [],
         invitations: [],
+        events: [],
         readinessRequests: [],
         error: ''
     };
@@ -112,6 +113,12 @@
         }) || null;
     }
 
+    function eventsFor(company) {
+        return cache.events.filter(function filterEvent(row) {
+            return row.company_id === company.id;
+        });
+    }
+
     function onboardingStageFor(state) {
         if (state === 'PILOT') return 'pilot_group';
         if (state === 'LIVE') return 'full_activation';
@@ -124,8 +131,13 @@
     function legacyTenant(company) {
         var lifecycle = lifecycleFor(company) || {};
         var invitations = invitationsFor(company);
+        var events = eventsFor(company);
         var readiness = readinessFor(company);
         var state = String(lifecycle.state || company.status || 'DRAFT').toUpperCase();
+        var metadata = company.metadata && typeof company.metadata === 'object' ? company.metadata : {};
+        var ownerProfile = metadata.companyOwner && typeof metadata.companyOwner === 'object'
+            ? metadata.companyOwner
+            : {};
         return freeze({
             id: company.id,
             companyId: company.id,
@@ -151,6 +163,10 @@
             ownerEmail: company.owner_email || '',
             ownerAuthUserId: company.owner_auth_user_id || '',
             invitationStatus: invitations[0]?.status || '',
+            invitation: invitations[0] || null,
+            invitations: invitations,
+            lifecycleEvents: events,
+            ownerProfile: ownerProfile,
             readinessRequestId: readiness?.id || '',
             readinessStatus: readiness?.status || '',
             readinessScore: Number(readiness?.readiness_score || 0),
@@ -159,14 +175,15 @@
             revision: Number(company.revision || 0),
             createdAt: company.created_at || '',
             updatedAt: company.updated_at || '',
-            metadata: company.metadata || {}
+            metadata: metadata
         });
     }
 
-    function refreshCacheRows(companies, lifecycle, invitations, readinessRequests) {
+    function refreshCacheRows(companies, lifecycle, invitations, events, readinessRequests) {
         cache.companies = Array.isArray(companies) ? companies.slice() : [];
         cache.lifecycle = Array.isArray(lifecycle) ? lifecycle.slice() : [];
         cache.invitations = Array.isArray(invitations) ? invitations.slice() : [];
+        cache.events = Array.isArray(events) ? events.slice() : [];
         cache.readinessRequests = Array.isArray(readinessRequests) ? readinessRequests.slice() : [];
         cache.loaded = true;
         cache.error = '';
@@ -182,6 +199,8 @@
 
         cache.loading = (async function load() {
             try {
+                var expiryResult = await supabase.rpc('arth_platform_expire_owner_invitations');
+                if (expiryResult.error) throw expiryResult.error;
                 var companyQuery = await supabase
                     .from('platform_companies')
                     .select('*')
@@ -196,12 +215,17 @@
                     .select('*')
                     .order('created_at', { ascending: false });
                 if (invitationQuery.error) throw invitationQuery.error;
+                var eventsQuery = await supabase
+                    .from('platform_lifecycle_events')
+                    .select('*')
+                    .order('occurred_at', { ascending: false });
+                if (eventsQuery.error) throw eventsQuery.error;
                 var readinessQuery = await supabase
                     .from('platform_company_readiness_requests')
                     .select('*')
                     .order('requested_at', { ascending: false });
                 if (readinessQuery.error) throw readinessQuery.error;
-                refreshCacheRows(companyQuery.data, lifecycleQuery.data, invitationQuery.data, readinessQuery.data);
+                refreshCacheRows(companyQuery.data, lifecycleQuery.data, invitationQuery.data, eventsQuery.data, readinessQuery.data);
                 return result(true, 'PLATFORM_REGISTRY_LOADED', 'Platform company registry loaded.', {
                     tenants: cache.companies.map(legacyTenant),
                     summary: summarize()
@@ -250,6 +274,23 @@
             loading: !!cache.loading,
             loaded: cache.loaded,
             error: cache.error
+        });
+    }
+
+    function getCompanyWorkspace(companyId, context) {
+        var access = requirePlatformOwner(context);
+        if (!access.ok) return access;
+        var company = cache.companies.find(function findCompany(row) {
+            return row.id === companyId;
+        });
+        if (!company) return result(false, 'TENANT_NOT_FOUND', 'Company registry record was not found.');
+        var tenant = legacyTenant(company);
+        return result(true, 'PLATFORM_COMPANY_WORKSPACE_READY', 'Platform company onboarding workspace is ready.', {
+            company: tenant,
+            lifecycle: lifecycleFor(company),
+            invitations: invitationsFor(company),
+            events: eventsFor(company),
+            readiness: readinessFor(company)
         });
     }
 
@@ -319,6 +360,17 @@
             });
             if (createResult.error) throw createResult.error;
             var createdCompany = createResult.data?.company || {};
+            if (options?.provision === false) {
+                await loadRegistry({ actor: access.actor });
+                return result(true, 'PLATFORM_COMPANY_CREATED', 'Company registry record created.', {
+                    created: true,
+                    tenant: legacyTenant(createdCompany),
+                    company: createdCompany,
+                    lifecycle: createResult.data?.lifecycle || null,
+                    failures: [],
+                    warnings: []
+                });
+            }
             var provisionResult = await transitionCompany(createdCompany.id, createdCompany.revision, 'PROVISIONED', {
                 context: { actor: access.actor },
                 reason: 'Tenant provisioning completed.',
@@ -349,6 +401,165 @@
                 failures: [{ failureCode: 'PLATFORM_COMPANY_CREATE_FAILED', message: error?.message || 'Company creation failed.' }]
             });
         }
+    }
+
+    async function createCompanyDraft(payload, options) {
+        return createCompany(payload, Object.assign({}, options || {}, { provision: false }));
+    }
+
+    async function provisionCompany(companyId, options) {
+        var context = options?.context || options || {};
+        var access = requirePlatformOwner(context);
+        if (!access.ok) return access;
+        if (!cache.loaded) {
+            var loaded = await loadRegistry({ actor: access.actor });
+            if (!loaded.ok) return loaded;
+        }
+        var company = cache.companies.find(function findCompany(row) {
+            return row.id === companyId;
+        });
+        if (!company) return result(false, 'TENANT_NOT_FOUND', 'Company registry record was not found.');
+        if (company.status === 'PROVISIONED') {
+            return result(true, 'TENANT_ALREADY_PROVISIONED', 'Tenant is already provisioned.', {
+                tenant: legacyTenant(company),
+                company: company,
+                lifecycle: lifecycleFor(company),
+                replayed: true
+            });
+        }
+        if (company.status !== 'DRAFT') {
+            return result(false, 'TENANT_PROVISION_STATE_INVALID', 'Tenant provisioning is available only for a draft company.');
+        }
+        var provisioned = await transitionCompany(company.id, company.revision, 'PROVISIONED', {
+            context: { actor: access.actor },
+            reason: 'Tenant provisioning completed from the Platform Owner onboarding workspace.',
+            idempotencyKey: String(options?.idempotencyKey || operationId('tenant-provision')),
+            correlationId: String(options?.correlationId || ''),
+            payload: { slug: company.slug, source: 'company-setup.html' }
+        });
+        if (!provisioned.ok) return provisioned;
+        var provisionedCompany = provisioned.company || cache.companies.find(function findProvisioned(row) {
+            return row.id === company.id;
+        });
+        return result(true, 'TENANT_PROVISIONED', 'Tenant provisioned successfully.', {
+            tenant: provisionedCompany ? legacyTenant(provisionedCompany) : null,
+            company: provisionedCompany || null,
+            lifecycle: provisioned.lifecycle || (provisionedCompany ? lifecycleFor(provisionedCompany) : null),
+            replayed: !!provisioned.replayed
+        });
+    }
+
+    async function retryProvisioning(companyId, options) {
+        var context = options?.context || options || {};
+        var access = requirePlatformOwner(context);
+        if (!access.ok) return access;
+        if (!cache.loaded) {
+            var loaded = await loadRegistry({ actor: access.actor });
+            if (!loaded.ok) return loaded;
+        }
+        var company = cache.companies.find(function findCompany(row) {
+            return row.id === companyId;
+        });
+        if (!company) return result(false, 'TENANT_NOT_FOUND', 'Company registry record was not found.');
+        if (company.status !== 'FAILED') return provisionCompany(companyId, options);
+        var reset = await transitionCompany(company.id, company.revision, 'DRAFT', {
+            context: { actor: access.actor },
+            reason: 'Tenant provisioning retry requested.',
+            idempotencyKey: String(options?.resetIdempotencyKey || operationId('tenant-provision-reset')),
+            correlationId: String(options?.correlationId || ''),
+            payload: { source: 'company-setup.html' }
+        });
+        if (!reset.ok) return reset;
+        return provisionCompany(companyId, options);
+    }
+
+    async function updateCompany(companyId, payload, options) {
+        var context = options?.context || options || {};
+        var access = requirePlatformOwner(context);
+        if (!access.ok) return access;
+        if (!enabled()) return result(false, 'PLATFORM_REGISTRY_DISABLED', 'Durable platform company registry is disabled.');
+        if (!cache.loaded) {
+            var loaded = await loadRegistry({ actor: access.actor });
+            if (!loaded.ok) return loaded;
+        }
+        var company = cache.companies.find(function findCompany(row) {
+            return row.id === companyId;
+        });
+        if (!company) return result(false, 'TENANT_NOT_FOUND', 'Company registry record was not found.');
+        var normalized = normalizePayload(Object.assign({}, company, payload || {}));
+        var ownerProfile = payload?.ownerProfile && typeof payload.ownerProfile === 'object'
+            ? payload.ownerProfile
+            : {};
+        var changeType = String(options?.changeType || 'COMPANY_INFORMATION').trim().toUpperCase();
+        var supabase = client();
+        if (!supabase?.rpc) return result(false, 'SUPABASE_UNAVAILABLE', 'Supabase platform registry is unavailable.');
+        try {
+            var response = await supabase.rpc('arth_platform_update_company', {
+                p_company_id: company.id,
+                p_expected_revision: Number(options?.expectedRevision ?? company.revision ?? 0),
+                p_company_name: normalized.companyName,
+                p_slug: normalized.slug,
+                p_tenant_id: normalized.tenantId,
+                p_organization_id: normalized.organizationId,
+                p_company_email: normalized.companyEmail,
+                p_company_phone: normalized.companyPhone,
+                p_company_size: normalized.companySize,
+                p_plan_type: normalized.planType,
+                p_timezone: normalized.timezone,
+                p_country: normalized.country,
+                p_owner_profile: ownerProfile,
+                p_change_type: changeType,
+                p_idempotency_key: String(options?.idempotencyKey || operationId('company-update')),
+                p_correlation_id: String(options?.correlationId || '')
+            });
+            if (response.error) throw response.error;
+            await loadRegistry({ actor: access.actor });
+            var updated = response.data?.company || null;
+            return result(true, changeType === 'OWNER_PROFILE' ? 'COMPANY_OWNER_PROFILE_SAVED' : 'COMPANY_INFORMATION_SAVED', changeType === 'OWNER_PROFILE'
+                ? 'Company Owner profile saved.'
+                : 'Company information saved.', {
+                company: updated,
+                tenant: updated ? legacyTenant(updated) : getTenants().find(function match(row) { return row.companyId === company.id; }),
+                lifecycle: response.data?.lifecycle || null,
+                replayed: !!response.data?.replayed
+            });
+        } catch (error) {
+            return result(false, 'PLATFORM_COMPANY_UPDATE_FAILED', error?.message || 'Company onboarding information could not be saved.');
+        }
+    }
+
+    async function saveCompanyOwnerProfile(companyId, profile, options) {
+        var company = cache.companies.find(function findCompany(row) {
+            return row.id === companyId;
+        });
+        if (!company) {
+            var context = options?.context || options || {};
+            var loaded = await loadRegistry(context);
+            if (!loaded.ok) return loaded;
+            company = cache.companies.find(function findLoadedCompany(row) {
+                return row.id === companyId;
+            });
+        }
+        if (!company) return result(false, 'TENANT_NOT_FOUND', 'Company registry record was not found.');
+        return updateCompany(companyId, {
+            company_name: company.company_name,
+            tenant_slug: company.slug,
+            tenant_id: company.tenant_id,
+            organization_id: company.organization_id,
+            company_email: company.company_email,
+            company_phone: company.company_phone,
+            company_size: company.company_size,
+            plan_type: company.plan_type,
+            timezone: company.timezone,
+            country: company.country,
+            ownerProfile: Object.assign({}, profile || {}, {
+                role: 'super_admin',
+                persona: 'company_owner'
+            })
+        }, Object.assign({}, options || {}, {
+            changeType: 'OWNER_PROFILE',
+            expectedRevision: Number(options?.expectedRevision ?? company.revision ?? 0)
+        }));
     }
 
     async function provisionTenant(payload, context) {
@@ -406,31 +617,46 @@
         }
     }
 
-    async function inviteCompanyOwner(companyId, payload, context) {
+    async function callCompanyOwnerInvitation(action, companyId, payload, context) {
         var access = requirePlatformOwner(context);
         if (!access.ok) return access;
         if (!enabled()) return result(false, 'PLATFORM_REGISTRY_DISABLED', 'Durable platform company registry is disabled.');
         var cfg = global.supabaseClientService?.readConfig?.() || {};
         var endpoint = cfg.SUPABASE_URL ? cfg.SUPABASE_URL.replace(/\/+$/, '') + '/functions/v1/invite-company-owner' : '';
         var redirectTo = cfg.AUTH_INVITE_REDIRECT_URL || '';
-        if (!endpoint || !redirectTo) {
+        if (!cfg.flags?.USE_SUPABASE_INVITES || !endpoint || !redirectTo) {
             return result(false, 'COMPANY_OWNER_INVITE_CONFIG_MISSING', 'Company Owner invitation configuration is incomplete.');
         }
         var session = await global.authService?.getSupabaseSession?.();
         if (!session?.access_token) return result(false, 'SESSION_REQUIRED', 'A valid Platform Owner session is required.');
-        var idempotencyKey = String(payload?.idempotencyKey || operationId('owner-invite'));
+        var normalizedAction = String(action || 'send').trim().toLowerCase();
+        if (!['send', 'resend', 'revoke'].includes(normalizedAction)) {
+            return result(false, 'COMPANY_OWNER_INVITE_ACTION_INVALID', 'Company Owner invitation action is invalid.');
+        }
+        var idempotencyKey = String(payload?.idempotencyKey || operationId('owner-invite-' + normalizedAction));
+        var controller = typeof global.AbortController === 'function' ? new global.AbortController() : null;
+        var timeoutId = controller ? global.setTimeout(function abortInvitationRequest() {
+            controller.abort();
+        }, 30000) : null;
         try {
             var response = await fetch(endpoint, {
                 method: 'POST',
+                signal: controller?.signal,
                 headers: {
                     'Authorization': 'Bearer ' + session.access_token,
                     'Content-Type': 'application/json',
                     'Idempotency-Key': idempotencyKey
                 },
                 body: JSON.stringify({
+                    action: normalizedAction,
                     companyId: companyId,
+                    invitationId: String(payload?.invitationId || ''),
                     email: String(payload?.email || '').trim().toLowerCase(),
                     name: String(payload?.name || '').trim(),
+                    phone: String(payload?.phone || '').trim(),
+                    role: 'super_admin',
+                    department: String(payload?.department || '').trim(),
+                    reason: String(payload?.reason || '').trim(),
                     redirectTo: redirectTo,
                     idempotencyKey: idempotencyKey,
                     correlationId: String(payload?.correlationId || '')
@@ -439,10 +665,42 @@
             var body = await response.json().catch(function emptyBody() { return {}; });
             if (!response.ok || body.error) throw new Error(body.error || body.message || 'Company Owner invitation failed.');
             await loadRegistry({ actor: access.actor });
-            return result(true, 'COMPANY_OWNER_INVITED', 'Company Owner invitation sent.', body);
+            var responseCode = normalizedAction === 'revoke'
+                ? 'COMPANY_OWNER_INVITATION_REVOKED'
+                : normalizedAction === 'resend'
+                    ? 'COMPANY_OWNER_INVITATION_RESENT'
+                    : 'COMPANY_OWNER_INVITED';
+            var responseMessage = normalizedAction === 'revoke'
+                ? 'Company Owner invitation revoked.'
+                : normalizedAction === 'resend'
+                    ? 'Company Owner invitation resent.'
+                    : 'Company Owner invitation sent.';
+            return result(true, responseCode, responseMessage, body);
         } catch (error) {
-            return result(false, 'COMPANY_OWNER_INVITE_FAILED', error?.message || 'Company Owner invitation failed.');
+            if (error?.name === 'AbortError') {
+                return result(false, 'COMPANY_OWNER_INVITE_TIMEOUT', 'Company Owner invitation service timed out. No success was recorded; refresh the persisted invitation status before retrying.');
+            }
+            await loadRegistry({ actor: access.actor });
+            return result(false, 'COMPANY_OWNER_INVITE_FAILED', error?.message || 'Company Owner invitation action failed.');
+        } finally {
+            if (timeoutId) global.clearTimeout(timeoutId);
         }
+    }
+
+    async function inviteCompanyOwner(companyId, payload, context) {
+        return callCompanyOwnerInvitation('send', companyId, payload, context);
+    }
+
+    async function resendCompanyOwnerInvitation(companyId, invitationId, payload, context) {
+        return callCompanyOwnerInvitation('resend', companyId, Object.assign({}, payload || {}, {
+            invitationId: invitationId
+        }), context);
+    }
+
+    async function revokeCompanyOwnerInvitation(companyId, invitationId, payload, context) {
+        return callCompanyOwnerInvitation('revoke', companyId, Object.assign({}, payload || {}, {
+            invitationId: invitationId
+        }), context);
     }
 
     function legacyHelper(name, fallback) {
@@ -481,12 +739,20 @@
         getTenants: getTenants,
         getReadinessRequests: getReadinessRequests,
         getTenantProvisioningView: getTenantProvisioningView,
+        getCompanyWorkspace: getCompanyWorkspace,
+        createCompanyDraft: createCompanyDraft,
         createCompany: createCompany,
         provisionTenant: provisionTenant,
+        provisionCompany: provisionCompany,
+        retryProvisioning: retryProvisioning,
+        updateCompany: updateCompany,
+        saveCompanyOwnerProfile: saveCompanyOwnerProfile,
         transitionCompany: transitionCompany,
         updateTenantActivation: updateTenantActivation,
         reviewReadinessRequest: reviewReadinessRequest,
-        inviteCompanyOwner: inviteCompanyOwner
+        inviteCompanyOwner: inviteCompanyOwner,
+        resendCompanyOwnerInvitation: resendCompanyOwnerInvitation,
+        revokeCompanyOwnerInvitation: revokeCompanyOwnerInvitation
     });
 
     global.PlatformCompanyRegistryService = service;

@@ -81,7 +81,7 @@
     const TENANT_ROLES = Object.freeze(['employee', 'manager', 'hr', 'hr_head', 'director', 'admin', 'super_admin']);
     const PLATFORM_ROLES = Object.freeze(['platform_owner']);
     const GOVERNANCE_ENTRYPOINT = 'platform-control.html';
-    const PLATFORM_ROUTE_NAMES = Object.freeze(['platform-control.html']);
+    const PLATFORM_ROUTE_NAMES = Object.freeze(['platform-control.html', 'company-setup.html']);
     const SENSITIVE_TENANT_FIELDS = Object.freeze([
         'salary',
         'salaryAmount',

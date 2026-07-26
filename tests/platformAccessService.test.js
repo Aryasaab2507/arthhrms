@@ -137,15 +137,20 @@ async function main() {
 
   const route = global.PlatformAccessService.validateGovernanceRoute('platform-control.html');
   assert.equal(route.valid, true, 'platform-control.html must be a valid hidden governance route');
+  assert.equal(global.PlatformAccessService.validateGovernanceRoute('company-setup.html').valid, true, 'company-setup.html must be a valid Platform Owner route');
   assert.equal(global.PlatformAccessService.validateGovernanceRoute('ArthHRMS.html').valid, false, 'tenant login must not be treated as governance route');
 
   const allowed = global.PlatformAccessService.validatePlatformAccess({ role: 'platform_owner', id: 'PO1' }, { pathname: 'platform-control.html' });
   assert.equal(allowed.allowed, true, 'platform owner should access platform-control');
+  const onboardingAllowed = global.PlatformAccessService.validatePlatformAccess({ role: 'platform_owner', id: 'PO1' }, { pathname: 'company-setup.html' });
+  assert.equal(onboardingAllowed.allowed, true, 'platform owner should access the isolated company onboarding workspace');
   assert.ok(Object.isFrozen(allowed), 'access validation output should be immutable');
 
   const previousHref = global.location.href;
   const denied = global.PlatformAccessService.validatePlatformAccess({ role: 'super_admin', id: 'SA1' }, { pathname: 'platform-control.html' });
   assert.equal(denied.allowed, false, 'tenant super admin must not access platform governance console');
+  const onboardingDenied = global.PlatformAccessService.validatePlatformAccess({ role: 'super_admin', id: 'SA1' }, { pathname: 'company-setup.html' });
+  assert.equal(onboardingDenied.allowed, false, 'Company Owner must not access the Platform Owner onboarding workspace');
   assert.equal(global.location.href, previousHref, 'access validation must never redirect to tenant login');
 
   const sensitive = global.PlatformAccessService.filterSensitiveTenantData({

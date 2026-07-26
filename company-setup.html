@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Company Onboarding - ArthHRMS Platform Control</title>
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8"></script>
+<script src="services/supabaseClient.js"></script>
+<script src="services/authService.js"></script>
+<script src="services/loadingService.js"></script>
+<script src="services/tenantProvisioningService.js"></script>
+<script src="services/platformCompanyRegistryService.js"></script>
+<script src="services/authInviteService.js"></script>
+<script src="services/platformGovernanceService.js"></script>
+<link rel="stylesheet" href="styles/loading-system.css">
+<style>
+*{box-sizing:border-box}
+:root{--ink:#172033;--muted:#667085;--bg:#f6f8fb;--surface:#fff;--border:#d9e1ec;--primary:#2457d6;--primary-dark:#1c46ad;--success:#087a55;--success-bg:#e7f7f0;--warning:#9a6700;--warning-bg:#fff6d8;--danger:#b42318;--danger-bg:#ffebe9;--sidebar:#162033}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+button,input,select{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid rgba(36,87,214,.25);outline-offset:2px}
+.skip-link{position:fixed;left:12px;top:-60px;background:#fff;color:#111;padding:10px;z-index:100}.skip-link:focus{top:12px}
+.shell{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
+.sidebar{background:var(--sidebar);color:#dbe5f5;padding:22px 18px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:11px;align-items:center;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:7px;background:#2f6df6;color:#fff;font-weight:900}
+.brand strong{display:block;font-size:.93rem}.brand span{display:block;color:#9cafca;font-size:.72rem;margin-top:3px}
+.nav{display:grid;gap:3px;margin-top:20px}.nav a{display:flex;align-items:center;min-height:40px;padding:8px 10px;color:#c7d3e6;text-decoration:none;border-radius:6px;font-size:.82rem;font-weight:700}.nav a:hover,.nav a:focus-visible{background:rgba(255,255,255,.09);color:#fff}
+.boundary{margin-top:24px;padding:12px;border:1px solid rgba(255,255,255,.14);border-radius:7px;color:#afbed3;font-size:.72rem;line-height:1.5}.boundary strong{display:block;color:#fff;margin-bottom:4px}
+.main{min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:8}
+.title h1{font-size:1.25rem;margin:0}.title p{margin:4px 0 0;color:var(--muted);font-size:.8rem}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.company-select{min-width:230px;border:1px solid var(--border);border-radius:6px;padding:9px;background:#fff;color:var(--ink)}
+.button{border:1px solid transparent;border-radius:6px;padding:9px 12px;background:var(--primary);color:#fff;font-weight:800;cursor:pointer;min-height:38px}.button:hover{background:var(--primary-dark)}.button.secondary{background:#fff;color:#344054;border-color:var(--border)}.button.danger{background:#fff;color:var(--danger);border-color:#f3b7b2}.button:disabled{cursor:not-allowed;opacity:.52}
+.content{padding:22px 24px 48px;max-width:1480px;margin:0 auto}
+.error-banner{display:none;border:1px solid #f3b7b2;background:var(--danger-bg);color:var(--danger);padding:11px 13px;border-radius:7px;font-size:.8rem;font-weight:700;margin-bottom:14px}.error-banner.visible{display:block}
+.config-banner{display:none;border:1px solid #e7c66b;background:var(--warning-bg);color:#6b4d00;padding:12px 14px;border-radius:7px;margin-bottom:14px;font-size:.8rem;line-height:1.45}.config-banner.visible{display:block}.config-banner strong{display:block;margin-bottom:3px}
+.summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.metric{background:#fff;border:1px solid var(--border);border-radius:7px;padding:12px;min-width:0}.metric span{display:block;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase}.metric strong{display:block;font-size:1rem;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric.good{border-left:4px solid var(--success)}.metric.warn{border-left:4px solid #d89b00}
+.section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:18px 20px;margin-bottom:14px;scroll-margin-top:92px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:15px}.section-head h2{font-size:1rem;margin:0}.section-head p{font-size:.77rem;color:var(--muted);margin:5px 0 0;line-height:1.45}
+.status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;background:#eef2f8;color:#475467;font-size:.68rem;font-weight:900;white-space:nowrap}.status-pill.good{background:var(--success-bg);color:var(--success)}.status-pill.warn{background:var(--warning-bg);color:var(--warning)}.status-pill.bad{background:var(--danger-bg);color:var(--danger)}
+.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.field{min-width:0}.field.full{grid-column:1/-1}.field label{display:block;font-size:.7rem;color:#475467;font-weight:800;margin-bottom:6px}.field input,.field select{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px;background:#fff;color:var(--ink)}.field input:disabled{background:#f2f4f7;color:#667085}
+.field-error{min-height:16px;color:var(--danger);font-size:.68rem;font-weight:700;margin-top:4px}
+.section-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:15px;flex-wrap:wrap}
+.operation-log{margin-top:13px;border-left:3px solid #9cb6f6;padding:8px 11px;background:#f8faff;color:#475467;font-size:.76rem;line-height:1.5;min-height:35px}
+.checklist{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.check-item{border:1px solid var(--border);border-radius:7px;padding:11px;background:#fff;display:flex;gap:9px;align-items:flex-start;min-height:67px}.check-icon{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#eef2f6;color:#667085;font-weight:900;flex:0 0 auto}.check-item.done .check-icon{background:var(--success-bg);color:var(--success)}.check-item strong{display:block;font-size:.76rem}.check-item span{display:block;color:var(--muted);font-size:.68rem;margin-top:4px;line-height:1.35}
+.timeline{display:grid;position:relative}.timeline-row{display:grid;grid-template-columns:150px 18px minmax(0,1fr);gap:10px;min-height:66px}.timeline-time{color:var(--muted);font-size:.68rem;padding-top:3px}.timeline-rail{position:relative}.timeline-rail:before{content:"";position:absolute;left:8px;top:0;bottom:0;border-left:1px solid #cbd5e1}.timeline-dot{position:absolute;left:3px;top:3px;width:11px;height:11px;background:var(--primary);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #9bb2e9}.timeline-copy strong{display:block;font-size:.78rem}.timeline-copy span{display:block;color:var(--muted);font-size:.7rem;line-height:1.45;margin-top:4px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:7px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px;text-align:left;border-bottom:1px solid var(--border);font-size:.73rem;vertical-align:top}th{font-size:.64rem;text-transform:uppercase;color:#667085;background:#f8fafc}tr:last-child td{border-bottom:0}
+.empty{border:1px dashed #b9c5d5;padding:22px;text-align:center;color:var(--muted);font-size:.78rem;border-radius:7px}
+.handoff-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:12px}.handoff-state{border-left:4px solid var(--primary);padding:12px 14px;background:#f8faff}.handoff-state strong{display:block;font-size:.85rem}.handoff-state span{display:block;color:var(--muted);font-size:.74rem;line-height:1.5;margin-top:5px}.access-list{display:grid;gap:7px}.access-row{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;font-size:.73rem}.access-row:last-child{border-bottom:0}.access-row b{color:var(--success)}.access-row b.denied{color:var(--danger)}
+@media(max-width:1120px){.summary-grid{grid-template-columns:repeat(3,1fr)}.form-grid{grid-template-columns:repeat(2,1fr)}.checklist{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:820px){.shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.nav{grid-template-columns:repeat(2,1fr)}.topbar{position:relative;align-items:flex-start}.handoff-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.topbar{display:block;padding:16px}.toolbar{margin-top:12px}.company-select{width:100%}.content{padding:14px}.summary-grid,.form-grid,.checklist{grid-template-columns:1fr}.timeline-row{grid-template-columns:1fr 18px}.timeline-time{grid-column:1/-1}.field.full{grid-column:auto}.section{padding:16px}.section-actions{display:grid}.button{width:100%}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to onboarding workspace</a>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PC</div>
+      <div><strong>ArthHRMS</strong><span>Platform company onboarding</span></div>
+    </div>
+    <nav class="nav" aria-label="Company onboarding sections">
+      <a href="#company-information">Company Information</a>
+      <a href="#tenant-provisioning">Tenant Provisioning</a>
+      <a href="#company-owner">Company Owner</a>
+      <a href="#owner-invitation">Owner Invitation</a>
+      <a href="#provision-status">Provision Status</a>
+      <a href="#lifecycle-timeline">Lifecycle Timeline</a>
+      <a href="#platform-handoff">Platform Handoff</a>
+      <a href="#monitoring">Monitoring</a>
+      <a href="#audit">Audit</a>
+    </nav>
+    <div class="boundary">
+      <strong>Platform boundary</strong>
+      Employee import, attendance, leave, payroll, policies, and workforce records are unavailable in this workspace.
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="title">
+        <h1 id="pageTitle">Company Onboarding Workspace</h1>
+        <p id="pageSubtitle">Loading persisted control-plane state...</p>
+      </div>
+      <div class="toolbar">
+        <select class="company-select" id="companySelector" aria-label="Select company"></select>
+        <button class="button secondary" id="refreshButton" type="button">Refresh</button>
+        <a class="button secondary" href="platform-control.html">Company Registry</a>
+      </div>
+    </header>
+
+    <main class="content" id="mainContent">
+      <div class="error-banner" id="errorBanner" role="alert"></div>
+      <div class="config-banner" id="configBanner" role="alert">
+        <strong>Invitation configuration required</strong>
+        <span id="configMessage"></span>
+      </div>
+
+      <div class="summary-grid" id="summaryGrid" aria-label="Onboarding summary"></div>
+
+      <section class="section" id="company-information">
+        <div class="section-head">
+          <div><h2>Company Information</h2><p>Durable company registry identity and operating defaults.</p></div>
+          <span class="status-pill" id="companyStatus">Not created</span>
+        </div>
+        <form id="companyForm" novalidate>
+          <div class="form-grid">
+            <div class="field"><label for="companyName">Company name</label><input id="companyName" name="companyName" autocomplete="organization" required><div class="field-error" data-error-for="companyName"></div></div>
+            <div class="field"><label for="tenantSlug">Tenant slug</label><input id="tenantSlug" name="tenantSlug" autocomplete="off" required><div class="field-error" data-error-for="tenantSlug"></div></div>
+            <div class="field"><label for="companyEmail">Company email</label><input id="companyEmail" name="companyEmail" type="email" autocomplete="email"><div class="field-error" data-error-for="companyEmail"></div></div>
+            <div class="field"><label for="companyPhone">Company phone</label><input id="companyPhone" name="companyPhone" type="tel" autocomplete="tel"><div class="field-error" data-error-for="companyPhone"></div></div>
+            <div class="field"><label for="companySize">Company size</label><select id="companySize" name="companySize"><option value="">Select size</option><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select><div class="field-error" data-error-for="companySize"></div></div>
+            <div class="field"><label for="planType">Plan</label><select id="planType" name="planType"><option value="enterprise">Enterprise</option><option value="pilot">Pilot</option></select><div class="field-error" data-error-for="planType"></div></div>
+            <div class="field"><label for="timezone">Timezone</label><input id="timezone" name="timezone" value="Asia/Kolkata" required><div class="field-error" data-error-for="timezone"></div></div>
+            <div class="field"><label for="country">Country</label><input id="country" name="country" value="India" required><div class="field-error" data-error-for="country"></div></div>
+          </div>
+          <div class="section-actions">
+            <button class="button" id="saveCompanyButton" type="submit">Save Company</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section" id="tenant-provisioning">
+        <div class="section-head">
+          <div><h2>Tenant Provisioning</h2><p>Audited transition from draft registry entry to provisioned tenant.</p></div>
+          <span class="status-pill" id="provisioningStatus">Waiting</span>
+        </div>
+        <div class="operation-log" id="provisioningLog" role="status" aria-live="polite">Create and save the company before provisioning.</div>
+        <div class="section-actions">
+          <button class="button" id="provisionButton" type="button" disabled>Provision Tenant</button>
+          <button class="button secondary" id="retryProvisionButton" type="button" disabled>Retry Provisioning</button>
+        </div>
+      </section>
+
+      <section class="section" id="company-owner">
+        <div class="section-head">
+          <div><h2>Company Owner</h2><p>Persist the tenant root administrator profile before sending authentication.</p></div>
+          <span class="status-pill" id="ownerStatus">Not created</span>
+        </div>
+        <form id="ownerForm" novalidate>
+          <div class="form-grid">
+            <div class="field"><label for="ownerName">Name</label><input id="ownerName" name="ownerName" autocomplete="name" required><div class="field-error" data-error-for="ownerName"></div></div>
+            <div class="field"><label for="ownerEmail">Email</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="email" required><div class="field-error" data-error-for="ownerEmail"></div></div>
+            <div class="field"><label for="ownerPhone">Phone</label><input id="ownerPhone" name="ownerPhone" type="tel" autocomplete="tel"><div class="field-error" data-error-for="ownerPhone"></div></div>
+            <div class="field"><label for="ownerRole">Role</label><select id="ownerRole" name="ownerRole" disabled><option value="super_admin">Company Owner (Super Admin)</option></select><div class="field-error" data-error-for="ownerRole"></div></div>
+            <div class="field"><label for="ownerDepartment">Department (optional)</label><input id="ownerDepartment" name="ownerDepartment" autocomplete="organization-title"><div class="field-error" data-error-for="ownerDepartment"></div></div>
+          </div>
+          <div class="section-actions">
+            <button class="button" id="saveOwnerButton" type="submit" disabled>Save Company Owner</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section" id="owner-invitation">
+        <div class="section-head">
+          <div><h2>Supabase Invitation</h2><p>Real Supabase Auth invitation delivery with persisted lifecycle and expiry.</p></div>
+          <span class="status-pill" id="invitationStatus">Not sent</span>
+        </div>
+        <div class="operation-log" id="invitationLog" role="status" aria-live="polite">Save a provisioned Company Owner profile before sending an invitation.</div>
+        <div class="section-actions">
+          <button class="button" id="sendInviteButton" type="button" disabled>Send Invitation</button>
+          <button class="button secondary" id="resendInviteButton" type="button" disabled>Resend Invitation</button>
+          <button class="button danger" id="revokeInviteButton" type="button" disabled>Revoke Invitation</button>
+        </div>
+      </section>
+
+      <section class="section" id="provision-status">
+        <div class="section-head">
+          <div><h2>Provision Status</h2><p>Completion signals calculated only from persisted registry, invitation, and lifecycle records.</p></div>
+          <span class="status-pill" id="completionStatus">0%</span>
+        </div>
+        <div class="checklist" id="statusChecklist"></div>
+      </section>
+
+      <section class="section" id="lifecycle-timeline">
+        <div class="section-head">
+          <div><h2>Lifecycle Timeline</h2><p>Control-plane events in persisted occurrence order.</p></div>
+          <span class="status-pill" id="timelineCount">0 events</span>
+        </div>
+        <div class="timeline" id="timeline"></div>
+      </section>
+
+      <section class="section" id="platform-handoff">
+        <div class="section-head">
+          <div><h2>Platform Handoff</h2><p>Company Owner activation transfers onboarding responsibility without Platform Owner tenant access.</p></div>
+          <span class="status-pill" id="handoffStatus">Pending</span>
+        </div>
+        <div class="handoff-grid">
+          <div class="handoff-state"><strong id="handoffTitle">Waiting for Company Owner</strong><span id="handoffMessage">The Company Owner must accept the secure invitation before tenant setup can begin.</span></div>
+          <div class="access-list">
+            <div class="access-row"><span>Monitor onboarding</span><b>Allowed</b></div>
+            <div class="access-row"><span>Provision tenant</span><b>Allowed</b></div>
+            <div class="access-row"><span>Open setup.html</span><b class="denied">Denied</b></div>
+            <div class="access-row"><span>Access tenant HR data</span><b class="denied">Denied</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="monitoring">
+        <div class="section-head">
+          <div><h2>Read-only Monitoring</h2><p>Non-sensitive company lifecycle, readiness, pilot, and activation signals.</p></div>
+          <span class="status-pill" id="monitoringStatus">Control-plane only</span>
+        </div>
+        <div class="summary-grid" id="monitoringGrid"></div>
+      </section>
+
+      <section class="section" id="audit">
+        <div class="section-head">
+          <div><h2>Platform Lifecycle Audit</h2><p>Actor, timestamp, tenant, state, reason, and correlation metadata.</p></div>
+          <span class="status-pill" id="auditCount">0 records</span>
+        </div>
+        <div class="table-wrap" id="auditTableWrap"><table><thead><tr><th>Event</th><th>Actor</th><th>Tenant</th><th>Lifecycle</th><th>Timestamp</th><th>Reason</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(function companyOnboardingWorkspace(){
+'use strict';
+
+const state={
+  actor:null,
+  companies:[],
+  company:null,
+  lifecycle:null,
+  invitations:[],
+  events:[],
+  readiness:null,
+  busy:false
+};
+
+const byId=id=>document.getElementById(id);
+const registry=()=>window.PlatformCompanyRegistryService;
+const loading=()=>window.ArthLoadingService||window.LoadingService;
+const actorContext=()=>({actor:state.actor});
+const currentCompanyId=()=>state.company?.companyId||'';
+
+function operationId(prefix){
+  let value='';
+  try{value=crypto.randomUUID();}catch(_error){}
+  if(!value)value=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+  return prefix+':'+value;
+}
+
+function textNode(tag,className,text){
+  const node=document.createElement(tag);
+  if(className)node.className=className;
+  node.textContent=String(text??'');
+  return node;
+}
+
+function clear(node){
+  while(node.firstChild)node.removeChild(node.firstChild);
+}
+
+function setError(message){
+  const box=byId('errorBanner');
+  box.textContent=String(message||'');
+  box.classList.toggle('visible',!!message);
+}
+
+function notify(type,message,title){
+  loading()?.notify?.(type,message,{title:title||'Company Onboarding'});
+}
+
+function setBusy(button,busy,label){
+  if(!button)return;
+  if(busy){
+    button.dataset.originalText=button.textContent;
+    button.textContent=label||'Working...';
+    button.disabled=true;
+  }else{
+    button.textContent=button.dataset.originalText||button.textContent;
+    delete button.dataset.originalText;
+  }
+}
+
+async function runAction(button,label,operation){
+  if(state.busy)return null;
+  state.busy=true;
+  setError('');
+  const token=loading()?.begin?.({title:label,label:label,delayMs:300,blocking:true});
+  setBusy(button,true,label);
+  try{
+    const result=await operation(token);
+    if(!result?.ok&&!result?.success)throw new Error(result?.message||result?.error||'Operation was not completed.');
+    loading()?.finish?.(token,{label:label,status:'completed'});
+    return result;
+  }catch(error){
+    loading()?.fail?.(token,error,error?.message||'Operation failed.');
+    setError(error?.message||String(error));
+    return null;
+  }finally{
+    state.busy=false;
+    setBusy(button,false);
+    applyActionAvailability();
+  }
+}
+
+function setFieldError(name,message){
+  const node=document.querySelector('[data-error-for="'+name+'"]');
+  if(node)node.textContent=message||'';
+}
+
+function clearFieldErrors(){
+  document.querySelectorAll('.field-error').forEach(node=>{node.textContent='';});
+}
+
+function validEmail(value){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value||'').trim().toLowerCase());
+}
+
+function validateCompany(){
+  clearFieldErrors();
+  const payload=companyPayload();
+  let valid=true;
+  if(payload.company_name.length<2){setFieldError('companyName','Enter a valid company name.');valid=false;}
+  if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(payload.tenant_slug)){setFieldError('tenantSlug','Use lowercase letters, numbers, and single hyphens.');valid=false;}
+  if(payload.company_email&&!validEmail(payload.company_email)){setFieldError('companyEmail','Enter a valid company email.');valid=false;}
+  if(!payload.timezone){setFieldError('timezone','Timezone is required.');valid=false;}
+  if(!payload.country){setFieldError('country','Country is required.');valid=false;}
+  return valid;
+}
+
+function validateOwner(){
+  clearFieldErrors();
+  const profile=ownerPayload();
+  let valid=true;
+  if(profile.name.length<2){setFieldError('ownerName','Enter the Company Owner name.');valid=false;}
+  if(!validEmail(profile.email)){setFieldError('ownerEmail','Enter a valid Company Owner email.');valid=false;}
+  if(profile.phone&&profile.phone.length>64){setFieldError('ownerPhone','Phone number is too long.');valid=false;}
+  return valid;
+}
+
+function companyPayload(){
+  const slug=byId('tenantSlug').value.trim().toLowerCase();
+  return {
+    company_name:byId('companyName').value.trim(),
+    tenant_slug:slug,
+    tenant_id:slug,
+    organization_id:slug,
+    company_email:byId('companyEmail').value.trim().toLowerCase(),
+    company_phone:byId('companyPhone').value.trim(),
+    company_size:byId('companySize').value,
+    plan_type:byId('planType').value,
+    timezone:byId('timezone').value.trim(),
+    country:byId('country').value.trim()
+  };
+}
+
+function ownerPayload(){
+  return {
+    name:byId('ownerName').value.trim(),
+    email:byId('ownerEmail').value.trim().toLowerCase(),
+    phone:byId('ownerPhone').value.trim(),
+    role:'super_admin',
+    department:byId('ownerDepartment').value.trim(),
+    persona:'company_owner'
+  };
+}
+
+function statusClass(value){
+  const normalized=String(value||'').toUpperCase();
+  if(['LIVE','ACTIVATED','ACCEPTED','PROVISIONED','READY_FOR_REVIEW','PILOT'].includes(normalized))return 'good';
+  if(['FAILED','REVOKED','CANCELLED','EXPIRED'].includes(normalized))return 'bad';
+  return 'warn';
+}
+
+function setPill(id,value){
+  const node=byId(id);
+  node.textContent=String(value||'Pending').replace(/_/g,' ');
+  node.className='status-pill '+statusClass(value);
+}
+
+function lifecycleRank(value){
+  return ['DRAFT','PROVISIONED','OWNER_INVITED','OWNER_ACCEPTED','CONFIGURING','ORG_STRUCTURE','POLICIES','HR_READY','EMPLOYEE_IMPORT','VALIDATION','READY_FOR_REVIEW','PILOT','LIVE'].indexOf(String(value||'').toUpperCase());
+}
+
+function eventExists(names){
+  const wanted=new Set(Array.isArray(names)?names:[names]);
+  return state.events.some(event=>wanted.has(event.event_type));
+}
+
+function latestInvitation(){
+  return state.invitations[0]||null;
+}
+
+function persistedStatuses(){
+  const lifecycleState=String(state.company?.lifecycleState||'DRAFT').toUpperCase();
+  const invitation=latestInvitation();
+  const invitationStatus=String(invitation?.status||'').toUpperCase();
+  const owner=state.company?.ownerProfile||{};
+  return [
+    {label:'Company Created',done:!!state.company?.createdAt||eventExists('CompanyCreated'),detail:state.company?.createdAt||'Registry record pending'},
+    {label:'Tenant Provisioned',done:lifecycleRank(lifecycleState)>=lifecycleRank('PROVISIONED')&&lifecycleState!=='FAILED',detail:lifecycleState},
+    {label:'Company Owner Created',done:!!(owner.name&&owner.email),detail:owner.email||'Owner profile pending'},
+    {label:'Invite Sent',done:['SENT','DELIVERED','OPENED','ACCEPTED','ACTIVATED'].includes(invitationStatus),detail:invitationStatus||'Not sent'},
+    {label:'Invite Accepted',done:['ACCEPTED','ACTIVATED'].includes(invitationStatus)||!!invitation?.accepted_at,detail:invitation?.accepted_at||'Pending'},
+    {label:'First Login',done:invitationStatus==='ACTIVATED',detail:invitationStatus==='ACTIVATED'?'Authenticated activation persisted':'Pending'},
+    {label:'Company Setup Started',done:eventExists('CompanySetupStarted')||lifecycleRank(lifecycleState)>=lifecycleRank('CONFIGURING'),detail:lifecycleState},
+    {label:'Company Setup Completed',done:eventExists('OrganizationStructureConfigured')||lifecycleRank(lifecycleState)>=lifecycleRank('ORG_STRUCTURE'),detail:lifecycleState}
+  ];
+}
+
+function renderMetrics(containerId,items){
+  const container=byId(containerId);
+  clear(container);
+  items.forEach(item=>{
+    const card=document.createElement('div');
+    card.className='metric '+(item.state||'');
+    card.appendChild(textNode('span','',item.label));
+    card.appendChild(textNode('strong','',item.value));
+    container.appendChild(card);
+  });
+}
+
+function renderCompanySelector(){
+  const select=byId('companySelector');
+  clear(select);
+  const createOption=document.createElement('option');
+  createOption.value='';
+  createOption.textContent='New company';
+  select.appendChild(createOption);
+  state.companies.forEach(company=>{
+    const option=document.createElement('option');
+    option.value=company.companyId;
+    option.textContent=company.companyName+' - '+company.lifecycleState;
+    select.appendChild(option);
+  });
+  select.value=currentCompanyId();
+}
+
+function populateForms(){
+  const company=state.company;
+  if(!company){
+    byId('companyForm').reset();
+    byId('timezone').value='Asia/Kolkata';
+    byId('country').value='India';
+    byId('planType').value='enterprise';
+    byId('ownerForm').reset();
+    byId('ownerRole').value='super_admin';
+    byId('tenantSlug').disabled=false;
+    return;
+  }
+  byId('companyName').value=company.companyName||'';
+  byId('tenantSlug').value=company.tenantSlug||'';
+  byId('companyEmail').value=company.companyEmail||'';
+  byId('companyPhone').value=company.companyPhone||'';
+  byId('companySize').value=company.companySize||'';
+  byId('planType').value=company.planType||'enterprise';
+  byId('timezone').value=company.timezone||'Asia/Kolkata';
+  byId('country').value=company.country||'India';
+  byId('tenantSlug').disabled=String(company.lifecycleState||'').toUpperCase()!=='DRAFT';
+  const owner=company.ownerProfile||{};
+  byId('ownerName').value=owner.name||'';
+  byId('ownerEmail').value=owner.email||company.ownerEmail||'';
+  byId('ownerPhone').value=owner.phone||'';
+  byId('ownerRole').value='super_admin';
+  byId('ownerDepartment').value=owner.department||'';
+}
+
+function renderChecklist(){
+  const statuses=persistedStatuses();
+  const container=byId('statusChecklist');
+  clear(container);
+  statuses.forEach(status=>{
+    const item=document.createElement('div');
+    item.className='check-item '+(status.done?'done':'');
+    item.appendChild(textNode('div','check-icon',status.done?'OK':'-'));
+    const copy=document.createElement('div');
+    copy.appendChild(textNode('strong','',status.label));
+    copy.appendChild(textNode('span','',status.detail));
+    item.appendChild(copy);
+    container.appendChild(item);
+  });
+  const completed=statuses.filter(item=>item.done).length;
+  const percent=Math.round((completed/statuses.length)*100);
+  setPill('completionStatus',percent+'%');
+}
+
+function formatTime(value){
+  if(!value)return '';
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?String(value):date.toLocaleString();
+}
+
+function renderTimeline(){
+  const container=byId('timeline');
+  clear(container);
+  const events=state.events.slice().sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
+  byId('timelineCount').textContent=events.length+' event'+(events.length===1?'':'s');
+  if(!events.length){
+    container.appendChild(textNode('div','empty','No persisted lifecycle events are available.'));
+    return;
+  }
+  events.forEach(event=>{
+    const row=document.createElement('div');
+    row.className='timeline-row';
+    row.appendChild(textNode('div','timeline-time',formatTime(event.occurred_at)));
+    const rail=document.createElement('div');
+    rail.className='timeline-rail';
+    rail.appendChild(textNode('span','timeline-dot',''));
+    row.appendChild(rail);
+    const copy=document.createElement('div');
+    copy.className='timeline-copy';
+    copy.appendChild(textNode('strong','',String(event.event_type||'Lifecycle event').replace(/([a-z])([A-Z])/g,'$1 $2')));
+    copy.appendChild(textNode('span','',(event.reason||'Recorded lifecycle event')+' | '+(event.previous_state||'-')+' to '+(event.new_state||'-')));
+    row.appendChild(copy);
+    container.appendChild(row);
+  });
+}
+
+function renderAudit(){
+  const body=byId('auditRows');
+  clear(body);
+  const events=state.events.slice().sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
+  byId('auditCount').textContent=events.length+' record'+(events.length===1?'':'s');
+  if(!events.length){
+    const row=document.createElement('tr');
+    const cell=document.createElement('td');
+    cell.colSpan=6;
+    cell.textContent='No persisted platform lifecycle audit records are available.';
+    row.appendChild(cell);
+    body.appendChild(row);
+    return;
+  }
+  events.forEach(event=>{
+    const row=document.createElement('tr');
+    [
+      event.event_type||'',
+      (event.actor_role||'')+(event.actor_user_id?' / '+event.actor_user_id:''),
+      event.tenant_id||'',
+      (event.previous_state||'-')+' to '+(event.new_state||'-'),
+      formatTime(event.occurred_at),
+      event.reason||''
+    ].forEach(value=>row.appendChild(textNode('td','',value)));
+    body.appendChild(row);
+  });
+}
+
+function renderHandoff(){
+  const invitation=latestInvitation();
+  const activated=String(invitation?.status||'').toUpperCase()==='ACTIVATED';
+  const accepted=activated||['ACCEPTED'].includes(String(invitation?.status||'').toUpperCase())||!!invitation?.accepted_at;
+  setPill('handoffStatus',accepted?'Transferred':'Pending');
+  byId('handoffTitle').textContent=accepted?'Company Owner control is active':'Waiting for Company Owner';
+  byId('handoffMessage').textContent=accepted
+    ?'The Company Owner now signs in through the company login. Incomplete onboarding is routed to setup.html; Platform Owner access remains control-plane only.'
+    :'The Company Owner must accept the secure Supabase invitation before tenant setup can begin.';
+}
+
+function renderConfiguration(){
+  const cfg=window.supabaseClientService?.readConfig?.()||{};
+  const missing=[];
+  if(!cfg.SUPABASE_URL)missing.push('SUPABASE_URL');
+  if(!(cfg.SUPABASE_PUBLISHABLE_KEY||cfg.SUPABASE_ANON_KEY))missing.push('SUPABASE_PUBLISHABLE_KEY');
+  if(!cfg.AUTH_INVITE_REDIRECT_URL)missing.push('AUTH_INVITE_REDIRECT_URL');
+  if(!cfg.flags?.USE_SUPABASE_INVITES)missing.push('USE_SUPABASE_INVITES');
+  const available=missing.length===0&&window.authInviteService?.isCompanyOwnerInviteEnabled?.();
+  const banner=byId('configBanner');
+  banner.classList.toggle('visible',!available);
+  byId('configMessage').textContent=available
+    ?''
+    :'Missing or disabled: '+(missing.length?missing.join(', '):'invite-company-owner service integration')+'. No invitation will be simulated.';
+  return !!available;
+}
+
+function render(){
+  const company=state.company;
+  const lifecycleState=company?.lifecycleState||'DRAFT';
+  const invitation=latestInvitation();
+  const invitationStatus=invitation?.status||'NOT_SENT';
+  byId('pageTitle').textContent=company?company.companyName:'New Company';
+  byId('pageSubtitle').textContent=company
+    ?company.tenantSlug+' | '+lifecycleState.replace(/_/g,' ')
+    :'Create a durable company registry entry to begin onboarding.';
+  setPill('companyStatus',company?'Created':'Not created');
+  setPill('provisioningStatus',lifecycleState);
+  setPill('ownerStatus',company?.ownerProfile?.email?'Created':'Not created');
+  setPill('invitationStatus',invitationStatus);
+  renderCompanySelector();
+  populateForms();
+  renderMetrics('summaryGrid',[
+    {label:'Lifecycle',value:lifecycleState,state:statusClass(lifecycleState)},
+    {label:'Setup progress',value:(company?.progress||0)+'%',state:Number(company?.progress||0)>=90?'good':'warn'},
+    {label:'Owner invite',value:invitationStatus,state:statusClass(invitationStatus)},
+    {label:'Pilot',value:lifecycleState==='PILOT'?'Active':'Not active',state:lifecycleState==='PILOT'?'good':'warn'},
+    {label:'Production',value:lifecycleState==='LIVE'?'Live':'Not live',state:lifecycleState==='LIVE'?'good':'warn'}
+  ]);
+  renderMetrics('monitoringGrid',[
+    {label:'Activation',value:invitationStatus},
+    {label:'Setup completion',value:(company?.progress||0)+'%'},
+    {label:'Readiness',value:company?.readinessStatus||'Not submitted'},
+    {label:'Pilot status',value:lifecycleState==='PILOT'?'Pilot active':'Not active'},
+    {label:'Live status',value:lifecycleState==='LIVE'?'LIVE':'Not live'}
+  ]);
+  byId('provisioningLog').textContent=company
+    ?lifecycleState==='DRAFT'
+      ?'Company registry entry is saved. Tenant provisioning is ready.'
+      :lifecycleState==='FAILED'
+        ?'The persisted lifecycle is FAILED. Review the displayed failure and retry provisioning.'
+        :'Persisted lifecycle: '+lifecycleState+'.'
+    :'Create and save the company before provisioning.';
+  byId('invitationLog').textContent=invitation
+    ?'Persisted invitation '+invitation.status+'. Sent '+formatTime(invitation.sent_at)+(invitation.expires_at?' | Expires '+formatTime(invitation.expires_at):'')
+    :'Save a provisioned Company Owner profile before sending an invitation.';
+  renderChecklist();
+  renderTimeline();
+  renderHandoff();
+  renderAudit();
+  renderConfiguration();
+  applyActionAvailability();
+}
+
+function applyActionAvailability(){
+  const company=state.company;
+  const lifecycleState=String(company?.lifecycleState||'').toUpperCase();
+  const owner=company?.ownerProfile||{};
+  const invitation=latestInvitation();
+  const invitationStatus=String(invitation?.status||'').toUpperCase();
+  const configReady=renderConfiguration();
+  byId('provisionButton').disabled=state.busy||!company||lifecycleState!=='DRAFT';
+  byId('retryProvisionButton').disabled=state.busy||!company||lifecycleState!=='FAILED';
+  byId('saveCompanyButton').disabled=state.busy;
+  byId('saveOwnerButton').disabled=state.busy||!company||!['PROVISIONED','OWNER_INVITED'].includes(lifecycleState);
+  byId('sendInviteButton').disabled=state.busy||!configReady||!company||lifecycleState!=='PROVISIONED'||!(owner.name&&owner.email);
+  byId('resendInviteButton').disabled=state.busy||!configReady||!invitation||!['SENT','DELIVERED','OPENED','EXPIRED','FAILED','REVOKED','CANCELLED'].includes(invitationStatus);
+  byId('revokeInviteButton').disabled=state.busy||!configReady||!invitation||!['SENT','DELIVERED','OPENED','EXPIRED','FAILED'].includes(invitationStatus);
+}
+
+async function refreshWorkspace(requestedCompanyId){
+  setError('');
+  const result=await registry().loadRegistry(actorContext());
+  if(!result?.ok)throw new Error(result?.message||result?.error||'Company registry could not be loaded.');
+  state.companies=Array.from(result.tenants||[]);
+  const companyId=requestedCompanyId===undefined
+    ?new URLSearchParams(location.search).get('companyId')||currentCompanyId()
+    :requestedCompanyId;
+  if(!companyId){
+    state.company=null;
+    state.lifecycle=null;
+    state.invitations=[];
+    state.events=[];
+    state.readiness=null;
+    render();
+    return;
+  }
+  const workspace=registry().getCompanyWorkspace(companyId,actorContext());
+  if(!workspace?.ok)throw new Error(workspace?.message||'Company onboarding workspace is unavailable.');
+  state.company=workspace.company;
+  state.lifecycle=workspace.lifecycle;
+  state.invitations=Array.from(workspace.invitations||[]);
+  state.events=Array.from(workspace.events||[]);
+  state.readiness=workspace.readiness||null;
+  const url=new URL(location.href);
+  url.searchParams.set('companyId',companyId);
+  history.replaceState(null,document.title,url.pathname+url.search);
+  render();
+}
+
+async function handleCompanySave(event){
+  event.preventDefault();
+  if(!validateCompany())return;
+  const button=byId('saveCompanyButton');
+  const result=await runAction(button,state.company?'Saving...':'Creating...',async token=>{
+    loading()?.update?.(token,{label:'Validating company registry data...'});
+    const payload=companyPayload();
+    if(!state.company){
+      loading()?.update?.(token,{label:'Creating durable company registry record...'});
+      return registry().createCompanyDraft(payload,{
+        context:actorContext(),
+        idempotencyKey:operationId('company-create'),
+        correlationId:operationId('company-onboarding')
+      });
+    }
+    loading()?.update?.(token,{label:'Saving company registry changes...'});
+    return registry().updateCompany(currentCompanyId(),payload,{
+      context:actorContext(),
+      expectedRevision:state.company.revision,
+      changeType:'COMPANY_INFORMATION',
+      idempotencyKey:operationId('company-update')
+    });
+  });
+  if(!result)return;
+  const companyId=result.tenant?.companyId||result.company?.id||currentCompanyId();
+  await refreshWorkspace(companyId);
+  notify('success',result.message,'Company saved');
+}
+
+async function handleProvision(retry){
+  const button=retry?byId('retryProvisionButton'):byId('provisionButton');
+  const result=await runAction(button,retry?'Retrying...':'Provisioning...',async token=>{
+    byId('provisioningLog').textContent='Checking persisted lifecycle and tenant identity...';
+    loading()?.update?.(token,{label:'Checking tenant identity...'});
+    await loading()?.yieldToBrowser?.();
+    byId('provisioningLog').textContent='Requesting audited tenant provisioning transaction...';
+    loading()?.update?.(token,{label:'Provisioning tenant...'});
+    return retry
+      ?registry().retryProvisioning(currentCompanyId(),{context:actorContext(),idempotencyKey:operationId('tenant-provision-retry')})
+      :registry().provisionCompany(currentCompanyId(),{context:actorContext(),idempotencyKey:operationId('tenant-provision')});
+  });
+  if(!result)return;
+  byId('provisioningLog').textContent='Tenant provisioning persisted. Refreshing lifecycle...';
+  await refreshWorkspace(currentCompanyId());
+  notify('success',result.message,'Tenant provisioned');
+}
+
+async function handleOwnerSave(event){
+  event.preventDefault();
+  if(!validateOwner())return;
+  const result=await runAction(byId('saveOwnerButton'),'Saving owner...',async token=>{
+    loading()?.update?.(token,{label:'Persisting Company Owner profile...'});
+    return registry().saveCompanyOwnerProfile(currentCompanyId(),ownerPayload(),{
+      context:actorContext(),
+      expectedRevision:state.company.revision,
+      idempotencyKey:operationId('company-owner-profile')
+    });
+  });
+  if(!result)return;
+  await refreshWorkspace(currentCompanyId());
+  notify('success',result.message,'Company Owner saved');
+}
+
+async function handleInvitation(action){
+  const invitation=latestInvitation();
+  const buttons={
+    send:byId('sendInviteButton'),
+    resend:byId('resendInviteButton'),
+    revoke:byId('revokeInviteButton')
+  };
+  if(action==='revoke'&&!confirm('Revoke this pending Company Owner invitation? The unconfirmed Supabase Auth user will be removed and the action will be audited.'))return;
+  const result=await runAction(buttons[action],action==='send'?'Sending...':action==='resend'?'Resending...':'Revoking...',async token=>{
+    byId('invitationLog').textContent=action==='revoke'
+      ?'Verifying and revoking the pending Supabase Auth invitation...'
+      :'Requesting a real Supabase Auth invitation email...';
+    loading()?.update?.(token,{label:action==='revoke'?'Revoking invitation...':'Sending Supabase invitation...'});
+    const profile=ownerPayload();
+    const context=actorContext();
+    if(action==='send')return authInviteService.sendCompanyOwnerInvite(currentCompanyId(),{
+      ...profile,
+      idempotencyKey:operationId('owner-invite')
+    },context);
+    if(action==='resend')return authInviteService.resendCompanyOwnerInvite(currentCompanyId(),invitation.id,{
+      ...profile,
+      idempotencyKey:operationId('owner-invite-resend')
+    },context);
+    return authInviteService.revokeCompanyOwnerInvite(currentCompanyId(),invitation.id,{
+      reason:'Revoked from the Platform Owner company onboarding workspace.',
+      idempotencyKey:operationId('owner-invite-revoke')
+    },context);
+  });
+  if(!result)return;
+  await refreshWorkspace(currentCompanyId());
+  notify('success',result.message||('Invitation '+action+' completed.'),'Company Owner invitation');
+}
+
+async function initialize(){
+  try{
+    const authDecision=await window.ArthAuthGuard.ready;
+    if(!authDecision?.authorized)return;
+    state.actor=window.authService?.getCurrentUser?.()||authDecision.user;
+    const governance=window.PlatformGovernanceService?.authorizePlatformGovernanceAccess?.(
+      state.actor,
+      'company_onboarding_workspace_access',
+      {route:'company-setup.html'}
+    );
+    if(governance&&!governance.allowed)throw new Error('Platform Owner authorization is required.');
+    if(!registry()?.isEnabled?.())throw new Error('Durable platform company registry is disabled.');
+    await runAction(byId('refreshButton'),'Loading...',async()=>{
+      await refreshWorkspace();
+      return {ok:true};
+    });
+  }catch(error){
+    setError(error?.message||String(error));
+  }
+}
+
+byId('companyForm').addEventListener('submit',handleCompanySave);
+byId('ownerForm').addEventListener('submit',handleOwnerSave);
+byId('provisionButton').addEventListener('click',()=>handleProvision(false));
+byId('retryProvisionButton').addEventListener('click',()=>handleProvision(true));
+byId('sendInviteButton').addEventListener('click',()=>handleInvitation('send'));
+byId('resendInviteButton').addEventListener('click',()=>handleInvitation('resend'));
+byId('revokeInviteButton').addEventListener('click',()=>handleInvitation('revoke'));
+byId('refreshButton').addEventListener('click',()=>runAction(byId('refreshButton'),'Refreshing...',async()=>{await refreshWorkspace(currentCompanyId());return {ok:true};}));
+byId('companySelector').addEventListener('change',event=>{
+  const companyId=event.target.value;
+  runAction(byId('refreshButton'),'Loading...',async()=>{await refreshWorkspace(companyId);return {ok:true};});
+});
+byId('companyName').addEventListener('input',event=>{
+  if(state.company||byId('tenantSlug').value.trim())return;
+  byId('tenantSlug').value=registry()?.normalizeTenantSlug?.(event.target.value)||'';
+});
+
+initialize();
+}());
+</script>
+</body>
+</html>

@@ -28,9 +28,10 @@
         'payroll-configuration-center.html': ['super_admin', 'admin', 'hr_head'],
         'performance-testing-center.html': ['platform_owner', 'super_admin', 'admin'],
         'platform-control.html': ['platform_owner'],
+        'company-setup.html': ['platform_owner'],
         'qa-validation.html': ['platform_owner', 'super_admin', 'admin'],
         'security-validation-center.html': ['platform_owner', 'super_admin'],
-        'setup.html': ['platform_owner', 'super_admin'],
+        'setup.html': ['super_admin'],
         'shift-roster-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
         'super-admin.html': ['super_admin'],
         'working-calendar-center.html': ['super_admin', 'admin', 'hr', 'hr_head']
@@ -50,13 +51,6 @@
 
     function policyFor(pathname) {
         return ROUTE_POLICIES[pageName(pathname)] || null;
-    }
-
-    function runtimePolicyFor(route, configuredRoles) {
-        if (route !== 'setup.html') return configuredRoles;
-        return global.supabaseClientService?.isEnabled?.('USE_COMPANY_SETUP_ORCHESTRATION')
-            ? ['super_admin']
-            : ['platform_owner'];
     }
 
     function isPublic(pathname) {
@@ -129,9 +123,7 @@
     function loginUrl(code) {
         const currentPage = pageName();
         const allowedRoles = policyFor(currentPage) || [];
-        const legacyPlatformSetup = currentPage === 'setup.html'
-            && !global.supabaseClientService?.isEnabled?.('USE_COMPANY_SETUP_ORCHESTRATION');
-        const loginPage = (allowedRoles.length === 1 && allowedRoles[0] === 'platform_owner') || legacyPlatformSetup
+        const loginPage = allowedRoles.length === 1 && allowedRoles[0] === 'platform_owner'
             ? 'platform-login.html'
             : 'ArthHRMS.html';
         return `${loginPage}?reason=${encodeURIComponent(code || 'session_required')}&returnTo=${encodeURIComponent(currentPage)}`;
@@ -167,7 +159,6 @@
         }
         try {
             await ensureRuntime();
-            roles = runtimePolicyFor(route, roles);
             const decision = await global.authService.authorizePage(roles);
             if (!decision.authenticated) {
                 redirectToLogin(decision.code);

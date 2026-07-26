@@ -222,11 +222,22 @@ for (const servicePath of [
   check(integrationSource.includes('PlatformAggregateIntegrationService?.getProjection'), `${servicePath} does not consume the durable aggregate projection.`);
 }
 const platformControlSource = await read('platform-control.html');
+const platformCompanySetupSource = await read('company-setup.html');
 check(platformControlSource.includes('services/platformAggregateIntegrationService.js'), 'Platform Control does not load durable platform aggregates.');
 check(platformControlSource.includes('platformAggregateSvc()?.load'), 'Platform Control does not initialize aggregate integrations after authentication.');
-check(platformControlSource.includes("label:'Continue Setup',wizard:true"), 'Company Registry lacks the CREATED-to-Company-Setup action.');
+check(platformControlSource.includes("label:'Continue Setup',focus:'company-information'"), 'Company Registry lacks the CREATED-to-Platform-Onboarding action.');
 check(platformControlSource.includes('_tenantRegistryRows.get(registryKey)'), 'Company Registry actions are not bound to the rendered tenant identity.');
 check(platformControlSource.includes('tenantRegistryKeys(tenant)'), 'Company Registry does not normalize durable and compatibility tenant identities.');
+check(platformControlSource.includes("new URL('company-setup.html',location.href)"), 'Company Registry does not open the Platform Owner onboarding workspace.');
+check(platformControlSource.includes('resolveRegistryTenantByKey'), 'Company Registry lacks durable lookup recovery for stale rendered rows.');
+check(!platformControlSource.includes('reason=company_handoff'), 'Platform Control retains the obsolete tenant impersonation handoff.');
+check(platformCompanySetupSource.includes('services/platformCompanyRegistryService.js'), 'Platform onboarding workspace lacks the durable registry service.');
+check(platformCompanySetupSource.includes('services/authInviteService.js'), 'Platform onboarding workspace lacks the Supabase invitation boundary.');
+check(platformCompanySetupSource.includes('createCompanyDraft'), 'Platform onboarding workspace cannot create durable company drafts.');
+check(platformCompanySetupSource.includes('provisionCompany'), 'Platform onboarding workspace cannot provision tenants.');
+check(platformCompanySetupSource.includes('sendCompanyOwnerInvite'), 'Platform onboarding workspace cannot send Company Owner invitations.');
+check(platformCompanySetupSource.includes('getCompanyWorkspace'), 'Platform onboarding workspace cannot monitor persisted lifecycle state.');
+check(!/location\.href\s*=\s*['"]setup\.html/.test(platformCompanySetupSource), 'Platform Owner onboarding workspace can enter tenant setup.');
 check(platformControlSource.includes("'Enterprise Operations Center':'Operations Summary'"), 'Platform Operations lacks focused lazy initialization.');
 check(platformControlSource.includes('tasks=preferred===summary?[summary]:[summary,preferred]'), 'Platform module navigation still schedules every center.');
 check(platformControlSource.includes('const renderKey=`${resolvedPanelId}:${resolvedHeading}`'), 'Platform render cache is not isolated by module.');
@@ -250,6 +261,9 @@ check(companyAdminSource.includes('href="go-live-readiness-center.html"'), 'Comp
 const authGuardSource = await read('services/authGuard.js');
 check(/'go-live-certification-center\.html': \['platform_owner'\]/.test(authGuardSource), 'Final certification is not isolated to the Platform Owner.');
 check(/'go-live-readiness-center\.html': \['super_admin'\]/.test(authGuardSource), 'Company readiness is not isolated to the Company Owner.');
+check(/'company-setup\.html': \['platform_owner'\]/.test(authGuardSource), 'Platform onboarding workspace is not isolated to the Platform Owner.');
+check(/'setup\.html': \['super_admin'\]/.test(authGuardSource), 'Tenant setup is not isolated to the Company Owner.');
+check(!/'setup\.html': \[[^\]]*platform_owner/.test(authGuardSource), 'Platform Owner retains access to tenant setup.');
 for (const [page, mount] of [
   ['super-admin.html', 'saLifecycleExperience'],
   ['hr-dashboard.html', 'hrLifecycleExperience'],

@@ -33,7 +33,8 @@ assert.match(sql, /CompanySetupStepSaved/);
 assert.match(sql, /OrganizationStructureConfigured/);
 assert.doesNotMatch(sql, /user_metadata/i);
 
-assert.match(guard, /'setup\.html': \['platform_owner', 'super_admin'\]/);
+assert.match(guard, /'setup\.html': \['super_admin'\]/);
+assert.doesNotMatch(guard, /legacyPlatformSetup/);
 assert.match(setupPage, /services\/companySetupOrchestrationService\.js/);
 assert.match(setupPage, /await orchestration\(\)\.saveStep/);
 assert.match(setupPage, /await orchestration\(\)\.completeCoreSetup/);
