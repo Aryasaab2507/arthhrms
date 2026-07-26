@@ -26296,6 +26296,25 @@ function tenantRegistryActionsFor(tenant){
     if(['LIVE','PRODUCTION_ACTIVE'].includes(state))return [{kind:'company-admin',label:'Open Company',dashboard:true}];
     return [{kind:'company-admin',label:'Company Administration',focus:'companyProfile'}];
 }
+function tenantRegistryRuntimeTrace(event,details){
+    let enabled=false;
+    try{
+        enabled=new URLSearchParams(location.search).get('registryDebug')==='1';
+    }catch(error){
+        enabled=false;
+    }
+    if(!enabled||!globalThis.console?.info)return;
+    globalThis.console.info('[ArthHRMS Tenant Registry]',event,details);
+}
+function tenantRegistryTraceSnapshot(tenant){
+    return {
+        companyId:String(tenant?.companyId||tenant?.id||''),
+        tenantId:String(tenant?.tenantId||tenant?.tenant_id||''),
+        tenantSlug:String(tenant?.tenantSlug||tenant?.tenant_slug||tenant?.slug||''),
+        lifecycleState:String(tenant?.lifecycleState||tenant?.deploymentHealth||'CREATED').trim().toUpperCase(),
+        onboardingStage:String(tenant?.onboardingStage||tenant?.onboarding_stage||'setup_only')
+    };
+}
 function tenantRegistryKeys(tenant){
     return [...new Set([
         tenant?.companyId,
@@ -26312,18 +26331,51 @@ function tenantRegistryKey(tenant){
 }
 function renderTenantRegistryActions(tenant){
     const key=tenantRegistryKey(tenant);
-    if(!key)return '<span class="muted">Identity unavailable</span>';
+    if(!key){
+        tenantRegistryRuntimeTrace('render-skipped',{
+            reason:'identity-unavailable',
+            company:tenantRegistryTraceSnapshot(tenant)
+        });
+        return '<span class="muted">Identity unavailable</span>';
+    }
     tenantRegistryKeys(tenant).forEach(identity=>_tenantRegistryRows.set(identity,tenant));
     const encodedKey=encodeURIComponent(key);
-    return `<div class="action-row">${tenantRegistryActionsFor(tenant).map((action,index)=>`<button class="btn mini ${index?'secondary':''}" type="button" onclick="openTenantRegistryAction('${encodedKey}','${action.kind}')">${esc(action.label)}</button>`).join('')}</div>`;
+    const actions=tenantRegistryActionsFor(tenant);
+    tenantRegistryRuntimeTrace('render-actions',{
+        company:tenantRegistryTraceSnapshot(tenant),
+        lookupKey:key,
+        generatedActions:actions.map(action=>({kind:action.kind,label:action.label}))
+    });
+    return `<div class="action-row" data-registry-renderer="multi-action-v2" data-registry-key="${esc(encodedKey)}">${actions.map((action,index)=>`<button class="btn mini ${index?'secondary':''}" type="button" data-registry-action="${esc(action.kind)}" onclick="openTenantRegistryAction('${encodedKey}','${action.kind}')">${esc(action.label)}</button>`).join('')}</div>`;
 }
 function registryTenantByKey(registryKey){
     const direct=_tenantRegistryRows.get(registryKey);
-    if(direct)return direct;
+    if(direct){
+        tenantRegistryRuntimeTrace('lookup-hit',{
+            source:'rendered-map',
+            lookupKey:registryKey,
+            company:tenantRegistryTraceSnapshot(direct)
+        });
+        return direct;
+    }
     const response=tenantProvisioningSvc()?.getTenantProvisioningView?.({actor:currentUser});
     const serviceTenant=(response?.tenants||[]).find(tenant=>tenantRegistryKeys(tenant).includes(registryKey));
-    if(serviceTenant)return serviceTenant;
-    return (platformView()?.tenants||[]).find(tenant=>tenantRegistryKeys(tenant).includes(registryKey))||null;
+    if(serviceTenant){
+        tenantRegistryRuntimeTrace('lookup-hit',{
+            source:'provisioning-service',
+            lookupKey:registryKey,
+            company:tenantRegistryTraceSnapshot(serviceTenant)
+        });
+        return serviceTenant;
+    }
+    const platformTenant=(platformView()?.tenants||[]).find(tenant=>tenantRegistryKeys(tenant).includes(registryKey))||null;
+    tenantRegistryRuntimeTrace(platformTenant?'lookup-hit':'lookup-miss',{
+        source:'platform-view',
+        lookupKey:registryKey,
+        renderedKeys:[..._tenantRegistryRows.keys()].slice(0,20),
+        company:platformTenant?tenantRegistryTraceSnapshot(platformTenant):null
+    });
+    return platformTenant;
 }
 async function ensureDurableRegistryTenant(tenant){
     const durable=window.PlatformCompanyRegistryService||window.platformCompanyRegistryService;
@@ -26387,6 +26439,10 @@ async function handoffToCompanyAdministration(tenant,action){
 }
 async function openTenantRegistryAction(encodedRegistryKey,kind){
     const registryKey=decodeURIComponent(String(encodedRegistryKey||''));
+    tenantRegistryRuntimeTrace('action-click',{
+        lookupKey:registryKey,
+        requestedAction:kind
+    });
     const tenant=registryTenantByKey(registryKey);
     if(!tenant){toast('Company registry entry is unavailable');return;}
     const action=tenantRegistryActionsFor(tenant).find(item=>item.kind===kind);
