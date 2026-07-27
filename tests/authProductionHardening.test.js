@@ -114,12 +114,20 @@ async function main() {
   const htmlPages = fs.readdirSync(root).filter(file => file.endsWith('.html')).sort();
   const protectedPages = htmlPages.filter(file => !publicPages.has(file));
   const policies = global.ArthAuthGuard.ROUTE_POLICIES;
+  const guardSource = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
   assert.deepEqual(Object.keys(policies).sort(), protectedPages.map(file => file.toLowerCase()).sort(), 'every protected HTML route must have exactly one role policy');
   protectedPages.forEach(file => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /services\/authGuard\.js/, `${file} must load the shared guard`);
-    assert.match(source, /services\/supabaseClient\.js/, `${file} must load the Supabase runtime`);
-    assert.match(source, /services\/authService\.js/, `${file} must load enterprise authentication`);
+    if (file === 'setup.html') {
+      assert.match(guardSource, /services\/supabaseClient\.js/, 'the shared guard must load the Supabase runtime for setup.html');
+      assert.match(guardSource, /services\/authService\.js/, 'the shared guard must load enterprise authentication for setup.html');
+      assert.doesNotMatch(source, /<script src="services\/supabaseClient\.js"/, 'setup.html must not initialize a duplicate Supabase client');
+      assert.doesNotMatch(source, /<script src="services\/authService\.js"/, 'setup.html must not initialize duplicate authentication');
+    } else {
+      assert.match(source, /services\/supabaseClient\.js/, `${file} must load the Supabase runtime`);
+      assert.match(source, /services\/authService\.js/, `${file} must load enterprise authentication`);
+    }
   });
 
   const platformControlSource = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');

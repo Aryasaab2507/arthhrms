@@ -45,7 +45,12 @@
         workspace: null,
         company: null,
         loading: null,
-        error: ''
+        error: '',
+        audit: {
+            pending: 0,
+            delivered: 0,
+            lastError: ''
+        }
     };
     var mutationQueue = Promise.resolve();
 
@@ -150,6 +155,38 @@
         return result;
     }
 
+    function delay(milliseconds) {
+        return new Promise(function wait(resolve) {
+            global.setTimeout(resolve, milliseconds);
+        });
+    }
+
+    async function flushAuditQueue(context) {
+        var access = requireCompanyOwner(context);
+        if (!access.ok || !enabled()) return access;
+        var supabase = client();
+        if (!supabase?.rpc) return output(false, 'SUPABASE_UNAVAILABLE', 'Supabase audit delivery is unavailable.');
+        try {
+            var response = await supabase.rpc('arth_flush_company_setup_audit', { p_limit: 25 });
+            if (response.error) throw response.error;
+            cache.audit.pending = Number(response.data?.pending || 0);
+            cache.audit.delivered = Number(response.data?.delivered || 0);
+            cache.audit.lastError = '';
+            return output(true, 'COMPANY_SETUP_AUDIT_FLUSHED', cache.audit.pending
+                ? 'Setup audit delivery remains queued.'
+                : 'Setup audit delivery is current.', {
+                audit: Object.assign({}, cache.audit)
+            });
+        } catch (error) {
+            cache.audit.lastError = String(error?.message || error || 'Audit delivery failed.');
+            return output(false, 'COMPANY_SETUP_AUDIT_QUEUED', 'Setup saved. Audit delivery will retry automatically.', {
+                category: 'AUDIT',
+                retryable: true,
+                audit: Object.assign({}, cache.audit)
+            });
+        }
+    }
+
     function completedSet() {
         return new Set(Array.isArray(cache.workspace?.completed_steps) ? cache.workspace.completed_steps : []);
     }
@@ -221,6 +258,7 @@
                 cache.workspace = response.data.workspace;
                 cache.company = response.data.company || null;
                 cache.error = '';
+                flushAuditQueue({ actor: access.actor });
                 return setupHome();
             } catch (error) {
                 cache.error = error?.message || String(error);
@@ -249,27 +287,40 @@
                 if (!loaded.ok) return loaded;
             }
             var supabase = client();
-            try {
-                var response = await supabase.rpc('arth_save_company_setup_step', {
-                    p_step_key: stepKey,
-                    p_payload: payload,
-                    p_expected_revision: Number(input?.expectedRevision ?? cache.workspace.revision ?? 0),
-                    p_idempotency_key: String(input?.idempotencyKey || operationId('setup-step')),
-                    p_complete: input?.complete !== false
-                });
-                if (response.error) throw response.error;
-                if (!response.data?.ok || !response.data?.workspace) throw new Error('Company setup save was not confirmed.');
-                cache.workspace = response.data.workspace;
-                return output(true, 'COMPANY_SETUP_STEP_SAVED', input?.complete === false
-                    ? 'Company setup draft saved.'
-                    : 'Company setup step completed.', {
-                    workspace: cache.workspace,
-                    version: response.data.version || null,
-                    home: setupHome()
-                });
-            } catch (error) {
-                return classifiedError(error, 'COMPANY_SETUP_STEP_SAVE_FAILED', 'Database Error: company setup progress could not be saved.');
+            var operationKey = String(input?.idempotencyKey || operationId('setup-step'));
+            var lastFailure = null;
+            for (var attempt = 1; attempt <= 3; attempt += 1) {
+                try {
+                    var response = await supabase.rpc('arth_save_company_setup_step', {
+                        p_step_key: stepKey,
+                        p_payload: payload,
+                        p_expected_revision: Number(input?.expectedRevision ?? cache.workspace.revision ?? 0),
+                        p_idempotency_key: operationKey,
+                        p_complete: input?.complete !== false
+                    });
+                    if (response.error) throw response.error;
+                    if (!response.data?.ok || !response.data?.workspace) throw new Error('Company setup save was not confirmed.');
+                    cache.workspace = response.data.workspace;
+                    flushAuditQueue({ actor: access.actor });
+                    return output(true, 'COMPANY_SETUP_STEP_SAVED', input?.complete === false
+                        ? 'Company setup draft saved.'
+                        : 'Company setup step completed.', {
+                        workspace: cache.workspace,
+                        version: response.data.version || null,
+                        home: setupHome(),
+                        attempts: attempt
+                    });
+                } catch (error) {
+                    lastFailure = classifiedError(error, 'COMPANY_SETUP_STEP_SAVE_FAILED', 'Database Error: company setup progress could not be saved.');
+                    if (!lastFailure.retryable || attempt >= 3) break;
+                    if (lastFailure.code === 'COMPANY_SETUP_CONFLICT') {
+                        var refreshed = await loadWorkspace({ actor: access.actor });
+                        if (!refreshed.ok) return refreshed;
+                    }
+                    await delay(attempt * 350);
+                }
             }
+            return lastFailure;
         });
     }
 
@@ -291,6 +342,7 @@
                 if (response.error) throw response.error;
                 if (!response.data?.ok || !response.data?.workspace) throw new Error('Core company setup completion was not confirmed.');
                 cache.workspace = response.data.workspace;
+                flushAuditQueue({ actor: access.actor });
                 return output(true, 'COMPANY_CORE_SETUP_COMPLETED', 'Core company setup completed.', {
                     workspace: cache.workspace,
                     lifecycle: response.data.lifecycle || null,
@@ -315,11 +367,17 @@
         refresh: loadWorkspace,
         saveStep: saveStep,
         completeCoreSetup: completeCoreSetup,
+        flushAuditQueue: flushAuditQueue,
         getWorkspace: function getWorkspace() { return freeze(cache.workspace); },
         getDraft: getDraft,
+        getAuditState: function getAuditState() { return freeze(Object.assign({}, cache.audit)); },
         getSetupHome: setupHome
     });
 
     global.CompanySetupOrchestrationService = service;
     global.companySetupOrchestrationService = service;
+    global.addEventListener?.('online', function retryCompanySetupAudit() {
+        var actor = actorFrom({});
+        if (actor?.companyOwner === true) flushAuditQueue({ actor: actor });
+    });
 }(typeof window !== 'undefined' ? window : globalThis));

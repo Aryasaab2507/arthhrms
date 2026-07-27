@@ -1,595 +1,868 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
-<meta name="referrer" content="no-referrer">
-<script src="services/frontendSecurityService.js"></script>
-    <script src="services/authGuard.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARTHHRMS First-Time Setup</title>
-    <script src="db.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="services/supabaseClient.js"></script>
-    <script src="services/authService.js"></script>
-<script src="services/frontendRuntimeErrorBoundaryService.js"></script>
-<script src="services/validationRegistryService.js"></script>
-<script src="services/workflowRecoveryService.js"></script>
-<script src="services/backupIntegrityVerificationService.js"></script>
-<script src="services/enterpriseRedisCacheService.js"></script>
-<script src="services/enterpriseAssetDeliveryService.js"></script>
-<script src="services/distributedQueueService.js"></script>
-<script src="services/apiGatewayGovernanceService.js"></script>
-<script src="services/horizontalScalabilityService.js"></script>
-<script src="services/infrastructureObservabilityService.js"></script>
-<script src="services/enterpriseLoggingPipelineService.js"></script>
-<script src="services/multiRegionArchitectureService.js"></script>
-<script src="services/tenantScopedRagService.js"></script>
-<script src="services/aiHrAssistantGovernanceService.js"></script>
-<script src="services/aiOperationsCopilotService.js"></script>
-<script src="services/softDeleteRestoreGovernanceService.js"></script>
-<script src="services/disasterRecoverySimulationService.js"></script>
-<script src="services/notificationDeliveryTrackingService.js"></script>
-<script src="services/inviteAcceptanceTrackingService.js"></script>
-<script src="services/employeeStatusLifecycleService.js"></script>
-    <script src="services/tenantProvisioningService.js"></script>
-    <script src="services/organizationSetupService.js"></script>
-    <script src="services/organizationInitializationWizardService.js"></script>
-    <script src="services/enterpriseOrganizationSetupWizardService.js"></script>
-    <script src="services/companySetupOrchestrationService.js"></script>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        :root{--p:#1a56db;--p2:#0ea5e9;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#d9e2ef;--r:#dc2626;--g:#047857;--o:#b45309}
-        body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:#edf3fb;min-height:100vh;color:var(--ink);display:grid;place-items:center;padding:22px}
-        .wizard{width:min(1180px,100%);background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,.12);overflow:hidden;display:grid;grid-template-columns:300px 1fr}
-        .rail{background:#111827;color:#e5e7eb;padding:24px}
-        .logo{width:44px;height:44px;border-radius:10px;background:#2563eb;display:grid;place-items:center;font-weight:900;margin-bottom:18px}
-        h1{font-size:1.16rem;line-height:1.25}.rail p{color:#9ca3af;font-size:.82rem;line-height:1.5;margin-top:10px}
-        .progress-shell{height:8px;background:rgba(255,255,255,.12);border-radius:999px;margin-top:18px;overflow:hidden}.progress-bar{height:100%;width:10%;background:#38bdf8;border-radius:999px;transition:width .2s ease}
-        .steps{margin-top:18px;display:grid;gap:7px}.step-dot{padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.06);font-size:.73rem;font-weight:800;color:#cbd5e1;border:1px solid transparent}.step-dot.on{background:rgba(37,99,235,.3);border-color:rgba(147,197,253,.5);color:#fff}.step-dot.done{color:#bfdbfe}
-        .main{padding:28px;min-width:0}.head{margin-bottom:18px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.head h2{font-size:1.25rem}.head p{color:var(--muted);font-size:.84rem;margin-top:5px;line-height:1.45}.badge{border:1px solid var(--border);background:#f8fafc;border-radius:999px;padding:8px 10px;font-size:.72rem;font-weight:900;color:#334155;white-space:nowrap}
-        .panel{display:none}.panel.on{display:block}
-        .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.fg label{display:block;font-size:.7rem;font-weight:900;color:var(--muted);text-transform:uppercase}.fg input,.fg select,.fg textarea{width:100%;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.88rem;background:#fff}.fg textarea{min-height:96px;resize:vertical}.full{grid-column:1/-1}.span2{grid-column:span 2}
-        .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.check{border:1px solid var(--border);border-radius:8px;padding:9px;font-size:.76rem;font-weight:800;background:#f8fafc}.check input{margin-right:7px}
-        .actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px;align-items:center}.action-left,.action-right{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:8px;padding:11px 14px;font-weight:900;cursor:pointer;background:var(--p);color:#fff}.btn.alt{background:#e2e8f0;color:#0f172a}.btn.good{background:var(--g)}.btn.warn{background:var(--o)}
-        .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:10px;padding:12px;font-size:.8rem;font-weight:700;line-height:1.45;margin-top:14px}.err{display:none;border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;font-size:.8rem;font-weight:800;margin-top:12px;white-space:pre-line}
-        .summary{display:grid;gap:10px}.summary div{border:1px solid var(--border);border-radius:9px;padding:10px;background:#f8fafc}.summary b{display:block;font-size:.8rem}.summary span{font-size:.78rem;color:var(--muted);line-height:1.45}
-        .status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.metric{border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff}.metric b{font-size:1.25rem}.metric span{display:block;color:var(--muted);font-size:.72rem;font-weight:900;text-transform:uppercase;margin-top:3px}
-        @media(max-width:940px){.wizard{grid-template-columns:1fr}.rail{padding:20px}.grid{grid-template-columns:1fr}.full,.span2{grid-column:auto}.checks{grid-template-columns:1fr 1fr}.head{display:block}.badge{display:inline-block;margin-top:10px}.status-grid{grid-template-columns:1fr 1fr}}
-        @media(max-width:560px){body{padding:12px}.main{padding:20px}.checks,.status-grid{grid-template-columns:1fr}.actions{display:grid}.action-left,.action-right{display:grid}.btn{width:100%}}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+  <meta name="referrer" content="no-referrer">
+  <title>Company Setup | ArthHRMS</title>
+  <script src="services/frontendSecurityService.js"></script>
+  <script src="services/authGuard.js"></script>
+  <script src="services/enterpriseOrganizationSetupWizardService.js"></script>
+  <script src="services/companySetupOrchestrationService.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    :root{
+      --ink:#172033;--muted:#667085;--surface:#fff;--subtle:#f6f8fb;--line:#d8dee9;
+      --nav:#182230;--nav-muted:#aeb8c7;--primary:#175cd3;--primary-hover:#154fb3;
+      --success:#067647;--success-bg:#ecfdf3;--warning:#b54708;--warning-bg:#fffaeb;
+      --danger:#b42318;--danger-bg:#fef3f2;--focus:#84adff
+    }
+    html,body{margin:0;min-height:100%;background:#eef2f6;color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif;letter-spacing:0}
+    button,input,select,textarea{font:inherit}
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+    .app{min-height:100vh;display:grid;grid-template-columns:292px minmax(0,1fr)}
+    .rail{background:var(--nav);color:#fff;padding:24px 20px;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh;overflow:auto}
+    .brand{display:flex;align-items:center;gap:12px;padding:2px 4px 20px;border-bottom:1px solid rgba(255,255,255,.12)}
+    .brand-mark{width:38px;height:38px;display:grid;place-items:center;background:#2e90fa;border-radius:6px;font-weight:800}
+    .brand strong{display:block;font-size:.94rem}.brand span{display:block;color:var(--nav-muted);font-size:.73rem;margin-top:3px}
+    .rail-progress{padding:20px 4px 14px}
+    .rail-progress-line{display:flex;justify-content:space-between;font-size:.76rem;color:#d0d5dd;font-weight:700}
+    .progress-track{height:7px;background:rgba(255,255,255,.13);margin-top:10px;border-radius:3px;overflow:hidden}
+    .progress-value{height:100%;width:0;background:#53b1fd;transition:width .25s ease}
+    .step-list{display:grid;gap:3px;margin-top:8px}
+    .step-button{width:100%;border:0;background:transparent;color:var(--nav-muted);display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;text-align:left;padding:9px 8px;border-radius:5px;cursor:pointer}
+    .step-button:hover:not(:disabled){background:rgba(255,255,255,.08);color:#fff}
+    .step-button:disabled{cursor:not-allowed;opacity:.55}
+    .step-number{width:26px;height:26px;display:grid;place-items:center;border:1px solid #667085;border-radius:50%;font-size:.7rem;font-weight:800}
+    .step-name{font-size:.78rem;font-weight:700}
+    .step-button.active{background:#24364d;color:#fff}.step-button.active .step-number{border-color:#53b1fd;background:#175cd3}
+    .step-button.complete{color:#d1fadf}.step-button.complete .step-number{background:#067647;border-color:#067647}
+    .rail-footer{margin-top:auto;padding:18px 4px 0;color:var(--nav-muted);font-size:.71rem;line-height:1.45}
+    .main{min-width:0;padding:28px 34px 42px}
+    .topbar{max-width:980px;margin:0 auto 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+    .eyebrow{font-size:.7rem;color:var(--primary);font-weight:800;text-transform:uppercase}
+    h1{font-size:1.55rem;margin:5px 0 4px;line-height:1.25}.subtitle{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+    .status-cluster{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+    .status{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;color:#475467;font-size:.71rem;font-weight:800;white-space:nowrap}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:#98a2b3}.status.saving .status-dot{background:#f79009;animation:pulse 1s infinite}.status.saved .status-dot{background:#12b76a}.status.failed .status-dot{background:#f04438}
+    @keyframes pulse{50%{opacity:.35}}
+    .alert{max-width:980px;margin:0 auto 16px;border:1px solid #fda29b;background:var(--danger-bg);padding:14px 16px;display:none;grid-template-columns:1fr auto;gap:14px;align-items:start;border-radius:6px}
+    .alert.show{display:grid}.alert-title{font-size:.84rem;font-weight:800;color:var(--danger)}.alert-reason{font-size:.78rem;color:#7a271a;margin-top:4px;line-height:1.5;white-space:pre-line}
+    .alert-actions{display:flex;gap:7px;flex-wrap:wrap}
+    .workspace{max-width:980px;margin:0 auto;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(16,24,40,.06)}
+    .workspace-header{padding:23px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+    .workspace-header h2{font-size:1.13rem;margin:0}.workspace-header p{font-size:.8rem;color:var(--muted);line-height:1.5;margin:5px 0 0}
+    .step-count{font-size:.72rem;color:#475467;background:var(--subtle);border:1px solid var(--line);padding:7px 9px;border-radius:4px;font-weight:800;white-space:nowrap}
+    .panel{display:none;padding:26px}.panel.active{display:block}
+    .section-title{font-size:.86rem;font-weight:800;margin:0 0 4px}.section-help{font-size:.76rem;color:var(--muted);margin:0 0 18px;line-height:1.45}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px}
+    .field{min-width:0}.field.full{grid-column:1/-1}.field label,.group-label{display:block;font-size:.73rem;font-weight:800;color:#344054;margin-bottom:6px}
+    .required::after{content:" *";color:var(--danger)}
+    .field input,.field select,.field textarea{width:100%;border:1px solid #b8c1cf;background:#fff;color:var(--ink);padding:10px 11px;border-radius:4px;font-size:.84rem;min-height:41px}
+    .field textarea{min-height:96px;resize:vertical;line-height:1.45}.field input.invalid,.field select.invalid,.field textarea.invalid{border-color:#f04438;background:#fffafa}
+    .hint{font-size:.69rem;color:var(--muted);line-height:1.4;margin-top:5px}.field-error{font-size:.7rem;color:var(--danger);font-weight:700;min-height:16px;margin-top:4px}
+    .choice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    .choice{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--subtle);padding:9px;border-radius:4px;font-size:.75rem;font-weight:700}
+    .choice input{width:auto;min-height:auto;margin:0}
+    .divider{height:1px;background:var(--line);margin:23px 0}
+    .role-block{border-top:1px solid var(--line);padding:15px 0 2px}.role-block:first-of-type{border-top:0;padding-top:0}
+    .role-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.role-heading strong{font-size:.79rem}.role-heading label{font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:7px}
+    .review-list{display:grid;gap:9px}.review-row{border:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:28px 170px 1fr;gap:10px;align-items:start}
+    .review-icon{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.69rem;font-weight:900;background:var(--success-bg);color:var(--success)}
+    .review-icon.warning{background:var(--warning-bg);color:var(--warning)}.review-label{font-size:.77rem;font-weight:800;padding-top:4px}.review-detail{font-size:.75rem;color:var(--muted);line-height:1.5;padding-top:3px}
+    .provision-state{padding:28px 20px;text-align:center}.provision-state h3{font-size:1.1rem;margin:13px 0 6px}.provision-state p{max-width:590px;margin:0 auto;color:var(--muted);font-size:.8rem;line-height:1.55}
+    .completion-mark{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;margin:auto;background:var(--success-bg);color:var(--success);font-size:1.3rem;font-weight:900}
+    .validation-summary{display:none;margin-top:18px;border-left:3px solid var(--danger);background:var(--danger-bg);padding:11px 13px;color:#7a271a;font-size:.75rem;line-height:1.5}.validation-summary.show{display:block}
+    .workspace-actions{border-top:1px solid var(--line);background:#fbfcfe;padding:16px 26px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .action-group{display:flex;gap:9px;flex-wrap:wrap}.button{border:1px solid transparent;background:var(--primary);color:#fff;padding:10px 14px;border-radius:4px;font-size:.78rem;font-weight:800;cursor:pointer;min-width:108px}
+    .button:hover:not(:disabled){background:var(--primary-hover)}.button.secondary{background:#fff;color:#344054;border-color:#b8c1cf}.button.secondary:hover:not(:disabled){background:#f2f4f7}.button.success{background:var(--success)}
+    .button:disabled{opacity:.55;cursor:not-allowed}.button.busy{position:relative;color:transparent}.button.busy::after{content:"";position:absolute;width:15px;height:15px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;left:50%;top:50%;margin:-9px;animation:spin .7s linear infinite}.button.secondary.busy::after{border-color:#d0d5dd;border-top-color:#475467}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .offline{display:none;max-width:980px;margin:0 auto 12px;background:var(--warning-bg);border:1px solid #fedf89;color:#93370d;padding:10px 13px;font-size:.75rem;font-weight:700}.offline.show{display:block}
+    .skeleton{max-width:980px;margin:0 auto;background:#fff;border:1px solid var(--line);padding:26px}.skeleton-line{height:13px;background:#eaecf0;margin:11px 0;border-radius:2px;animation:shimmer 1.3s infinite}.skeleton-line.short{width:34%}.skeleton-line.medium{width:67%}
+    @keyframes shimmer{50%{background:#f2f4f7}}
+    [hidden]{display:none!important}
+    @media(max-width:860px){.app{grid-template-columns:1fr}.rail{position:static;height:auto;min-height:0}.step-list{grid-template-columns:repeat(5,minmax(0,1fr))}.step-button{display:flex;justify-content:center;padding:8px}.step-name{display:none}.rail-footer{display:none}.main{padding:20px}.topbar{display:block}.status-cluster{justify-content:flex-start;margin-top:12px}}
+    @media(max-width:620px){.main{padding:12px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.choice-grid{grid-template-columns:1fr 1fr}.workspace-header,.panel,.workspace-actions{padding:18px}.workspace-actions{display:grid}.action-group{display:grid;grid-template-columns:1fr 1fr}.button{width:100%}.review-row{grid-template-columns:28px 1fr}.review-detail{grid-column:2}.alert.show{grid-template-columns:1fr}.topbar h1{font-size:1.3rem}}
+  </style>
 </head>
 <body>
-<div class="wizard">
-    <aside class="rail">
-        <div class="logo">A</div>
-        <h1>Enterprise Organization Setup Wizard</h1>
-        <p>Configure company identity, structure, work rules, security, notifications, and tenant provisioning from one validated flow.</p>
-        <div class="progress-shell"><div class="progress-bar" id="setupProgress"></div></div>
-        <div class="steps" id="setupStepper">
-            <div class="step-dot on" id="dot1">1. Organization Info</div>
-            <div class="step-dot" id="dot2">2. Structure</div>
-            <div class="step-dot" id="dot3">3. Working Config</div>
-            <div class="step-dot" id="dot4">4. Leave</div>
-            <div class="step-dot" id="dot5">5. Payroll</div>
-            <div class="step-dot" id="dot6">6. Identity</div>
-            <div class="step-dot" id="dot7">7. Notifications</div>
-            <div class="step-dot" id="dot8">8. Administrator</div>
-            <div class="step-dot" id="dot9">9. Review</div>
-            <div class="step-dot" id="dot10">10. Provision</div>
+<div class="app">
+  <aside class="rail" aria-label="Company setup progress">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div><strong>ArthHRMS</strong><span>Company Administration</span></div>
+    </div>
+    <div class="rail-progress">
+      <div class="rail-progress-line"><span>Setup progress</span><span id="progressText">0%</span></div>
+      <div class="progress-track" aria-hidden="true"><div class="progress-value" id="progressValue"></div></div>
+    </div>
+    <nav class="step-list" id="stepList"></nav>
+    <div class="rail-footer">Tenant-scoped workspace<br><span id="tenantLabel">Verifying access...</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Company Owner onboarding</div>
+        <h1 id="pageTitle">Complete company setup</h1>
+        <p class="subtitle" id="pageSubtitle">Loading the tenant workspace and your saved progress.</p>
+      </div>
+      <div class="status-cluster">
+        <span class="status" id="saveStatus"><span class="status-dot"></span><span id="saveStatusText">Loading</span></span>
+        <span class="status" id="auditStatus"><span class="status-dot"></span><span id="auditStatusText">Audit checking</span></span>
+      </div>
+    </header>
+
+    <div class="offline" id="offlineBanner" role="status">You are offline. Changes remain on screen and will save when the connection returns.</div>
+
+    <section class="alert" id="errorAlert" role="alert" aria-live="assertive">
+      <div>
+        <div class="alert-title" id="errorTitle">Unable to continue</div>
+        <div class="alert-reason" id="errorReason"></div>
+      </div>
+      <div class="alert-actions">
+        <button class="button secondary" id="retryButton" type="button">Retry</button>
+        <button class="button secondary" id="reportButton" type="button">Report issue</button>
+      </div>
+    </section>
+
+    <div class="skeleton" id="loadingSkeleton" aria-label="Loading setup workspace">
+      <div class="skeleton-line short"></div><div class="skeleton-line"></div>
+      <div class="skeleton-line medium"></div><div class="skeleton-line"></div>
+      <div class="skeleton-line medium"></div>
+    </div>
+
+    <section class="workspace" id="workspace" hidden>
+      <div class="workspace-header">
+        <div><h2 id="stepTitle"></h2><p id="stepDescription"></p></div>
+        <div class="step-count" id="stepCount">Step 1 of 10</div>
+      </div>
+
+      <form id="wizardForm" novalidate>
+        <section class="panel" data-step="1">
+          <div class="form-grid">
+            <div class="field"><label class="required" for="companyName">Company name</label><input id="companyName" autocomplete="organization" maxlength="160"><div class="field-error" data-error-for="companyName"></div></div>
+            <div class="field"><label class="required" for="legalName">Legal name</label><input id="legalName" maxlength="200"><div class="field-error" data-error-for="legalName"></div></div>
+            <div class="field"><label class="required" for="industry">Industry</label><input id="industry" maxlength="100"><div class="field-error" data-error-for="industry"></div></div>
+            <div class="field"><label class="required" for="companySize">Company size</label><select id="companySize"><option value="">Select</option><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select><div class="field-error" data-error-for="companySize"></div></div>
+            <div class="field"><label class="required" for="country">Country</label><select id="country"><option value="">Select</option><option value="IN">India</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US">United States</option><option value="SG">Singapore</option></select><div class="field-error" data-error-for="country"></div></div>
+            <div class="field"><label class="required" for="timeZone">Timezone</label><select id="timeZone"><option value="">Select</option><option>Asia/Kolkata</option><option>Asia/Dubai</option><option>Asia/Singapore</option><option>Europe/London</option><option>America/New_York</option><option>UTC</option></select><div class="field-error" data-error-for="timeZone"></div></div>
+            <div class="field"><label class="required" for="language">Language</label><select id="language"><option value="">Select</option><option value="en">English</option><option value="hi">Hindi</option><option value="ar">Arabic</option></select><div class="field-error" data-error-for="language"></div></div>
+            <div class="field"><label class="required" for="currency">Currency</label><select id="currency"><option value="">Select</option><option>INR</option><option>AED</option><option>GBP</option><option>USD</option><option>SGD</option></select><div class="field-error" data-error-for="currency"></div></div>
+            <div class="field"><label class="required" for="website">Website</label><input id="website" type="url" placeholder="https://company.example" maxlength="300"><div class="field-error" data-error-for="website"></div></div>
+            <div class="field"><label for="logoUrl">Logo</label><input id="logoUrl" type="url" placeholder="https://company.example/logo.png" maxlength="500"><div class="hint">Use an HTTPS image URL.</div><div class="field-error" data-error-for="logoUpload"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="2">
+          <p class="section-title">Organization structure</p><p class="section-help">Enter one item per line. Add an optional code after a vertical bar.</p>
+          <div class="form-grid">
+            <div class="field"><label class="required" for="departments">Departments</label><textarea id="departments" placeholder="Human Resources | HR&#10;Operations | OPS"></textarea><div class="field-error" data-error-for="departments"></div></div>
+            <div class="field"><label for="businessUnits">Business units</label><textarea id="businessUnits" placeholder="Manufacturing | MFG"></textarea><div class="field-error" data-error-for="businessUnits"></div></div>
+            <div class="field"><label class="required" for="branches">Branches</label><textarea id="branches" placeholder="Head Office | HQ"></textarea><div class="field-error" data-error-for="branches"></div></div>
+            <div class="field"><label class="required" for="designations">Designations</label><textarea id="designations" placeholder="HR Manager | HR-MGR&#10;Executive | EXEC"></textarea><div class="field-error" data-error-for="designations"></div></div>
+            <div class="field full"><label class="required" for="reportingHierarchy">Reporting hierarchy</label><textarea id="reportingHierarchy" placeholder="Executive | Manager&#10;Manager | Department Head"></textarea><div class="field-error" data-error-for="reportingHierarchy"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="3">
+          <p class="section-title">Working days</p><p class="section-help">Choose the regular working week and attendance baseline.</p>
+          <div class="choice-grid" id="workingDays">
+            <label class="choice"><input type="checkbox" value="MON">Monday</label><label class="choice"><input type="checkbox" value="TUE">Tuesday</label>
+            <label class="choice"><input type="checkbox" value="WED">Wednesday</label><label class="choice"><input type="checkbox" value="THU">Thursday</label>
+            <label class="choice"><input type="checkbox" value="FRI">Friday</label><label class="choice"><input type="checkbox" value="SAT">Saturday</label>
+            <label class="choice"><input type="checkbox" value="SUN">Sunday</label>
+          </div>
+          <div class="field-error" data-error-for="workWeek"></div><div class="divider"></div>
+          <div class="form-grid">
+            <div class="field"><label class="required" for="officeStart">Office start</label><input id="officeStart" type="time"><div class="field-error" data-error-for="officeHours"></div></div>
+            <div class="field"><label class="required" for="officeEnd">Office end</label><input id="officeEnd" type="time"></div>
+            <div class="field"><label class="required" for="attendanceMode">Attendance</label><select id="attendanceMode"><option value="">Select</option><option value="WEB_MOBILE">Web and mobile</option><option value="BIOMETRIC">Biometric</option><option value="HYBRID">Hybrid</option><option value="MANUAL">Manual</option></select><div class="field-error" data-error-for="attendanceMode"></div></div>
+            <div class="field"><label class="required" for="shiftStrategy">Shift</label><select id="shiftStrategy"><option value="">Select</option><option value="STANDARD">Standard</option><option value="FLEXIBLE">Flexible</option><option value="ROTATIONAL">Rotational</option><option value="MULTI_SHIFT">Multiple shifts</option></select><div class="field-error" data-error-for="shiftStrategy"></div></div>
+            <div class="field full"><label for="holidayCalendar">Holiday calendar</label><textarea id="holidayCalendar" placeholder="Republic Day | 2027-01-26"></textarea><div class="field-error" data-error-for="publicHolidays"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="4">
+          <div class="form-grid">
+            <div class="field full"><label class="required" for="leaveTypes">Leave policies</label><textarea id="leaveTypes" placeholder="Casual Leave | CL | 12&#10;Sick Leave | SL | 10"></textarea><div class="hint">Name | Code | Annual allowance</div><div class="field-error" data-error-for="leaveTypes"></div></div>
+            <div class="field"><label class="required" for="accrualFrequency">Accrual</label><select id="accrualFrequency"><option value="">Select</option><option value="MONTHLY">Monthly</option><option value="QUARTERLY">Quarterly</option><option value="YEARLY">Yearly</option><option value="MANUAL">Manual</option></select></div>
+            <div class="field"><label for="carryForward">Carry forward</label><select id="carryForward"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+            <div class="field"><label for="encashment">Encashment</label><select id="encashment"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
+            <div class="field"><label class="required" for="leaveApprovers">Approval chain</label><textarea id="leaveApprovers" placeholder="MANAGER&#10;HR"></textarea><div class="field-error" data-error-for="approvalRules"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="5">
+          <div class="form-grid">
+            <div class="field"><label class="required" for="payrollFrequency">Payroll frequency</label><select id="payrollFrequency"><option value="">Select</option><option value="MONTHLY">Monthly</option><option value="BI_WEEKLY">Bi-weekly</option><option value="WEEKLY">Weekly</option></select><div class="field-error" data-error-for="payrollFrequency"></div></div>
+            <div class="field"><label class="required" for="salaryStructure">Salary structure</label><input id="salaryStructure" maxlength="100" placeholder="Standard"><div class="field-error" data-error-for="salaryStructure"></div></div>
+            <div class="field"><label class="required" for="paymentDay">Payment day</label><input id="paymentDay" type="number" min="1" max="31"><div class="field-error" data-error-for="paymentCycle"></div></div>
+            <div class="field"><label for="taxConfiguration">Tax configuration</label><input id="taxConfiguration" maxlength="200" placeholder="India statutory defaults"></div>
+            <div class="field full"><label class="required" for="salaryComponents">Salary components</label><textarea id="salaryComponents" placeholder="Basic Salary | EARNING&#10;Provident Fund | DEDUCTION"></textarea><div class="hint">Name | EARNING or DEDUCTION</div><div class="field-error" data-error-for="components"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="6">
+          <div class="form-grid">
+            <div class="field"><label class="required" for="authenticationMethod">Authentication method</label><select id="authenticationMethod"><option value="">Select</option><option value="LOCAL_AND_SSO">Password and SSO</option><option value="LOCAL_ONLY">Password only</option><option value="SSO_ONLY">SSO only</option></select><div class="field-error" data-error-for="authenticationMethod"></div></div>
+            <div class="field"><label class="required" for="passwordMinLength">Minimum password length</label><input id="passwordMinLength" type="number" min="12" max="128"><div class="field-error" data-error-for="passwordPolicy"></div></div>
+            <div class="field"><label class="required" for="sessionTimeout">Session timeout (minutes)</label><input id="sessionTimeout" type="number" min="5" max="1440"><div class="field-error" data-error-for="sessionTimeoutMinutes"></div></div>
+            <div class="field"><label for="mfaEnabled">Administrator MFA</label><select id="mfaEnabled"><option value="true">Required</option><option value="false">Optional</option></select></div>
+            <div class="field"><label for="ssoEnabled">SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
+            <div class="field"><label for="ssoProvider">SSO provider</label><input id="ssoProvider" maxlength="100" placeholder="Microsoft Entra ID"><div class="field-error" data-error-for="sso"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="7">
+          <div class="form-grid">
+            <div class="field"><label for="emailNotifications">Email notifications</label><select id="emailNotifications"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+            <div class="field"><label for="smsNotifications">SMS notifications</label><select id="smsNotifications"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
+            <div class="field"><label for="pushNotifications">Push notifications</label><select id="pushNotifications"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+            <div class="field full"><label for="reminderRules">Reminder rules</label><textarea id="reminderRules" placeholder="LEAVE_APPROVAL | 24&#10;PROFILE_COMPLETION | 48"></textarea><div class="hint">Event | Hours before reminder</div><div class="field-error" data-error-for="reminderRules"></div></div>
+          </div>
+        </section>
+
+        <section class="panel" data-step="8">
+          <p class="section-title">Primary administrator</p><p class="section-help">The Company Owner remains the tenant root. Configure the first operational administrator.</p>
+          <div class="form-grid">
+            <div class="field"><label class="required" for="administratorName">Name</label><input id="administratorName" maxlength="160"><div class="field-error" data-error-for="name"></div></div>
+            <div class="field"><label class="required" for="administratorEmail">Email</label><input id="administratorEmail" type="email" maxlength="254"><div class="field-error" data-error-for="email"></div></div>
+            <div class="field"><label for="administratorPhone">Phone</label><input id="administratorPhone" maxlength="32"></div>
+            <div class="field"><label class="required" for="administratorRole">Role</label><select id="administratorRole"><option value="super_admin">Company Owner</option><option value="admin">Administrator</option><option value="hr">HR</option></select><div class="field-error" data-error-for="role"></div></div>
+          </div>
+          <div class="divider"></div>
+          <p class="section-title">Invitation handoff</p><p class="section-help">Prepare tenant roles for the existing Invitation Center. Invitations require matching employee records.</p>
+          <div id="invitationIntents">
+            <div class="role-block" data-invite-role="hr"><div class="role-heading"><strong>HR invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
+            <div class="role-block" data-invite-role="admin"><div class="role-heading"><strong>Administrator invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
+            <div class="role-block" data-invite-role="manager"><div class="role-heading"><strong>Manager invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
+          </div>
+          <div class="field-error" data-error-for="invitationIntents"></div>
+        </section>
+
+        <section class="panel" data-step="9">
+          <div class="review-list" id="reviewList"></div>
+        </section>
+
+        <section class="panel" data-step="10">
+          <div class="provision-state" id="provisionState">
+            <div class="completion-mark" id="provisionMark">10</div>
+            <h3 id="provisionTitle">Ready to finish setup</h3>
+            <p id="provisionMessage">The saved configuration will be finalized and the tenant lifecycle will advance to Company Administration.</p>
+          </div>
+        </section>
+
+        <div class="validation-summary" id="validationSummary" role="alert"></div>
+      </form>
+
+      <footer class="workspace-actions">
+        <div class="action-group">
+          <button class="button secondary" id="previousButton" type="button">Previous</button>
+          <button class="button secondary" id="saveDraftButton" type="button">Save &amp; Resume Later</button>
         </div>
-    </aside>
-    <main class="main">
-        <div class="head">
-            <div>
-                <h2 id="stepTitle">Organization Information</h2>
-                <p id="stepHelp">Capture the legal and operating identity used for tenant provisioning.</p>
-            </div>
-            <div class="badge" id="draftBadge">Draft not saved</div>
+        <div class="action-group">
+          <button class="button" id="nextButton" type="button">Save &amp; Next</button>
+          <button class="button success" id="dashboardButton" type="button" hidden>Open Company Dashboard</button>
         </div>
-        <div class="panel on" id="step1">
-            <div class="grid">
-                <div class="fg"><label>Company Name *</label><input id="companyName" autocomplete="organization"></div>
-                <div class="fg"><label>Legal Name *</label><input id="legalName"></div>
-                <div class="fg"><label>Organization Code *</label><input id="organizationCode" placeholder="TABSONS"></div>
-                <div class="fg"><label>Industry *</label><input id="industry" value="Manufacturing"></div>
-                <div class="fg"><label>Company Size *</label><select id="companySize"><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select></div>
-                <div class="fg"><label>Website *</label><input id="website" placeholder="https://example.com"></div>
-                <div class="fg"><label>Registration Number</label><input id="registrationNumber"></div>
-                <div class="fg"><label>Tax ID</label><input id="taxId"></div>
-                <div class="fg"><label>Time Zone *</label><select id="timezone"><option>Asia/Kolkata</option><option>UTC</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></div>
-                <div class="fg"><label>Currency *</label><select id="currency"><option>INR</option><option>USD</option><option>AED</option><option>GBP</option><option>EUR</option></select></div>
-                <div class="fg"><label>Language *</label><select id="language"><option value="en">English</option><option value="hi">Hindi</option><option value="ar">Arabic</option></select></div>
-                <div class="fg"><label>Fiscal Year Start *</label><input id="fiscalYearStart" value="04-01" placeholder="MM-DD"></div>
-                <div class="fg full"><label>Logo Upload Reference</label><input id="logoUpload" placeholder="logo.png or https://..."></div>
-            </div>
-        </div>
-        <div class="panel" id="step2">
-            <div class="grid">
-                <div class="fg"><label>Head Office *</label><input id="headOffice" placeholder="Mumbai HQ"></div>
-                <div class="fg"><label>Head Office Code</label><input id="headOfficeCode" value="HQ"></div>
-                <div class="fg"><label>Default Location</label><input id="defaultLocation" value="Mumbai"></div>
-                <div class="fg span2"><label>Branches</label><textarea id="branches" placeholder="Pune Branch,PUN"></textarea></div>
-                <div class="fg"><label>Business Units</label><textarea id="businessUnits" placeholder="Manufacturing,MFG"></textarea></div>
-                <div class="fg span2"><label>Departments *</label><textarea id="departments">HR,HR
-Operations,OPS
-Finance,FIN
-Engineering,ENG
-Management,MGT</textarea></div>
-                <div class="fg"><label>Cost Centers</label><textarea id="costCenters" placeholder="Factory,FACT"></textarea></div>
-                <div class="fg span2"><label>Locations</label><textarea id="locations">Mumbai,MUM</textarea></div>
-                <div class="fg full"><label>Excel Import Paste Area</label><textarea id="structureImport" placeholder="Type,Name,Code&#10;Department,Quality,QA&#10;Branch,Delhi,DEL"></textarea></div>
-            </div>
-            <div class="notice">Import rows are parsed locally and de-duplicated before being written to tenant-scoped setup metadata.</div>
-        </div>
-        <div class="panel" id="step3">
-            <div class="grid">
-                <div class="fg full">
-                    <label>Work Week *</label>
-                    <div class="checks" id="workWeek">
-                        <label class="check"><input type="checkbox" value="MON" checked>Monday</label>
-                        <label class="check"><input type="checkbox" value="TUE" checked>Tuesday</label>
-                        <label class="check"><input type="checkbox" value="WED" checked>Wednesday</label>
-                        <label class="check"><input type="checkbox" value="THU" checked>Thursday</label>
-                        <label class="check"><input type="checkbox" value="FRI" checked>Friday</label>
-                        <label class="check"><input type="checkbox" value="SAT">Saturday</label>
-                    </div>
-                </div>
-                <div class="fg"><label>Office Start *</label><input id="officeStart" type="time" value="09:30"></div>
-                <div class="fg"><label>Office End *</label><input id="officeEnd" type="time" value="18:30"></div>
-                <div class="fg"><label>Setup Time Zone *</label><select id="workingTimezone"><option>Asia/Kolkata</option><option>UTC</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></div>
-                <div class="fg"><label>Shift Strategy *</label><select id="shiftStrategy"><option>STANDARD</option><option>FLEXIBLE</option><option>MULTI_SHIFT</option><option>ROSTER_BASED</option></select></div>
-                <div class="fg"><label>Attendance Mode *</label><select id="attendanceMode"><option>WEB_MOBILE</option><option>BIOMETRIC</option><option>GEO_FENCED</option><option>MANUAL_APPROVAL</option></select></div>
-                <div class="fg"><label>Weekend Rule</label><select id="weekendRule"><option value="SAT_SUN_OFF">Saturday and Sunday off</option><option value="SUN_OFF">Sunday off</option><option value="CUSTOM">Custom</option></select></div>
-                <div class="fg full"><label>Public Holidays</label><textarea id="publicHolidays" placeholder="Republic Day,2026-01-26"></textarea></div>
-            </div>
-        </div>
-        <div class="panel" id="step4">
-            <div class="grid">
-                <div class="fg full"><label>Leave Types *</label><textarea id="leaveTypes">Casual Leave,CL,12
-Sick Leave,SL,12
-Earned Leave,EL,18</textarea></div>
-                <div class="fg"><label>Accrual Rule</label><select id="accrualRule"><option>MONTHLY</option><option>QUARTERLY</option><option>ANNUAL</option><option>NONE</option></select></div>
-                <div class="fg"><label>Carry Forward</label><select id="carryForward"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-                <div class="fg"><label>Encashment</label><select id="encashment"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
-                <div class="fg full"><label>Approval Rules *</label><textarea id="leaveApprovalRules">MANAGER
-HR</textarea></div>
-            </div>
-        </div>
-        <div class="panel" id="step5">
-            <div class="grid">
-                <div class="fg"><label>Payroll Frequency *</label><select id="payrollFrequency"><option>MONTHLY</option><option>BI_WEEKLY</option><option>WEEKLY</option></select></div>
-                <div class="fg"><label>Salary Structure *</label><select id="salaryStructure"><option>STANDARD</option><option>CTC_BASED</option><option>HOURLY</option><option>CUSTOM</option></select></div>
-                <div class="fg"><label>Payment Day</label><input id="paymentDay" type="number" min="1" max="31" value="30"></div>
-                <div class="fg full"><label>Salary Components *</label><textarea id="salaryComponents">Basic,EARNING
-HRA,EARNING
-PF,DEDUCTION</textarea></div>
-                <div class="fg full"><label>Tax Configuration</label><textarea id="taxConfiguration">India old/new regime readiness</textarea></div>
-            </div>
-        </div>
-        <div class="panel" id="step6">
-            <div class="grid">
-                <div class="fg"><label>Authentication Method *</label><select id="authenticationMethod"><option>LOCAL_AND_SSO</option><option>LOCAL_ONLY</option><option>SSO_ONLY</option></select></div>
-                <div class="fg"><label>Password Minimum Length</label><input id="passwordMinLength" type="number" min="12" value="12"></div>
-                <div class="fg"><label>Session Timeout Minutes *</label><input id="sessionTimeoutMinutes" type="number" min="5" value="30"></div>
-                <div class="fg"><label>MFA</label><select id="mfa"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-                <div class="fg"><label>SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
-                <div class="fg"><label>SSO Provider</label><input id="ssoProvider" placeholder="Microsoft Entra ID"></div>
-                <div class="fg"><label>Authenticated Setup Owner</label><input id="ownerName" autocomplete="name" readonly></div>
-                <div class="fg"><label>Verified Owner Email</label><input id="ownerEmail" type="email" autocomplete="email" readonly></div>
-            </div>
-            <div class="notice">The setup owner identity is supplied by secure authentication. Tenant administrators remain invite-pending until the server-side onboarding flow completes.</div>
-        </div>
-        <div class="panel" id="step7">
-            <div class="grid">
-                <div class="fg"><label>Email</label><select id="emailEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-                <div class="fg"><label>SMS</label><select id="smsEnabled"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
-                <div class="fg"><label>Push Notifications</label><select id="pushEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-                <div class="fg full"><label>Reminder Rules</label><textarea id="reminderRules">LEAVE_APPROVAL,24
-PROFILE_COMPLETION,48</textarea></div>
-            </div>
-        </div>
-        <div class="panel" id="step8">
-            <div class="grid">
-                <div class="fg"><label>Administrator Name *</label><input id="adminName" autocomplete="name"></div>
-                <div class="fg"><label>Administrator Email *</label><input id="adminEmail" type="email" autocomplete="email"></div>
-                <div class="fg"><label>Phone</label><input id="adminPhone" placeholder="+91 90000 00000"></div>
-                <div class="fg"><label>Role *</label><select id="adminRole"><option value="super_admin">Super Admin</option><option value="admin">Admin</option><option value="hr">HR</option></select></div>
-                <div class="fg"><label>MFA</label><select id="adminMfa"><option value="true">Required</option><option value="false">Optional</option></select></div>
-            </div>
-            <div class="notice">The administrator is scoped to the new tenant and does not become a platform owner.</div>
-        </div>
-        <div class="panel" id="step9">
-            <div class="status-grid" id="readinessMetrics"></div>
-            <div class="summary" id="setupSummary"></div>
-            <div class="notice">Review highlights missing required fields, validation errors, and warnings before tenant provisioning.</div>
-        </div>
-        <div class="panel" id="step10">
-            <div class="status-grid" id="provisionMetrics"></div>
-            <div class="summary" id="provisionSummary"></div>
-            <div class="notice">Provisioning creates tenant metadata, default organization configuration, invite-pending administrator access, and audit logs.</div>
-        </div>
-        <div class="err" id="setupError"></div>
-        <div class="actions">
-            <div class="action-left">
-                <button class="btn alt" id="backBtn" onclick="backStep()" style="visibility:hidden">Back</button>
-                <button class="btn alt" id="saveDraftBtn" onclick="saveDraft({complete:false,source:'manual'})">Save & Resume</button>
-            </div>
-            <div class="action-right">
-                <button class="btn" id="nextBtn" onclick="nextStep()">Next</button>
-            </div>
-        </div>
-    </main>
+      </footer>
+    </section>
+  </main>
 </div>
-<script type="application/x-arthhrms-retired">
-/* Retained only for source-history compatibility. The enterprise wizard below is authoritative. */
-let step=1;
-const titles={
-    1:['Company Details','Start with the organization identity. You can refine branding later from Platform Control Center.'],
-    2:['Create Governance Owner','This root account controls feature governance and installation state.'],
-    3:['Create Initial HR/Admin','Create the first operating user or leave it invite-pending.'],
-    4:['Initialize Organization','Configure tenant-scoped departments, roles, policies, features, and pilot readiness.'],
-    5:['Complete Setup','Review and finish installation.']
-};
-if(!DB.isSetupRequired || !DB.isSetupRequired()){
-    location.replace('ArthHRMS.html');
-}
-function val(id){return document.getElementById(id).value.trim();}
-function showError(msg){const e=document.getElementById('setupError');e.textContent=msg;e.style.display='block';}
-function clearError(){document.getElementById('setupError').style.display='none';}
-function setupSvc(){return window.OrganizationSetupService||window.organizationSetupService;}
-function normalizeSlug(value){
-    if(window.TenantProvisioningService?.normalizeTenantSlug) return TenantProvisioningService.normalizeTenantSlug(value);
-    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-}
-function parseList(value){return String(value||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);}
-function selectedChecks(containerId){
-    return Array.from(document.querySelectorAll('#'+containerId+' input[type="checkbox"]')).filter(x=>x.checked).map(x=>x.value);
-}
-function parseManagerStructure(){
-    return parseList(val('setupManagers')).map(line=>{
-        const parts=line.split(/>|,|:/).map(x=>x.trim()).filter(Boolean);
-        return {employee_id:parts[0]||'',manager_id:parts[1]||'',tenant_slug:normalizeSlug(val('tenantSlug')||val('companyName'))};
-    }).filter(row=>row.employee_id||row.manager_id);
-}
-function collectOrganizationSetupPayload(){
-    return {
-        tenant_slug:normalizeSlug(val('tenantSlug')||val('companyName')),
-        company_profile:{
-            company_name:val('companyName'),
-            company_logo:val('logoUrl'),
-            company_email:val('companyEmail'),
-            company_phone:val('companyPhone'),
-            timezone:val('timezone'),
-            country:val('country'),
-            working_days:parseList(val('workingDays')),
-            fiscal_year:val('fiscalYear'),
-            default_currency:val('currency')
-        },
-        departments:parseList(val('setupDepartments')),
-        role_matrix:selectedChecks('setupRoles'),
-        manager_structure:parseManagerStructure(),
-        policies:{
-            leave_policy:val('leavePolicy'),
-            attendance_policy:val('attendancePolicy'),
-            holiday_policy:'standard',
-            working_hours:val('workingHours'),
-            onboarding_defaults:'invite_required'
-        },
-        features:['attendance','payroll','strategic_deliverables','expense_management','onboarding_workflows'].reduce((acc,key)=>{acc[key]=selectedChecks('setupFeatures').includes(key);return acc;},{}),
-        pilot:{
-            pilot_employee_count:Number(val('pilotEmployeeCount')||0),
-            pilot_departments:parseList(val('pilotDepartments')),
-            staged_onboarding:true,
-            activation_stage:'pilot_group'
-        }
-    };
-}
-function validateOrganizationSetupStep(){
-    const svc=setupSvc();
-    if(!svc?.validateOrganizationSetup) return {passed:true,warnings:[],failures:[],readiness:'ACTIVATION_READY'};
-    return svc.validateOrganizationSetup(collectOrganizationSetupPayload(),{
-        actor:{role:document.getElementById('opsRole').value||'super_admin',tenantSlug:normalizeSlug(val('tenantSlug')||val('companyName'))}
-    });
-}
-function renderStep(){
-    clearError();
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-    document.getElementById('step'+step).classList.add('on');
-    document.querySelectorAll('.step-dot').forEach((d,i)=>d.classList.toggle('on',i+1===step));
-    document.getElementById('stepTitle').textContent=titles[step][0];
-    document.getElementById('stepHelp').textContent=titles[step][1];
-    document.getElementById('backBtn').style.visibility=step===1?'hidden':'visible';
-    document.getElementById('nextBtn').textContent=step===5?'Complete Setup':'Next';
-    if(step===5) renderEnterpriseSummary();
-}
-function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
-function orchestration(){return window.CompanySetupOrchestrationService||window.companySetupOrchestrationService;}
-function durableMode(){return !!orchestration()?.isEnabled?.();}
-function authenticatedOwner(){
-    const u=window.authService?.getCurrentUser?.();
-    if(!u||u.source!=='supabase'||!u.roleTrusted)return null;
-    return durableMode()
-        ? (u.role==='super_admin'&&u.tenantSlug&&u.organizationId?u:null)
-        : (u.role==='platform_owner'?u:null);
-}
-function wizardContext(){
-    const owner=authenticatedOwner();
-    return {actor:{role:owner?.role||'',id:owner?.id||'',email:owner?.email||'',tenantSlug:owner?.tenantSlug||''},draftId:draftId(),ignoreCurrentCompanySettings:durableMode()};
-}
-function validateStep(){
-    if(step===1 && !val('companyName')) return 'Company name is required.';
-    if(step===1 && !normalizeSlug(val('tenantSlug')||val('companyName'))) return 'Tenant slug is required.';
-    if(step===1 && val('companyEmail') && !validEmail(val('companyEmail'))) return 'Company email is invalid.';
-    if(step===2 && !authenticatedOwner()) return 'A validated Platform Owner session is required.';
-    if(step===3){
-        if((val('opsName')||val('opsEmail')) && (!val('opsName')||!val('opsEmail'))) return 'Initial HR/Admin needs both name and email.';
-        if(val('opsEmail') && !validEmail(val('opsEmail'))) return 'Initial HR/Admin email is invalid.';
-    }
-    if(step===4){
-        const setup=validateOrganizationSetupStep();
-        if(!setup.passed) return setup.failures?.[0]?.message||'Organization setup has activation blockers.';
-    }
-    return '';
-}
-function renderSummary(){
-    document.getElementById('setupSummary').innerHTML=[
-        ['Company',val('companyName')+' · '+val('timezone')+' · '+val('currency')],
-        ['Platform Owner',val('ownerName')+' · '+val('ownerEmail')],
-        ['Initial Operations User',val('opsEmail')?val('opsName')+' · '+val('opsEmail')+' · '+document.getElementById('opsRole').value:'Skipped for now'],
-        ['Environment',DB.isProductionMode()?'Production mode':'Development/local mode']
-    ].map(([k,v])=>`<div><b>${k}</b><span>${v}</span></div>`).join('');
-}
-function renderEnterpriseSummary(){
-    const setup=validateOrganizationSetupStep();
-    document.getElementById('setupSummary').innerHTML=[
-        ['Company',val('companyName')+' - '+normalizeSlug(val('tenantSlug')||val('companyName'))+' - '+val('timezone')+' - '+val('currency')],
-        ['Governance Owner',val('ownerName')+' - '+val('ownerEmail')],
-        ['Initial Operations User',val('opsEmail')?val('opsName')+' - '+val('opsEmail')+' - '+document.getElementById('opsRole').value:'Skipped for now'],
-        ['Organization Setup',setup.readiness||'ACTIVATION_READY'],
-        ['Environment',DB.isProductionMode()?'Production mode':'Development/local mode']
-    ].map(([k,v])=>`<div><b>${k}</b><span>${v}</span></div>`).join('');
-}
-function nextStep(){
-    const err=validateStep();
-    if(err){showError(err);return;}
-    if(step<5){step++;renderStep();return;}
-    const result=DB.completeInitialSetup({
-        company:{companyName:val('companyName'),companyEmail:val('companyEmail'),timezone:val('timezone'),currency:val('currency'),logoUrl:val('logoUrl')},
-        platformOwner:authenticatedOwner(),
-        initialUser:{name:val('opsName'),email:val('opsEmail'),role:document.getElementById('opsRole').value}
-    });
-    if(!result.ok){showError(result.error||'Setup could not be completed.');return;}
-    const svc=setupSvc();
-    if(svc?.saveOrganizationSetup){
-        svc.saveOrganizationSetup(collectOrganizationSetupPayload(),{
-            actor:{role:'platform_owner',id:result.ownerUser?.id||authenticatedOwner()?.id||'',tenantSlug:normalizeSlug(val('tenantSlug')||val('companyName'))}
-        });
-    }
-    location.href='platform-control.html';
-}
-function backStep(){if(step>1){step--;renderStep();}}
-renderStep();
-</script>
+
 <script>
-(function(){
-let enterpriseStep=1;
-let wizardDraftId=sessionStorage.getItem('arthhrms_enterprise_setup_draft_id')||'';
-let workspaceReady=false;
-let workspaceInitialization=null;
-let autosaveTimer=0;
-let actionBusy=false;
-const keys=['organizationInformation','organizationStructure','workingConfiguration','leaveConfiguration','payrollConfiguration','identitySecurity','notifications','administrator','review','provisionTenant'];
-const titles={
-1:['Organization Information','Capture the legal and operating identity used for tenant provisioning.'],
-2:['Organization Structure','Define head office, branches, business units, departments, cost centers, and locations.'],
-3:['Working Configuration','Configure work week, office hours, attendance mode, shifts, weekends, and holidays.'],
-4:['Leave Configuration','Set leave types, accrual, carry forward, encashment, and approvals.'],
-5:['Payroll Configuration','Define payroll frequency, salary components, tax readiness, and payment cycle.'],
-6:['Identity & Security','Configure authentication, security policy, MFA, SSO readiness, and verify the authenticated owner.'],
-7:['Notifications','Enable communication channels and reminder governance.'],
-8:['Administrator','Create the first tenant administrator as invite-pending and MFA-ready.'],
-9:['Review','Validate the complete setup before tenant provisioning.'],
-10:['Provision Tenant','Create tenant metadata, seed configuration, administrator invite, and audit records.']
-};
-function node(id){return document.getElementById(id);}
-function authenticatedOwner(){
-    const u=window.authService?.getCurrentUser?.();
-    return u?.source==='supabase'&&u?.role==='super_admin'&&u?.roleTrusted===true&&u?.companyOwner===true&&u?.tenantSlug&&u?.organizationId?u:null;
-}
-function value(id){const n=node(id);return n?String(n.value||'').trim():'';}
-function setValue(id,next){const n=node(id);if(n)n.value=next??'';}
-function boolValue(id){return value(id)==='true';}
-function service(){return window.EnterpriseOrganizationSetupWizardService||window.enterpriseOrganizationSetupWizardService;}
-function slug(value){
-    if(window.TenantProvisioningService&&TenantProvisioningService.normalizeTenantSlug) return TenantProvisioningService.normalizeTenantSlug(value);
-    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-}
-function html(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function lines(text){return String(text||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);}
-function nameCodeRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim()).filter(Boolean);return{name:p[0]||'',code:p[1]||p[0]||''};}).filter(x=>x.name||x.code);}
-function rowsToText(rows){return (rows||[]).map(x=>[x.name||'',x.code||''].filter(Boolean).join(',')).join('\n');}
-function importRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());if(/^type$/i.test(p[0]||''))return null;return{Type:p[0]||'',Name:p[1]||'',Code:p[2]||''};}).filter(Boolean);}
-function checkedValues(containerId){return Array.from(document.querySelectorAll('#'+containerId+' input[type="checkbox"]')).filter(x=>x.checked).map(x=>x.value);}
-function setCheckedValues(containerId,values){const set=new Set(values||[]);document.querySelectorAll('#'+containerId+' input[type="checkbox"]').forEach(x=>{x.checked=set.has(x.value);});}
-function parseHolidayRows(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',date:p[1]||''};}).filter(x=>x.name||x.date);}
-function holidaysToText(rows){return (rows||[]).map(x=>[x.name||'',x.date||''].filter(Boolean).join(',')).join('\n');}
-function parseLeaveTypes(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',code:p[1]||p[0]||'',annualAllowance:Number(p[2]||0)};}).filter(x=>x.name);}
-function leaveTypesToText(rows){return (rows||[]).map(x=>[x.name||'',x.code||'',x.annualAllowance||0].join(',')).join('\n');}
-function parseComponents(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{name:p[0]||'',type:(p[1]||'EARNING').toUpperCase()};}).filter(x=>x.name);}
-function componentsToText(rows){return (rows||[]).map(x=>[x.name||'',x.type||'EARNING'].join(',')).join('\n');}
-function parseReminders(text){return lines(text).map(line=>{const p=line.split(/,|\|/).map(x=>x.trim());return{event:p[0]||'',hoursBefore:Number(p[1]||24)};}).filter(x=>x.event);}
-function remindersToText(rows){return (rows||[]).map(x=>[x.event||'',x.hoursBefore||24].join(',')).join('\n');}
-function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
-function orgCode(){return value('organizationCode')||slug(value('companyName')).toUpperCase();}
-function draftId(){if(!wizardDraftId){wizardDraftId='DRAFT-'+slug(orgCode()||value('companyName')||Date.now());sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);}return wizardDraftId;}
-function collectStructure(){
-    const structure={headOffice:{name:value('headOffice'),locationCode:value('headOfficeCode')},branches:nameCodeRows(value('branches')),businessUnits:nameCodeRows(value('businessUnits')),departments:nameCodeRows(value('departments')),costCenters:nameCodeRows(value('costCenters')),locations:nameCodeRows(value('locations')||value('defaultLocation'))};
-    const imported=importRows(value('structureImport'));
-    if(imported.length&&service()?.OrganizationStructureImporter?.importFromRows){
-        const result=service().OrganizationStructureImporter.importFromRows(imported,{tenantSlug:slug(orgCode())});
-        if(result.success&&result.structure){
-            ['branches','businessUnits','departments','costCenters','locations'].forEach(key=>{structure[key]=structure[key].concat(result.structure[key]||[]);});
-            if(result.structure.headOffice&&result.structure.headOffice.name) structure.headOffice=result.structure.headOffice;
-        }
+(function companyOwnerSetupWizard(global) {
+  'use strict';
+
+  const STEPS = Object.freeze([
+    { key:'organizationInformation', title:'Organization Basics', description:'Set the company identity and regional defaults.' },
+    { key:'organizationStructure', title:'Organization Structure', description:'Define the structure used by employees and reporting workflows.' },
+    { key:'workingConfiguration', title:'Working Configuration', description:'Configure the working week, attendance baseline, shifts, and holidays.' },
+    { key:'leaveConfiguration', title:'Leave Policies', description:'Create the first leave policy baseline and approval route.' },
+    { key:'payrollConfiguration', title:'Payroll Basics', description:'Set payroll frequency, payment cycle, and salary components.' },
+    { key:'identitySecurity', title:'Identity Settings', description:'Configure authentication and session security requirements.' },
+    { key:'notifications', title:'Notifications', description:'Choose communication channels and reminder defaults.' },
+    { key:'administrator', title:'Administrator Setup', description:'Configure tenant administration and prepare role invitations.' },
+    { key:'review', title:'Review', description:'Resolve missing information and warnings before provisioning.' },
+    { key:'provisionTenant', title:'Provision', description:'Finalize core setup and continue to Company Administration.' }
+  ]);
+
+  const state = {
+    owner:null, workspace:null, company:null, draft:{}, current:0, busy:false, dirty:false,
+    autosaveTimer:0, autosaveInFlight:false, changeVersion:0, retryAction:null, lastError:null, initialized:false,
+    completed:new Set(), completionRedirectTimer:0
+  };
+
+  const byId = id => document.getElementById(id);
+  const service = () => global.CompanySetupOrchestrationService || global.companySetupOrchestrationService;
+  const validator = () => global.EnterpriseOrganizationSetupWizardService || global.enterpriseOrganizationSetupWizardService;
+  const value = id => String(byId(id)?.value || '').trim();
+  const boolValue = id => value(id) === 'true';
+  const setValue = (id, next) => { const element=byId(id); if(element) element.value=next ?? ''; };
+  const lines = text => String(text || '').split(/\r?\n/).map(row => row.trim()).filter(Boolean);
+  const splitRow = line => line.split(/\||,/).map(cell => cell.trim());
+  const validEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
+  const validHttpsUrl = input => {
+    if(!input) return true;
+    try { return new URL(input).protocol === 'https:'; } catch(_error) { return false; }
+  };
+  const slug = input => String(input || '').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
+
+  function namedRows(text) {
+    return lines(text).map(line => {
+      const cells=splitRow(line);
+      return {name:cells[0] || '',code:slug(cells[1] || cells[0] || '')};
+    }).filter(row => row.name);
+  }
+
+  function namedRowsText(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.code || ''}`.trim()).join('\n');
+  }
+
+  function leaveRows(text) {
+    return lines(text).map(line => {
+      const cells=splitRow(line);
+      return {name:cells[0] || '',code:slug(cells[1] || cells[0] || ''),annualAllowance:Number(cells[2] || 0)};
+    }).filter(row => row.name);
+  }
+
+  function leaveRowsText(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.code || ''} | ${Number(row.annualAllowance || 0)}`).join('\n');
+  }
+
+  function componentRows(text) {
+    return lines(text).map(line => {
+      const cells=splitRow(line);
+      return {name:cells[0] || '',type:String(cells[1] || 'EARNING').toUpperCase()};
+    }).filter(row => row.name);
+  }
+
+  function componentRowsText(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.type || 'EARNING'}`).join('\n');
+  }
+
+  function holidayRows(text) {
+    return lines(text).map(line => {
+      const cells=splitRow(line);
+      return {name:cells[0] || '',date:cells[1] || ''};
+    }).filter(row => row.name || row.date);
+  }
+
+  function holidayRowsText(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.date || ''}`).join('\n');
+  }
+
+  function reminderRows(text) {
+    return lines(text).map(line => {
+      const cells=splitRow(line);
+      return {event:String(cells[0] || '').toUpperCase(),hoursBefore:Number(cells[1] || 24)};
+    }).filter(row => row.event);
+  }
+
+  function reminderRowsText(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => `${row.event || ''} | ${Number(row.hoursBefore || 0)}`).join('\n');
+  }
+
+  function checkedWorkingDays() {
+    return Array.from(document.querySelectorAll('#workingDays input:checked')).map(input => input.value);
+  }
+
+  function setWorkingDays(days) {
+    const selected=new Set(Array.isArray(days) ? days : []);
+    document.querySelectorAll('#workingDays input').forEach(input => { input.checked=selected.has(input.value); });
+  }
+
+  function collectInvitationIntents() {
+    return Array.from(document.querySelectorAll('[data-invite-role]')).map(block => ({
+      role:block.dataset.inviteRole,
+      enabled:!!block.querySelector('[data-intent-enabled]')?.checked,
+      name:String(block.querySelector('[data-intent-name]')?.value || '').trim(),
+      email:String(block.querySelector('[data-intent-email]')?.value || '').trim().toLowerCase(),
+      employeeId:String(block.querySelector('[data-intent-employee]')?.value || '').trim(),
+      status:'PREPARED'
+    }));
+  }
+
+  function applyInvitationIntents(rows) {
+    const byRole=new Map((Array.isArray(rows) ? rows : []).map(row => [row.role,row]));
+    document.querySelectorAll('[data-invite-role]').forEach(block => {
+      const row=byRole.get(block.dataset.inviteRole) || {};
+      block.querySelector('[data-intent-enabled]').checked=!!row.enabled;
+      block.querySelector('[data-intent-name]').value=row.name || '';
+      block.querySelector('[data-intent-email]').value=row.email || '';
+      block.querySelector('[data-intent-employee]').value=row.employeeId || '';
+    });
+  }
+
+  function collectStep(index=state.current) {
+    const key=STEPS[index].key;
+    const organizationCode=slug(state.company?.slug || state.company?.tenant_id || value('companyName'));
+    if(key==='organizationInformation') return {
+      companyName:value('companyName'),legalName:value('legalName'),organizationCode,
+      industry:value('industry'),companySize:value('companySize'),country:value('country'),
+      timeZone:value('timeZone'),language:value('language'),currency:value('currency'),
+      website:value('website'),fiscalYearStart:'04-01',
+      logoUpload:{url:value('logoUrl'),name:value('logoUrl') ? value('logoUrl').split('/').pop() : ''}
+    };
+    if(key==='organizationStructure') {
+      const departments=namedRows(value('departments'));
+      const businessUnits=namedRows(value('businessUnits'));
+      const branches=namedRows(value('branches'));
+      const designations=namedRows(value('designations'));
+      const hierarchy=lines(value('reportingHierarchy')).map(line => {
+        const cells=splitRow(line);
+        return {role:cells[0] || '',reportsTo:cells[1] || ''};
+      }).filter(row => row.role);
+      return {
+        headOffice:{name:branches[0]?.name || `${value('companyName')} Head Office`,locationCode:branches[0]?.code || 'HQ'},
+        departments,businessUnits,branches,designations,reportingHierarchy:hierarchy,
+        locations:branches,costCenters:[]
+      };
     }
-    return structure;
-}
-function collectDraft(){
-    return{draftId:draftId(),organizationInformation:{companyName:value('companyName'),legalName:value('legalName'),organizationCode:orgCode(),industry:value('industry'),companySize:value('companySize'),registrationNumber:value('registrationNumber'),taxId:value('taxId'),website:value('website'),timeZone:value('timezone'),currency:value('currency'),language:value('language'),fiscalYearStart:value('fiscalYearStart'),logoUpload:{name:value('logoUpload'),url:value('logoUpload')}},organizationStructure:collectStructure(),workingConfiguration:{workWeek:checkedValues('workWeek'),officeHours:{start:value('officeStart'),end:value('officeEnd')},timeZone:value('workingTimezone')||value('timezone'),shiftStrategy:value('shiftStrategy'),attendanceMode:value('attendanceMode'),weekendRules:{rule:value('weekendRule')},publicHolidays:parseHolidayRows(value('publicHolidays'))},leaveConfiguration:{leaveTypes:parseLeaveTypes(value('leaveTypes')),accrualRules:{frequency:value('accrualRule')},carryForward:{enabled:boolValue('carryForward'),maxDays:12},encashment:{enabled:boolValue('encashment')},approvalRules:{approvers:lines(value('leaveApprovalRules'))}},payrollConfiguration:{payrollFrequency:value('payrollFrequency'),salaryStructure:value('salaryStructure'),components:parseComponents(value('salaryComponents')),taxConfiguration:{summary:value('taxConfiguration')},paymentCycle:{day:Number(value('paymentDay')||30)}},identitySecurity:{authenticationMethod:value('authenticationMethod'),passwordPolicy:{minLength:Number(value('passwordMinLength')||10),requireUppercase:true,requireLowercase:true,requireNumber:true,requireSymbol:true},mfa:boolValue('mfa'),sessionTimeoutMinutes:Number(value('sessionTimeoutMinutes')||30),sso:{enabled:boolValue('ssoEnabled'),provider:value('ssoProvider')}},notifications:{email:{enabled:boolValue('emailEnabled')},sms:{enabled:boolValue('smsEnabled')},pushNotifications:{enabled:boolValue('pushEnabled')},reminderRules:parseReminders(value('reminderRules'))},administrator:{name:value('adminName'),email:value('adminEmail'),phone:value('adminPhone'),role:value('adminRole'),mfa:boolValue('adminMfa')},createDefaultDepartments:true,enabledModules:['employees','attendance','leave','payroll','notifications','reports']};
-}
-function applyDraft(draft){
-    if(!draft)return;
+    if(key==='workingConfiguration') return {
+      workWeek:checkedWorkingDays(),officeHours:{start:value('officeStart'),end:value('officeEnd')},
+      timeZone:value('timeZone'),attendanceMode:value('attendanceMode'),shiftStrategy:value('shiftStrategy'),
+      weekendRules:{rule:'NON_WORKING_DAYS'},publicHolidays:holidayRows(value('holidayCalendar'))
+    };
+    if(key==='leaveConfiguration') return {
+      leaveTypes:leaveRows(value('leaveTypes')),accrualRules:{frequency:value('accrualFrequency')},
+      carryForward:{enabled:boolValue('carryForward'),maxDays:12},encashment:{enabled:boolValue('encashment')},
+      approvalRules:{approvers:lines(value('leaveApprovers')).map(row => row.toUpperCase())}
+    };
+    if(key==='payrollConfiguration') return {
+      payrollFrequency:value('payrollFrequency'),salaryStructure:value('salaryStructure'),
+      paymentCycle:{day:Number(value('paymentDay') || 0)},components:componentRows(value('salaryComponents')),
+      taxConfiguration:{summary:value('taxConfiguration')}
+    };
+    if(key==='identitySecurity') return {
+      authenticationMethod:value('authenticationMethod'),
+      passwordPolicy:{minLength:Number(value('passwordMinLength') || 0),requireUppercase:true,requireLowercase:true,requireNumber:true,requireSymbol:true},
+      sessionTimeoutMinutes:Number(value('sessionTimeout') || 0),mfa:boolValue('mfaEnabled'),
+      sso:{enabled:boolValue('ssoEnabled'),provider:value('ssoProvider')}
+    };
+    if(key==='notifications') return {
+      email:{enabled:boolValue('emailNotifications')},sms:{enabled:boolValue('smsNotifications')},
+      pushNotifications:{enabled:boolValue('pushNotifications')},reminderRules:reminderRows(value('reminderRules'))
+    };
+    if(key==='administrator') return {
+      name:value('administratorName'),email:value('administratorEmail').toLowerCase(),
+      phone:value('administratorPhone'),role:value('administratorRole'),mfa:true,
+      invitationIntents:collectInvitationIntents()
+    };
+    if(key==='review') return {ready:true,reviewedAt:new Date().toISOString()};
+    return {};
+  }
+
+  function collectDraft() {
+    const next={...state.draft};
+    for(let index=0;index<8;index+=1) next[STEPS[index].key]=collectStep(index);
+    return next;
+  }
+
+  function setDefaults() {
+    setValue('industry','Manufacturing');setValue('companySize','201-500');setValue('country','IN');
+    setValue('timeZone','Asia/Kolkata');setValue('language','en');setValue('currency','INR');
+    setWorkingDays(['MON','TUE','WED','THU','FRI']);setValue('officeStart','09:30');setValue('officeEnd','18:30');
+    setValue('attendanceMode','WEB_MOBILE');setValue('shiftStrategy','STANDARD');
+    setValue('accrualFrequency','MONTHLY');setValue('carryForward','true');setValue('encashment','false');
+    setValue('payrollFrequency','MONTHLY');setValue('salaryStructure','STANDARD');setValue('paymentDay','30');
+    setValue('authenticationMethod','LOCAL_AND_SSO');setValue('passwordMinLength','12');setValue('sessionTimeout','30');
+    setValue('mfaEnabled','true');setValue('ssoEnabled','false');setValue('emailNotifications','true');
+    setValue('smsNotifications','false');setValue('pushNotifications','true');setValue('administratorRole','super_admin');
+  }
+
+  function applyDraft(draft) {
     const info=draft.organizationInformation;
-    if(info){setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('organizationCode',info.organizationCode);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('registrationNumber',info.registrationNumber);setValue('taxId',info.taxId);setValue('website',info.website);setValue('timezone',info.timeZone);setValue('currency',info.currency);setValue('language',info.language);setValue('fiscalYearStart',info.fiscalYearStart);setValue('logoUpload',info.logoUpload?.url||info.logoUpload?.name||'');}
-    const st=draft.organizationStructure;if(st){setValue('headOffice',st.headOffice?.name||'');setValue('headOfficeCode',st.headOffice?.locationCode||st.headOffice?.code||'HQ');setValue('branches',rowsToText(st.branches));setValue('businessUnits',rowsToText(st.businessUnits));setValue('departments',rowsToText(st.departments));setValue('costCenters',rowsToText(st.costCenters));setValue('locations',rowsToText(st.locations));}
-    const work=draft.workingConfiguration;if(work){setCheckedValues('workWeek',work.workWeek||[]);setValue('officeStart',work.officeHours?.start||'09:30');setValue('officeEnd',work.officeHours?.end||'18:30');setValue('workingTimezone',work.timeZone||info?.timeZone||'Asia/Kolkata');setValue('shiftStrategy',work.shiftStrategy||'STANDARD');setValue('attendanceMode',work.attendanceMode||'WEB_MOBILE');setValue('weekendRule',work.weekendRules?.rule||'SAT_SUN_OFF');setValue('publicHolidays',holidaysToText(work.publicHolidays));}
-    const leave=draft.leaveConfiguration;if(leave){setValue('leaveTypes',leaveTypesToText(leave.leaveTypes));setValue('accrualRule',leave.accrualRules?.frequency||'MONTHLY');setValue('carryForward',String(!!leave.carryForward?.enabled));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovalRules',(leave.approvalRules?.approvers||[]).join('\n'));}
-    const pay=draft.payrollConfiguration;if(pay){setValue('payrollFrequency',pay.payrollFrequency||'MONTHLY');setValue('salaryStructure',pay.salaryStructure||'STANDARD');setValue('paymentDay',pay.paymentCycle?.day||30);setValue('salaryComponents',componentsToText(pay.components));setValue('taxConfiguration',pay.taxConfiguration?.summary||'');}
-    const ident=draft.identitySecurity;if(ident){setValue('authenticationMethod',ident.authenticationMethod||'LOCAL_AND_SSO');setValue('passwordMinLength',ident.passwordPolicy?.minLength||12);setValue('sessionTimeoutMinutes',ident.sessionTimeoutMinutes||30);setValue('mfa',String(!!ident.mfa));setValue('ssoEnabled',String(!!ident.sso?.enabled));setValue('ssoProvider',ident.sso?.provider||'');}
-    const note=draft.notifications;if(note){setValue('emailEnabled',String(!!note.email?.enabled));setValue('smsEnabled',String(!!note.sms?.enabled));setValue('pushEnabled',String(!!note.pushNotifications?.enabled));setValue('reminderRules',remindersToText(note.reminderRules));}
-    const admin=draft.administrator;if(admin){setValue('adminName',admin.name);setValue('adminEmail',admin.email);setValue('adminPhone',admin.phone);setValue('adminRole',admin.role||'super_admin');setValue('adminMfa',String(admin.mfa!==false));}
-}
-function show(msg){const e=node('setupError');e.textContent=msg;e.style.display='block';}
-function clear(){node('setupError').style.display='none';}
-function validationText(result){return Object.values(result?.inlineErrors||{}).concat((result?.failures||[]).map(x=>x.message||x.code||x.failureCode)).filter(Boolean).join('\n');}
-function ownerError(){const owner=authenticatedOwner();if(!owner)return'A validated Company Owner session is required.';if(!validEmail(owner.email))return'The authenticated Company Owner email is invalid.';return'';}
-function validateCurrent(){
-    const owner=ownerError();if(owner)return owner;
-    if(enterpriseStep===9){const review=service().generateReviewSummary(collectDraft(),wizardContext());return review.readyToProvision?'':validationText({failures:review.validationErrors})||'Review has unresolved validation errors.';}
-    if(enterpriseStep>=10)return'';
-    const key=keys[enterpriseStep-1];const draft=collectDraft();const result=service().validateStep({stepKey:key,values:draft[key]},wizardContext());
-    return result.valid?'':validationText(result);
-}
-function metrics(id,items){node(id).innerHTML=items.map(x=>`<div class="metric"><b>${html(x.value)}</b><span>${html(x.label)}</span></div>`).join('');}
-function renderReview(){
-    const draft=collectDraft();const review=service().generateReviewSummary(draft,wizardContext());const ready=service().calculateSetupReadiness(draft,wizardContext());
-    metrics('readinessMetrics',[{label:'Readiness',value:(ready.setupReadinessScore||0)+'%'},{label:'Scale Ready',value:(ready.scaleReadinessScore||0)+'%'},{label:'Errors',value:String((review.validationErrors||[]).length)},{label:'Warnings',value:String((review.warnings||[]).length)}]);
-    const rows=(review.configurationSummary||[]).map(x=>[x.label,x.status+' - '+x.errorCount+' errors - '+x.warningCount+' warnings']).concat((review.missingRequiredFields||[]).map(x=>[x.stepKey,x.field+': '+x.message]));
-    node('setupSummary').innerHTML=(rows.length?rows:[['Ready','No validation blockers found.']]).map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
-}
-function renderProvisionPreview(){
-    const draft=collectDraft();
-    metrics('provisionMetrics',[{label:'Tenant',value:slug(draft.organizationInformation.organizationCode)},{label:'Departments',value:String((draft.organizationStructure.departments||[]).length)},{label:'Admin MFA',value:draft.administrator.mfa?'On':'Off'},{label:'Workflow Impact',value:'None'}]);
-    const rows=durableMode()
-        ? [['Tenant Workspace','Completes the existing tenant core setup without creating another tenant.'],['Cross-device Resume','Stores validated setup progress in the tenant-scoped Supabase workspace.'],['Next Action','Returns the Company Owner to the setup home for policy and workforce tasks.'],['Audit','Versions each step and appends lifecycle evidence.']]
-        : [['Tenant Creation','Creates tenant metadata and routing-safe organization code.'],['Configuration Seeding','Stores working, leave, payroll, identity, notification, and structure setup by tenant.'],['Administrator','Creates invite-pending tenant administrator without changing employee records.'],['Audit','Writes setup, provisioning, and security audit entries.']];
-    node('provisionSummary').innerHTML=rows.map(([k,v])=>`<div><b>${html(k)}</b><span>${html(v)}</span></div>`).join('');
-}
-function renderEnterpriseStep(){
-    clear();document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));node('step'+enterpriseStep).classList.add('on');
-    document.querySelectorAll('.step-dot').forEach((d,i)=>{d.classList.toggle('on',i+1===enterpriseStep);d.classList.toggle('done',i+1<enterpriseStep);});
-    const persisted=Number(orchestration()?.getWorkspace?.()?.progress||0);
-    node('stepTitle').textContent=titles[enterpriseStep][0];node('stepHelp').textContent=titles[enterpriseStep][1];node('backBtn').style.visibility=enterpriseStep===1?'hidden':'visible';node('nextBtn').textContent=enterpriseStep===10?'Complete Setup':(enterpriseStep===9?'Continue to Provision':'Save & Next');node('nextBtn').className=enterpriseStep===10?'btn good':'btn';node('setupProgress').style.width=Math.max(persisted,(enterpriseStep-1)*10)+'%';node('draftBadge').textContent=wizardDraftId?'Draft '+wizardDraftId:'Draft not saved';
-    if(enterpriseStep===9)renderReview();if(enterpriseStep===10)renderProvisionPreview();
-}
-function setBusy(busy,label){
-    actionBusy=busy;
-    ['backBtn','saveDraftBtn','nextBtn'].forEach(id=>{const button=node(id);if(button)button.disabled=busy;});
-    if(label)node('draftBadge').textContent=label;
-}
-window.saveDraft=async function(options={}){
-    if(actionBusy&&options.source!=='autosave')return false;
-    const complete=options.complete===true;
-    const draft=collectDraft();
+    if(info){setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('country',info.country);setValue('timeZone',info.timeZone);setValue('language',info.language);setValue('currency',info.currency);setValue('website',info.website);setValue('logoUrl',info.logoUpload?.url || '');}
+    const structure=draft.organizationStructure;
+    if(structure){setValue('departments',namedRowsText(structure.departments));setValue('businessUnits',namedRowsText(structure.businessUnits));setValue('branches',namedRowsText(structure.branches));setValue('designations',namedRowsText(structure.designations));setValue('reportingHierarchy',(structure.reportingHierarchy || []).map(row => `${row.role || ''} | ${row.reportsTo || ''}`).join('\n'));}
+    const working=draft.workingConfiguration;
+    if(working){setWorkingDays(working.workWeek);setValue('officeStart',working.officeHours?.start);setValue('officeEnd',working.officeHours?.end);setValue('attendanceMode',working.attendanceMode);setValue('shiftStrategy',working.shiftStrategy);setValue('holidayCalendar',holidayRowsText(working.publicHolidays));}
+    const leave=draft.leaveConfiguration;
+    if(leave){setValue('leaveTypes',leaveRowsText(leave.leaveTypes));setValue('accrualFrequency',leave.accrualRules?.frequency);setValue('carryForward',String(leave.carryForward?.enabled !== false));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovers',(leave.approvalRules?.approvers || []).join('\n'));}
+    const payroll=draft.payrollConfiguration;
+    if(payroll){setValue('payrollFrequency',payroll.payrollFrequency);setValue('salaryStructure',payroll.salaryStructure);setValue('paymentDay',payroll.paymentCycle?.day);setValue('salaryComponents',componentRowsText(payroll.components));setValue('taxConfiguration',payroll.taxConfiguration?.summary);}
+    const identity=draft.identitySecurity;
+    if(identity){setValue('authenticationMethod',identity.authenticationMethod);setValue('passwordMinLength',identity.passwordPolicy?.minLength);setValue('sessionTimeout',identity.sessionTimeoutMinutes);setValue('mfaEnabled',String(!!identity.mfa));setValue('ssoEnabled',String(!!identity.sso?.enabled));setValue('ssoProvider',identity.sso?.provider);}
+    const notifications=draft.notifications;
+    if(notifications){setValue('emailNotifications',String(!!notifications.email?.enabled));setValue('smsNotifications',String(!!notifications.sms?.enabled));setValue('pushNotifications',String(!!notifications.pushNotifications?.enabled));setValue('reminderRules',reminderRowsText(notifications.reminderRules));}
+    const administrator=draft.administrator;
+    if(administrator){setValue('administratorName',administrator.name);setValue('administratorEmail',administrator.email);setValue('administratorPhone',administrator.phone);setValue('administratorRole',administrator.role || 'super_admin');applyInvitationIntents(administrator.invitationIntents);}
+  }
+
+  function clearValidation() {
+    document.querySelectorAll('.invalid').forEach(element => {element.classList.remove('invalid');element.removeAttribute('aria-invalid');});
+    document.querySelectorAll('[data-error-for]').forEach(element => {element.textContent='';});
+    byId('validationSummary').classList.remove('show');byId('validationSummary').textContent='';
+  }
+
+  function setFieldError(field,message) {
+    const aliases={
+      logoUpload:'logoUrl',headOffice:'branches',workWeek:'workingDays',officeHours:'officeStart',
+      publicHolidays:'holidayCalendar',approvalRules:'leaveApprovers',paymentCycle:'paymentDay',
+      components:'salaryComponents',passwordPolicy:'passwordMinLength',
+      sessionTimeoutMinutes:'sessionTimeout',sso:'ssoProvider',
+      name:'administratorName',email:'administratorEmail',role:'administratorRole'
+    };
+    const renderedField=aliases[field] || field;
+    const target=document.querySelector(`[data-error-for="${CSS.escape(field)}"]`)
+      || document.querySelector(`[data-error-for="${CSS.escape(renderedField)}"]`);
+    if(target) target.textContent=message;
+    const input=byId(renderedField);
+    if(input){input.classList.add('invalid');input.setAttribute('aria-invalid','true');}
+  }
+
+  function customValidation(index,payload) {
+    const errors={};const warnings=[];
+    if(index===0){
+      ['companyName','legalName','industry','companySize','country','timeZone','language','currency','website'].forEach(field => {if(!payload[field])errors[field]='Required.';});
+      if(payload.website && !validHttpsUrl(payload.website)) errors.website='Use a valid HTTPS URL.';
+      if(payload.logoUpload?.url && !validHttpsUrl(payload.logoUpload.url)) errors.logoUpload='Use a valid HTTPS image URL.';
+    }
+    if(index===1){
+      if(!payload.departments.length) errors.departments='Add at least one department.';
+      if(!payload.branches.length) errors.branches='Add at least one branch.';
+      if(!payload.designations.length) errors.designations='Add at least one designation.';
+      if(!payload.reportingHierarchy.length) errors.reportingHierarchy='Add at least one reporting relationship.';
+      if(!payload.businessUnits.length) warnings.push('No business unit has been configured.');
+    }
+    if(index===7){
+      const invalidIntent=payload.invitationIntents.find(row => row.enabled && (!row.name || !validEmail(row.email) || !row.employeeId));
+      if(invalidIntent) errors.invitationIntents=`${invalidIntent.role.toUpperCase()} invitation requires name, valid email, and employee ID.`;
+    }
+    return {errors,warnings};
+  }
+
+  function validationContext() {
+    return {
+      actor:state.owner,
+      timeZone:value('timeZone'),
+      ignoreCurrentCompanySettings:true,
+      draftId:state.workspace?.id || ''
+    };
+  }
+
+  function validateIndex(index) {
+    clearValidation();
+    if(index===8) return validateReview();
+    if(index>=9) return {valid:true,errors:[],warnings:[]};
+    const payload=collectStep(index);
+    const result=validator()?.validateStep?.({stepKey:STEPS[index].key,values:payload},validationContext());
+    const custom=customValidation(index,payload);
+    const inline={...(result?.inlineErrors || {}),...custom.errors};
+    Object.entries(inline).forEach(([field,message]) => setFieldError(field,message));
+    const messages=[...Object.values(inline),...(result?.failures || []).map(row => row.message || row.failureCode).filter(Boolean)];
+    const unique=[...new Set(messages)];
+    if(unique.length){byId('validationSummary').textContent=unique.join('\n');byId('validationSummary').classList.add('show');}
+    return {valid:!!result?.valid && !Object.keys(custom.errors).length,errors:unique,warnings:[...(result?.warnings || []).map(row => row.message || row.warningCode).filter(Boolean),...custom.warnings]};
+  }
+
+  function validateReview() {
+    const draft=collectDraft();const rows=[];let valid=true;
+    for(let index=0;index<8;index+=1){
+      const result=validator()?.validateStep?.({stepKey:STEPS[index].key,values:draft[STEPS[index].key]},{
+        ...validationContext(),
+        timeZone:draft.organizationInformation?.timeZone || value('timeZone')
+      });
+      const custom=customValidation(index,draft[STEPS[index].key]);
+      const errors=[...Object.values(result?.inlineErrors || {}),...(result?.failures || []).map(row => row.message || row.failureCode).filter(Boolean),...Object.values(custom.errors)];
+      const warnings=[...(result?.warnings || []).map(row => row.message || row.warningCode).filter(Boolean),...custom.warnings];
+      if(!result?.valid || errors.length) valid=false;
+      rows.push({label:STEPS[index].title,valid:!!result?.valid && !errors.length,detail:errors.length ? errors.join(' ') : warnings.length ? warnings.join(' ') : 'Complete'});
+    }
+    renderReview(rows);
+    if(!valid){byId('validationSummary').textContent='Resolve the highlighted setup sections before provisioning.';byId('validationSummary').classList.add('show');}
+    return {valid,errors:rows.filter(row => !row.valid),warnings:rows.filter(row => row.valid && row.detail!=='Complete')};
+  }
+
+  function renderReview(rows) {
+    const list=byId('reviewList');list.replaceChildren();
+    rows.forEach(row => {
+      const item=document.createElement('div');item.className='review-row';
+      const icon=document.createElement('span');icon.className=`review-icon${row.valid ? '' : ' warning'}`;icon.textContent=row.valid ? 'OK' : '!';
+      const label=document.createElement('span');label.className='review-label';label.textContent=row.label;
+      const detail=document.createElement('span');detail.className='review-detail';detail.textContent=row.detail;
+      item.append(icon,label,detail);list.appendChild(item);
+    });
+  }
+
+  function updateStatus(kind,text) {
+    const status=byId('saveStatus');status.className=`status ${kind || ''}`.trim();byId('saveStatusText').textContent=text;
+  }
+
+  function updateAuditStatus() {
+    const audit=service()?.getAuditState?.() || {};
+    const element=byId('auditStatus');
+    if(audit.lastError || audit.pending){element.className='status saving';byId('auditStatusText').textContent=audit.pending ? `Audit queued (${audit.pending})` : 'Audit retry queued';}
+    else{element.className='status saved';byId('auditStatusText').textContent='Audit current';}
+  }
+
+  function setBusy(busy,button) {
+    state.busy=busy;
+    byId('previousButton').disabled=busy || state.current===0;
+    byId('saveDraftButton').disabled=busy;
+    byId('nextButton').disabled=busy;
+    document.querySelectorAll('.step-button').forEach(element => {element.disabled=busy || Number(element.dataset.index)>maximumUnlockedIndex();});
+    document.querySelectorAll('#wizardForm input,#wizardForm select,#wizardForm textarea').forEach(element => {element.disabled=busy;});
+    if(button)button.classList.toggle('busy',busy);
+  }
+
+  function errorCategory(result) {
+    if(result?.category) return result.category;
+    const text=String(result?.message || result?.error || '');
+    if(/permission|forbidden|rls|42501|403/i.test(text))return'PERMISSION';
+    if(/network|fetch|offline|timeout/i.test(text))return'NETWORK';
+    if(/config|disabled|unavailable/i.test(text))return'CONFIGURATION';
+    if(/valid|required|invalid/i.test(text))return'VALIDATION';
+    return'DATABASE';
+  }
+
+  function presentError(result,retryAction) {
+    const category=errorCategory(result);
+    const titles={PERMISSION:'Permission Error',NETWORK:'Network Error',CONFIGURATION:'Configuration Error',VALIDATION:'Validation Error',DATABASE:'Database Error',APPLICATION:'Application Error'};
+    const reason=String(result?.message || result?.error || 'The operation could not be completed.');
+    state.lastError={category,reason,code:result?.code || '',at:new Date().toISOString()};
+    state.retryAction=typeof retryAction==='function' ? retryAction : null;
+    byId('errorTitle').textContent=titles[category] || 'Application Error';
+    byId('errorReason').textContent=`Reason:\n${reason}`;
+    byId('retryButton').hidden=!state.retryAction;
+    byId('errorAlert').classList.add('show');
+    updateStatus('failed','Save failed');
+  }
+
+  function clearError() {
+    byId('errorAlert').classList.remove('show');state.retryAction=null;
+  }
+
+  async function reportIssue() {
+    const diagnostic={
+      reference:`SETUP-${Date.now().toString(36).toUpperCase()}`,
+      tenant:state.owner?.tenantSlug || '',
+      workspaceId:state.workspace?.id || '',
+      step:STEPS[state.current]?.key || '',
+      error:state.lastError,
+      online:navigator.onLine,
+      userAgent:navigator.userAgent.slice(0,180)
+    };
+    const text=JSON.stringify(diagnostic,null,2);
+    try {await navigator.clipboard.writeText(text);byId('reportButton').textContent='Reference copied';}
+    catch(_error){byId('reportButton').textContent=diagnostic.reference;}
+  }
+
+  function maximumUnlockedIndex() {
+    const currentKey=state.workspace?.current_step;
+    const persisted=Math.max(0,STEPS.findIndex(step => step.key===currentKey));
+    return Math.min(9,Math.max(state.current,persisted));
+  }
+
+  function renderSteps() {
+    const list=byId('stepList');list.replaceChildren();
+    STEPS.forEach((step,index) => {
+      const button=document.createElement('button');button.type='button';button.className='step-button';button.dataset.index=String(index);
+      if(index===state.current)button.classList.add('active');
+      if(state.completed.has(step.key))button.classList.add('complete');
+      button.disabled=state.busy || index>maximumUnlockedIndex();
+      const number=document.createElement('span');number.className='step-number';number.textContent=state.completed.has(step.key) ? 'OK' : String(index+1);
+      const name=document.createElement('span');name.className='step-name';name.textContent=step.title;
+      button.append(number,name);
+      button.addEventListener('click',() => navigateTo(index));
+      list.appendChild(button);
+    });
+  }
+
+  function render() {
+    const step=STEPS[state.current];
+    document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active',Number(panel.dataset.step)===state.current+1));
+    byId('stepTitle').textContent=step.title;byId('stepDescription').textContent=step.description;byId('stepCount').textContent=`Step ${state.current+1} of ${STEPS.length}`;
+    byId('previousButton').disabled=state.busy || state.current===0;
+    byId('saveDraftButton').hidden=state.current>=8;
+    byId('nextButton').hidden=state.current===9 && state.workspace?.status==='CORE_SETUP_COMPLETE';
+    byId('nextButton').textContent=state.current===8 ? 'Confirm Review' : state.current===9 ? 'Finish Setup' : 'Save & Next';
+    const progress=Number(state.workspace?.progress || 0);byId('progressValue').style.width=`${progress}%`;byId('progressText').textContent=`${progress}%`;
+    if(state.current===8)validateReview();
+    renderSteps();updateAuditStatus();
+  }
+
+  async function persistCurrent({complete=false,source='manual'}={}) {
+    if(!state.workspace || !state.owner)return false;
+    if(!navigator.onLine){
+      state.dirty=true;
+      state.autosaveInFlight=false;
+      updateStatus('saving','Waiting for connection');
+      return false;
+    }
+    if(complete){
+      const validation=validateIndex(state.current);
+      if(!validation.valid){updateStatus('failed','Validation required');return false;}
+    }
+    const stepKey=STEPS[Math.min(state.current,8)].key;
+    const payload=stepKey==='review' ? {ready:true,reviewedAt:new Date().toISOString()} : collectStep(state.current);
+    const changeVersionAtStart=state.changeVersion;
+    const button=source==='next' ? byId('nextButton') : source==='manual' ? byId('saveDraftButton') : null;
+    if(source!=='autosave')setBusy(true,button);
+    updateStatus('saving',source==='autosave' ? 'Autosaving' : 'Saving');
+    clearError();
     try{
-        if(options.source!=='autosave')setBusy(true,complete?'Saving step...':'Saving draft...');
-        if(durableMode()){
-            const key=keys[Math.min(enterpriseStep,9)-1]||'review';
-            const payload=key==='review'?{ready:true,reviewedAt:new Date().toISOString()}:draft[key];
-            const saved=await orchestration().saveStep({stepKey:key,payload,complete},{actor:authenticatedOwner()});
-            if(!saved.success){show(saved.message||'Database Error: draft could not be saved.');return false;}
-            wizardDraftId=saved.workspace.id;
-            sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
-            node('draftBadge').textContent=(complete?'Completed':'Saved')+' - '+saved.workspace.progress+'%';
-            return true;
-        }
-        const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';
-        const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},wizardContext());
-        if(!result.success){show(validationText(result)||'Validation Error: draft could not be saved.');return false;}
-        wizardDraftId=result.draft.draftId;sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);node('draftBadge').textContent='Draft saved - '+wizardDraftId;return true;
+      const result=await service().saveStep({stepKey,payload,complete},{actor:state.owner});
+      if(!result?.success){presentError(result,() => persistCurrent({complete,source}));return false;}
+      state.workspace=result.workspace;state.draft={...state.draft,[stepKey]:payload};state.completed=new Set(result.workspace.completed_steps || []);
+      state.dirty=state.changeVersion!==changeVersionAtStart;
+      updateStatus('saved',state.dirty ? 'New changes pending' : complete ? 'Step saved' : 'Draft saved');
+      renderSteps();updateAuditStatus();
+      return true;
     }catch(error){
-        show(/fetch|network|offline/i.test(String(error?.message||error))?'Network Error: check your connection and retry.':'Database Error: the setup draft could not be saved.');
-        return false;
+      presentError({category:/network|fetch/i.test(String(error?.message))?'NETWORK':'APPLICATION',message:error?.message || 'The draft could not be saved.'},() => persistCurrent({complete,source}));
+      return false;
     }finally{
-        if(options.source!=='autosave')setBusy(false);
+      if(source!=='autosave')setBusy(false,button);
+      state.autosaveInFlight=false;
+      if(source==='autosave' && state.dirty && navigator.onLine)armAutosave();
     }
-};
-window.nextStep=async function(){
+  }
+
+  function armAutosave() {
+    if(!state.initialized || state.busy || state.current>=8)return;
+    clearTimeout(state.autosaveTimer);
+    state.autosaveTimer=global.setTimeout(async() => {
+      state.autosaveTimer=0;
+      if(state.autosaveInFlight){armAutosave();return;}
+      state.autosaveInFlight=true;
+      await persistCurrent({complete:false,source:'autosave'});
+    },900);
+  }
+
+  function scheduleAutosave() {
+    if(!state.initialized || state.busy || state.current>=8)return;
+    state.changeVersion+=1;
+    state.dirty=true;
+    updateStatus('saving',navigator.onLine ? 'Unsaved changes' : 'Waiting for connection');
+    armAutosave();
+  }
+
+  async function next() {
+    clearTimeout(state.autosaveTimer);state.autosaveTimer=0;
+    if(state.current<9){
+      const saved=await persistCurrent({complete:true,source:'next'});
+      if(!saved)return;
+      state.current+=1;clearValidation();render();return;
+    }
+    await completeSetup();
+  }
+
+  async function previous() {
+    if(state.current<=0 || state.busy)return;
+    clearTimeout(state.autosaveTimer);state.autosaveTimer=0;
+    if(state.current<8 && state.dirty){
+      const saved=await persistCurrent({complete:false,source:'previous'});
+      if(!saved)return;
+    }
+    state.current-=1;clearValidation();render();
+  }
+
+  async function navigateTo(index) {
+    if(index===state.current || index>maximumUnlockedIndex() || state.busy)return;
+    if(state.current<8 && state.dirty){
+      const saved=await persistCurrent({complete:false,source:'navigation'});
+      if(!saved)return;
+    }
+    state.current=index;clearValidation();render();
+  }
+
+  async function completeSetup() {
+    setBusy(true,byId('nextButton'));clearError();updateStatus('saving','Provisioning');
     try{
-        const err=validateCurrent();if(err){show('Validation Error: '+err);return;}
-        if(autosaveTimer){clearTimeout(autosaveTimer);autosaveTimer=0;}
-        if(enterpriseStep<10){if(!await window.saveDraft({complete:true,source:'next'}))return;enterpriseStep++;renderEnterpriseStep();return;}
-        if(durableMode()){
-            setBusy(true,'Completing setup...');
-            const completed=await orchestration().completeCoreSetup({}, {actor:authenticatedOwner()});
-            if(!completed.success){show(completed.message||'Database Error: core company setup could not be completed.');return;}
-            sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');
-            location.href='super-admin.html?section=company-setup';
-            return;
-        }
+      const result=await service().completeCoreSetup({}, {actor:state.owner});
+      if(!result?.success){presentError(result,completeSetup);return;}
+      state.workspace=result.workspace;state.completed=new Set(result.workspace.completed_steps || []);
+      byId('provisionMark').textContent='OK';byId('provisionTitle').textContent='Company setup completed';
+      byId('provisionMessage').textContent='Core configuration is saved. Continue to Company Administration for invitations, workforce import, readiness, and go-live.';
+      byId('dashboardButton').hidden=false;byId('nextButton').hidden=true;byId('saveDraftButton').hidden=true;
+      updateStatus('saved','Setup complete');renderSteps();updateAuditStatus();
+      state.completionRedirectTimer=global.setTimeout(openDashboard,1800);
     }catch(error){
-        show(/fetch|network|offline/i.test(String(error?.message||error))?'Network Error: check your connection and retry.':'Configuration Error: company setup could not continue.');
-        return;
-    }finally{
-        if(enterpriseStep===10)setBusy(false);
+      presentError({category:'APPLICATION',message:error?.message || 'Company setup could not be completed.'},completeSetup);
+    }finally{setBusy(false,byId('nextButton'));}
+  }
+
+  function openDashboard() {
+    clearTimeout(state.completionRedirectTimer);
+    global.location.assign('super-admin.html?section=company-setup');
+  }
+
+  function verifyOwner() {
+    const owner=global.authService?.getCurrentUser?.();
+    if(owner?.source!=='supabase' || owner?.role!=='super_admin' || owner?.roleTrusted!==true || owner?.companyOwner!==true || !owner?.tenantSlug || !owner?.organizationId)return null;
+    return owner;
+  }
+
+  async function initialize() {
+    if(state.initialized)return;
+    const guardResult=await global.ArthAuthGuard?.ready;
+    if(!guardResult?.authorized)return;
+    state.owner=verifyOwner();
+    if(!state.owner){
+      byId('loadingSkeleton').hidden=true;
+      presentError({category:'PERMISSION',message:'A trusted Company Owner session is required for this tenant setup.'});
+      return;
     }
-    const draft=collectDraft();let setupResult={ok:true,ownerUser:null};
-    if(DB.isSetupRequired&&DB.isSetupRequired()){setupResult=DB.completeInitialSetup({company:{companyName:draft.organizationInformation.companyName,companyEmail:draft.administrator.email,timezone:draft.organizationInformation.timeZone,currency:draft.organizationInformation.currency,logoUrl:draft.organizationInformation.logoUpload.url},platformOwner:authenticatedOwner(),initialUser:{name:draft.administrator.name,email:draft.administrator.email,role:draft.administrator.role}});if(!setupResult.ok){show(setupResult.error||'Initial setup could not be completed.');return;}}
-    const result=service().provisionTenant(draft,{actor:{role:'platform_owner',id:setupResult.ownerUser?.id||value('ownerEmail'),email:value('ownerEmail')}});
-    if(!result.success){show(validationText(result)||'Tenant provisioning could not be completed.');return;}
-    sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');location.href='platform-control.html';
-};
-window.backStep=async function(){
-    if(enterpriseStep<=1)return;
-    if(durableMode()&&workspaceReady){
-        const saved=await window.saveDraft({complete:false,source:'back'});
-        if(!saved)return;
+    if(!service()?.isEnabled?.()){
+      byId('loadingSkeleton').hidden=true;
+      presentError({category:'CONFIGURATION',message:'Durable Company Setup is not enabled in runtime configuration.'},initialize);
+      return;
     }
-    enterpriseStep--;
-    renderEnterpriseStep();
-};
-function syncAuthenticatedOwner(){const owner=authenticatedOwner();if(!owner)return;setValue('ownerName',owner.name||owner.email);setValue('ownerEmail',owner.email);}
-async function loadDurableWorkspace(){
-    if(!durableMode())return;
-    if(workspaceInitialization)return workspaceInitialization;
-    workspaceInitialization=(async()=>{
-    const owner=authenticatedOwner();
-    if(!owner){
-        const current=window.authService?.getCurrentUser?.();
-        if(current?.role==='platform_owner')location.replace('platform-control.html');
-        else show('Permission Error: this setup workspace is available only to the invited Company Owner.');
-        return;
+    byId('tenantLabel').textContent=state.owner.tenantSlug;
+    try{
+      const loaded=await service().loadWorkspace({actor:state.owner});
+      if(!loaded?.success){byId('loadingSkeleton').hidden=true;presentError(loaded,initialize);return;}
+      state.workspace=loaded.workspace;state.company=loaded.company;state.draft=loaded.workspace.draft_payload || {};
+      state.completed=new Set(loaded.workspace.completed_steps || []);
+      setDefaults();applyDraft(state.draft);
+      if(!value('administratorName'))setValue('administratorName',state.owner.name || '');
+      if(!value('administratorEmail'))setValue('administratorEmail',state.owner.email || '');
+      const currentIndex=STEPS.findIndex(step => step.key===loaded.workspace.current_step);
+      state.current=currentIndex>=0 ? currentIndex : 0;
+      state.initialized=true;byId('loadingSkeleton').hidden=true;byId('workspace').hidden=false;
+      byId('pageTitle').textContent=loaded.company?.company_name || 'Complete company setup';
+      byId('pageSubtitle').textContent='Your progress is saved to the tenant workspace and resumes across sessions.';
+      updateStatus('saved','Workspace ready');render();
+      service().flushAuditQueue?.({actor:state.owner}).then(updateAuditStatus);
+    }catch(error){
+      byId('loadingSkeleton').hidden=true;
+      presentError({category:/network|fetch/i.test(String(error?.message))?'NETWORK':'APPLICATION',message:error?.message || 'The setup workspace could not be loaded.'},initialize);
     }
-    const loaded=await orchestration().loadWorkspace({actor:owner});
-    if(!loaded.success){show(loaded.message||'Company setup workspace could not be loaded.');return;}
-    wizardDraftId=loaded.workspace.id;
-    sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
-    applyDraft(loaded.workspace.draft_payload||{});
-    const savedStep=keys.indexOf(loaded.workspace.current_step);
-    if(savedStep>=0)enterpriseStep=savedStep+1;
-    syncAuthenticatedOwner();
-    workspaceReady=true;
-    renderEnterpriseStep();
-    return loaded;
-    })();
-    return workspaceInitialization;
-}
-function scheduleAutosave(){
-    if(!durableMode()||!workspaceReady||actionBusy||enterpriseStep>=9)return;
-    clearTimeout(autosaveTimer);
-    node('draftBadge').textContent='Unsaved changes';
-    autosaveTimer=setTimeout(()=>{autosaveTimer=0;window.saveDraft({complete:false,source:'autosave'});},1200);
-}
-node('setupStepper')?.closest('.wizard')?.addEventListener('input',scheduleAutosave);
-node('setupStepper')?.closest('.wizard')?.addEventListener('change',scheduleAutosave);
-globalThis.addEventListener?.('arthhrms:auth-ready',()=>{syncAuthenticatedOwner();loadDurableWorkspace();});
-window.ArthAuthGuard?.ready?.then(()=>{syncAuthenticatedOwner();loadDurableWorkspace();});
-syncAuthenticatedOwner();
-if(!durableMode()&&wizardDraftId&&service()?.resumeDraft){const resumed=service().resumeDraft({draftId:wizardDraftId},wizardContext());if(resumed.success)applyDraft(resumed.draft);syncAuthenticatedOwner();}
-renderEnterpriseStep();
-})();
+  }
+
+  function onlineChanged() {
+    byId('offlineBanner').classList.toggle('show',!navigator.onLine);
+    if(navigator.onLine){
+      service()?.flushAuditQueue?.({actor:state.owner}).then(updateAuditStatus);
+      if(state.dirty)scheduleAutosave();
+    }
+  }
+
+  byId('wizardForm').addEventListener('input',scheduleAutosave);
+  byId('wizardForm').addEventListener('change',scheduleAutosave);
+  byId('wizardForm').addEventListener('submit',event => {event.preventDefault();next();});
+  byId('previousButton').addEventListener('click',previous);
+  byId('saveDraftButton').addEventListener('click',() => persistCurrent({complete:false,source:'manual'}));
+  byId('nextButton').addEventListener('click',next);
+  byId('dashboardButton').addEventListener('click',openDashboard);
+  byId('retryButton').addEventListener('click',() => state.retryAction?.());
+  byId('reportButton').addEventListener('click',reportIssue);
+  global.addEventListener('online',onlineChanged);global.addEventListener('offline',onlineChanged);
+  global.addEventListener('beforeunload',event => {if(state.dirty){event.preventDefault();event.returnValue='';}});
+  global.addEventListener('unhandledrejection',event => {
+    event.preventDefault();
+    presentError({category:'APPLICATION',message:event.reason?.message || 'A background operation failed. Your saved progress is unchanged.'},state.retryAction);
+  });
+  global.addEventListener('error',event => {
+    presentError({category:'APPLICATION',message:event.error?.message || 'A page operation failed. Reload the setup workspace and retry.'},() => global.location.reload());
+  });
+  onlineChanged();
+  initialize();
+}(window));
 </script>
 </body>
 </html>

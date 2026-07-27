@@ -15,6 +15,18 @@ const rpcClaimSql = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260727084250_enforce_company_owner_setup_rpc_claim.sql'),
   'utf8'
 );
+const auditOutboxSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727090940_company_setup_audit_outbox.sql'),
+  'utf8'
+);
+const auditTriggerFixSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727092707_fix_company_setup_audit_trigger.sql'),
+  'utf8'
+);
+const setupIndexSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727093827_index_company_setup_foreign_keys.sql'),
+  'utf8'
+);
 const setupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const adminPage = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 const guard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
@@ -46,13 +58,26 @@ assert.match(guard, /DEDICATED_PERSISTENCE_ROUTES/);
 assert.match(guard, /usesDedicatedPersistence/);
 assert.doesNotMatch(guard, /legacyPlatformSetup/);
 assert.match(setupPage, /services\/companySetupOrchestrationService\.js/);
-assert.match(setupPage, /await orchestration\(\)\.saveStep/);
-assert.match(setupPage, /await orchestration\(\)\.completeCoreSetup/);
-assert.match(setupPage, /u\?\.companyOwner===true/);
-assert.match(setupPage, /saveDraft\(\{complete:false,source:'manual'\}\)/);
+assert.doesNotMatch(setupPage, /<script src="services\/authService\.js"/);
+assert.doesNotMatch(setupPage, /<script src="services\/supabaseClient\.js"/);
+assert.doesNotMatch(setupPage, /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase/);
+assert.match(setupPage, /await service\(\)\.saveStep/);
+assert.match(setupPage, /await service\(\)\.completeCoreSetup/);
+assert.match(setupPage, /owner\?\.companyOwner!==true/);
+assert.match(setupPage, /persistCurrent\(\{complete:false,source:'manual'\}\)/);
 assert.match(setupPage, /source:'autosave'/);
-assert.match(setupPage, /source:'back'/);
-assert.match(setupPage, /id="passwordMinLength"[^>]*min="12"[^>]*value="12"/);
+assert.match(setupPage, /source:'previous'/);
+assert.match(setupPage, /id="passwordMinLength"[^>]*min="12"/);
+assert.match(setupPage, /setValue\('passwordMinLength','12'\)/);
+assert.equal((setupPage.match(/<section class="panel" data-step="/g) || []).length, 10);
+assert.equal((setupPage.match(/<script>/g) || []).length, 1);
+assert.match(setupPage, /changeVersionAtStart/);
+assert.match(setupPage, /function armAutosave/);
+assert.match(setupPage, /if\(!navigator\.onLine\)\{[\s\S]*state\.autosaveInFlight=false/);
+assert.match(setupPage, /ignoreCurrentCompanySettings:true/);
+assert.doesNotMatch(setupPage, /durableMode/);
+assert.doesNotMatch(setupPage, /Unexpected Error Occurred/);
+assert.doesNotMatch(setupPage, /\.innerHTML\s*=/);
 assert.match(adminPage, /data-company-setup-nav/);
 assert.match(adminPage, /id="sec-company-setup"/);
 assert.match(adminPage, /CompanySetupOrchestrationService/);
@@ -83,5 +108,37 @@ assert.match(rpcClaimSql, /public\.arth_persistence_role\(\) <> 'super_admin'/);
 assert.match(rpcClaimSql, /Company Owner authorization is required/);
 assert.doesNotMatch(rpcClaimSql, /user_metadata/i);
 assert.doesNotMatch(rpcClaimSql, /disable row level security/i);
+
+assert.match(auditOutboxSql, /create table if not exists public\.company_setup_audit_outbox/);
+assert.match(auditOutboxSql, /alter table public\.company_setup_audit_outbox force row level security/);
+assert.match(auditOutboxSql, /revoke all on public\.company_setup_audit_outbox from public, anon, authenticated/);
+assert.match(auditOutboxSql, /arth_enqueue_company_setup_audit/);
+assert.match(auditOutboxSql, /arth_deliver_company_setup_audit/);
+assert.match(auditOutboxSql, /arth_flush_company_setup_audit/);
+assert.match(auditOutboxSql, /status = 'PENDING'/);
+assert.match(auditOutboxSql, /exception\s+when others then\s+null/is);
+assert.doesNotMatch(auditOutboxSql, /disable row level security/i);
+assert.doesNotMatch(
+  auditOutboxSql,
+  /grant\s+(insert|update|delete)[^;]*company_setup_audit_outbox[^;]*authenticated/i
+);
+assert.doesNotMatch(
+  auditOutboxSql,
+  /grant\s+(insert|update|delete)[^;]*hrms_audit_records[^;]*authenticated/i
+);
+assert.match(auditTriggerFixSql, /create or replace function private\.arth_audit_company_setup_step/);
+assert.match(auditTriggerFixSql, /Company setup audit provenance is invalid/);
+assert.match(auditTriggerFixSql, /arth_enqueue_company_setup_audit/);
+assert.doesNotMatch(auditTriggerFixSql, /new\.completed/);
+for (const index of [
+  'company_setup_audit_outbox_workspace_idx',
+  'company_setup_audit_outbox_actor_idx',
+  'company_setup_step_versions_company_idx',
+  'company_setup_step_versions_actor_idx',
+  'company_setup_workspaces_created_by_idx',
+  'company_setup_workspaces_updated_by_idx'
+]) {
+  assert.match(setupIndexSql, new RegExp(`create index if not exists ${index}`));
+}
 
 console.log('companySetupOrchestrationMigration.test.js passed');

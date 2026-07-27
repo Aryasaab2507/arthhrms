@@ -34,10 +34,18 @@ async function main() {
     revision: 0
   };
   const calls = [];
+  let auditShouldFail = false;
+  let transientSaveFailures = 1;
 
   const client = {
     async rpc(name, params) {
       calls.push({ name, params });
+      if (name === 'arth_flush_company_setup_audit') {
+        if (auditShouldFail) {
+          return { data: null, error: { code: 'PGRST500', message: 'Audit delivery unavailable' } };
+        }
+        return { data: { ok: true, delivered: 1, pending: 0 }, error: null };
+      }
       if (name === 'arth_get_or_create_company_setup') {
         return {
           data: {
@@ -50,6 +58,10 @@ async function main() {
       }
       if (name === 'arth_save_company_setup_step') {
         assert.equal(params.p_expected_revision, workspace.revision);
+        if (transientSaveFailures > 0) {
+          transientSaveFailures -= 1;
+          return { data: null, error: { message: 'Network timeout while saving setup' } };
+        }
         const complete = params.p_complete !== false;
         workspace = {
           ...workspace,
@@ -125,15 +137,21 @@ async function main() {
   assert.equal(loaded.tasks.find((task) => task.key === 'companyOwner').completed, true);
   assert.equal(loaded.tasks.find((task) => task.key === 'companyProfile').completed, false);
 
+  auditShouldFail = true;
   const saved = await service.saveStep({
     stepKey: 'organizationInformation',
     payload: { companyName: 'Tabsons India Pvt Ltd' },
     idempotencyKey: 'company-setup-step-0001'
   }, { actor });
   assert.equal(saved.ok, true);
+  assert.equal(saved.attempts, 2);
   assert.equal(saved.workspace.revision, 1);
   assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').status, 'DRAFTED');
   assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').completed, false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.match(service.getAuditState().lastError, /Audit delivery unavailable/);
+  auditShouldFail = false;
+  assert.equal((await service.flushAuditQueue({ actor })).ok, true);
 
   const draftSaved = await service.saveStep({
     stepKey: 'organizationStructure',
@@ -155,15 +173,25 @@ async function main() {
   assert.equal(completed.ok, true);
   assert.equal(completed.workspace.status, 'CORE_SETUP_COMPLETE');
   assert.equal(completed.lifecycle.state, 'ORG_STRUCTURE');
+  await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(
-    calls.map((call) => call.name),
+    calls.map((call) => call.name).filter((name) => name !== 'arth_flush_company_setup_audit'),
     [
       'arth_get_or_create_company_setup',
+      'arth_save_company_setup_step',
       'arth_save_company_setup_step',
       'arth_save_company_setup_step',
       'arth_complete_company_core_setup'
     ]
   );
+  assert.ok(calls.some((call) => call.name === 'arth_flush_company_setup_audit'));
+
+  auditShouldFail = true;
+  const queuedAudit = await service.flushAuditQueue({ actor });
+  assert.equal(queuedAudit.ok, false);
+  assert.equal(queuedAudit.code, 'COMPANY_SETUP_AUDIT_QUEUED');
+  assert.equal(queuedAudit.category, 'AUDIT');
+  assert.match(service.getAuditState().lastError, /Audit delivery unavailable/);
   assert.ok(Object.isFrozen(completed));
 
   console.log('companySetupOrchestrationService.test.js passed');
