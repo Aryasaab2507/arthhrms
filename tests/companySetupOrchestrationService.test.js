@@ -14,6 +14,7 @@ async function main() {
     role: 'super_admin',
     source: 'supabase',
     roleTrusted: true,
+    companyOwner: true,
     tenantSlug: 'tabsons-india',
     tenantId: 'tabsons-india',
     organizationId: 'tabsons-india'
@@ -49,12 +50,13 @@ async function main() {
       }
       if (name === 'arth_save_company_setup_step') {
         assert.equal(params.p_expected_revision, workspace.revision);
+        const complete = params.p_complete !== false;
         workspace = {
           ...workspace,
           status: 'IN_PROGRESS',
-          current_step: 'organizationStructure',
-          completed_steps: [params.p_step_key],
-          progress: 10,
+          current_step: complete ? 'organizationStructure' : workspace.current_step,
+          completed_steps: complete ? [params.p_step_key] : workspace.completed_steps,
+          progress: complete ? 10 : workspace.progress,
           draft_payload: {
             ...workspace.draft_payload,
             [params.p_step_key]: params.p_payload
@@ -133,6 +135,20 @@ async function main() {
   assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').status, 'DRAFTED');
   assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').completed, false);
 
+  const draftSaved = await service.saveStep({
+    stepKey: 'organizationStructure',
+    payload: {
+      headOffice: { name: 'Mumbai HQ' },
+      departments: [{ name: 'HR', code: 'HR' }]
+    },
+    complete: false,
+    idempotencyKey: 'company-setup-draft-0001'
+  }, { actor });
+  assert.equal(draftSaved.ok, true);
+  assert.equal(draftSaved.workspace.current_step, 'organizationStructure');
+  assert.deepEqual(draftSaved.workspace.completed_steps, ['organizationInformation']);
+  assert.equal(draftSaved.workspace.progress, 10);
+
   const completed = await service.completeCoreSetup({
     idempotencyKey: 'company-core-complete-0001'
   }, { actor });
@@ -143,6 +159,7 @@ async function main() {
     calls.map((call) => call.name),
     [
       'arth_get_or_create_company_setup',
+      'arth_save_company_setup_step',
       'arth_save_company_setup_step',
       'arth_complete_company_core_setup'
     ]

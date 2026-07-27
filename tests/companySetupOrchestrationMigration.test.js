@@ -7,6 +7,14 @@ const sql = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260725145129_company_setup_orchestration.sql'),
   'utf8'
 );
+const hardeningSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727083151_harden_company_setup_wizard.sql'),
+  'utf8'
+);
+const rpcClaimSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727084250_enforce_company_owner_setup_rpc_claim.sql'),
+  'utf8'
+);
 const setupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const adminPage = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 const guard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
@@ -34,12 +42,46 @@ assert.match(sql, /OrganizationStructureConfigured/);
 assert.doesNotMatch(sql, /user_metadata/i);
 
 assert.match(guard, /'setup\.html': \['super_admin'\]/);
+assert.match(guard, /DEDICATED_PERSISTENCE_ROUTES/);
+assert.match(guard, /usesDedicatedPersistence/);
 assert.doesNotMatch(guard, /legacyPlatformSetup/);
 assert.match(setupPage, /services\/companySetupOrchestrationService\.js/);
 assert.match(setupPage, /await orchestration\(\)\.saveStep/);
 assert.match(setupPage, /await orchestration\(\)\.completeCoreSetup/);
+assert.match(setupPage, /u\?\.companyOwner===true/);
+assert.match(setupPage, /saveDraft\(\{complete:false,source:'manual'\}\)/);
+assert.match(setupPage, /source:'autosave'/);
+assert.match(setupPage, /source:'back'/);
+assert.match(setupPage, /id="passwordMinLength"[^>]*min="12"[^>]*value="12"/);
 assert.match(adminPage, /data-company-setup-nav/);
 assert.match(adminPage, /id="sec-company-setup"/);
 assert.match(adminPage, /CompanySetupOrchestrationService/);
+
+assert.match(hardeningSql, /arth_company_setup_owner_allowed/);
+assert.match(hardeningSql, /company_owner', 'false'/);
+assert.match(hardeningSql, /company_setup_workspace_owner_read/);
+assert.match(hardeningSql, /company_setup_versions_owner_read/);
+assert.match(hardeningSql, /arth_company_setup_payload_error/);
+assert.match(hardeningSql, /Setup review must be completed before final provisioning/);
+assert.match(hardeningSql, /new\.current_step := old\.current_step/);
+assert.match(hardeningSql, /company_setup_audit_step_version/);
+assert.match(hardeningSql, /company_setup_audit_workspace/);
+assert.match(hardeningSql, /insert into public\.hrms_audit_records/);
+assert.doesNotMatch(hardeningSql, /disable row level security/i);
+assert.doesNotMatch(hardeningSql, /grant\s+(insert|update|delete)[^;]*hrms_audit_records/i);
+
+for (const rpc of [
+  'arth_get_or_create_company_setup',
+  'arth_save_company_setup_step',
+  'arth_complete_company_core_setup'
+]) {
+  assert.match(rpcClaimSql, new RegExp(`private\\.${rpc}_internal`));
+  assert.match(rpcClaimSql, new RegExp(`public\\.${rpc}`));
+}
+assert.match(rpcClaimSql, /'app_metadata'\s*->>\s*'company_owner'/);
+assert.match(rpcClaimSql, /public\.arth_persistence_role\(\) <> 'super_admin'/);
+assert.match(rpcClaimSql, /Company Owner authorization is required/);
+assert.doesNotMatch(rpcClaimSql, /user_metadata/i);
+assert.doesNotMatch(rpcClaimSql, /disable row level security/i);
 
 console.log('companySetupOrchestrationMigration.test.js passed');

@@ -490,6 +490,17 @@
         ['timeZone', 'shiftStrategy', 'attendanceMode'].forEach(function required(field) {
             if (!safeString(working[field], '')) addRequiredError(field, field + ' is required.', inlineErrors, failures);
         });
+        var start = safeString(working.officeHours && working.officeHours.start, '');
+        var end = safeString(working.officeHours && working.officeHours.end, '');
+        if (start && end && start === end) {
+            inlineErrors.officeHours = 'Office start and end time cannot be the same.';
+            failures.push(failure('WORKING_HOURS_INVALID', 'officeHours', inlineErrors.officeHours, 'HIGH'));
+        }
+        (working.publicHolidays || []).forEach(function validateHoliday(row, index) {
+            if (!safeString(row && row.name, '') || !/^\d{4}-\d{2}-\d{2}$/.test(safeString(row && row.date, ''))) {
+                failures.push(failure('HOLIDAY_INVALID', 'publicHolidays', 'Holiday row ' + (index + 1) + ' requires a name and YYYY-MM-DD date.', 'MEDIUM'));
+            }
+        });
         return validationResult('workingConfiguration', failures.length === 0, inlineErrors, failures, [], working);
     }
 
@@ -499,7 +510,18 @@
         var failures = [];
         var leaveTypes = Array.isArray(source.leaveTypes || source.leave_types) ? (source.leaveTypes || source.leave_types) : [];
         if (!leaveTypes.length) addRequiredError('leaveTypes', 'At least one leave type is required.', inlineErrors, failures);
-        if (!isPlainObject(source.approvalRules || source.approval_rules)) addRequiredError('approvalRules', 'Leave approval rules are required.', inlineErrors, failures);
+        leaveTypes.forEach(function validateLeaveType(row, index) {
+            if (!safeString(row && row.name, '') || !safeString(row && row.code, '')) {
+                failures.push(failure('LEAVE_TYPE_INVALID', 'leaveTypes', 'Leave type ' + (index + 1) + ' requires a name and code.', 'HIGH'));
+            }
+            if (Number(row && row.annualAllowance) < 0) {
+                failures.push(failure('LEAVE_ALLOWANCE_INVALID', 'leaveTypes', 'Leave allowance cannot be negative.', 'HIGH'));
+            }
+        });
+        var approval = source.approvalRules || source.approval_rules;
+        if (!isPlainObject(approval) || !Array.isArray(approval.approvers) || !approval.approvers.length) {
+            addRequiredError('approvalRules', 'At least one leave approver is required.', inlineErrors, failures);
+        }
         return validationResult('leaveConfiguration', failures.length === 0, inlineErrors, failures, [], cloneValue(source, 0));
     }
 
@@ -511,6 +533,16 @@
         if (!safeString(source.salaryStructure || source.salary_structure, '')) addRequiredError('salaryStructure', 'Salary structure is required.', inlineErrors, failures);
         if (!Array.isArray(source.components) || !source.components.length) addRequiredError('components', 'At least one payroll component is required.', inlineErrors, failures);
         if (!isPlainObject(source.paymentCycle || source.payment_cycle)) addRequiredError('paymentCycle', 'Payment cycle is required.', inlineErrors, failures);
+        (source.components || []).forEach(function validateComponent(row, index) {
+            if (!safeString(row && row.name, '') || ['EARNING', 'DEDUCTION'].indexOf(safeString(row && row.type, '').toUpperCase()) === -1) {
+                failures.push(failure('PAYROLL_COMPONENT_INVALID', 'components', 'Payroll component ' + (index + 1) + ' requires a name and EARNING or DEDUCTION type.', 'HIGH'));
+            }
+        });
+        var paymentDay = Number((source.paymentCycle || source.payment_cycle || {}).day || 0);
+        if (paymentDay < 1 || paymentDay > 31) {
+            inlineErrors.paymentCycle = 'Payment day must be between 1 and 31.';
+            failures.push(failure('PAYMENT_DAY_INVALID', 'paymentCycle', inlineErrors.paymentCycle, 'HIGH'));
+        }
         return validationResult('payrollConfiguration', failures.length === 0, inlineErrors, failures, [], cloneValue(source, 0));
     }
 
@@ -522,6 +554,21 @@
         if (!safeString(source.authenticationMethod || source.authentication_method, '')) addRequiredError('authenticationMethod', 'Authentication method is required.', inlineErrors, failures);
         if (!isPlainObject(source.passwordPolicy || source.password_policy)) addRequiredError('passwordPolicy', 'Password policy is required.', inlineErrors, failures);
         if (!Number(source.sessionTimeoutMinutes || source.session_timeout_minutes || 0)) addRequiredError('sessionTimeoutMinutes', 'Session timeout is required.', inlineErrors, failures);
+        var passwordMinimum = Number((source.passwordPolicy || source.password_policy || {}).minLength || 0);
+        if (passwordMinimum < 12) {
+            inlineErrors.passwordPolicy = 'Password minimum length must be at least 12 characters.';
+            failures.push(failure('PASSWORD_POLICY_WEAK', 'passwordPolicy', inlineErrors.passwordPolicy, 'HIGH'));
+        }
+        var timeout = Number(source.sessionTimeoutMinutes || source.session_timeout_minutes || 0);
+        if (timeout < 5 || timeout > 1440) {
+            inlineErrors.sessionTimeoutMinutes = 'Session timeout must be between 5 and 1440 minutes.';
+            failures.push(failure('SESSION_TIMEOUT_INVALID', 'sessionTimeoutMinutes', inlineErrors.sessionTimeoutMinutes, 'HIGH'));
+        }
+        var sso = source.sso || {};
+        if (sso.enabled && !safeString(sso.provider, '')) {
+            inlineErrors.sso = 'SSO provider is required when SSO is enabled.';
+            failures.push(failure('SSO_PROVIDER_REQUIRED', 'sso', inlineErrors.sso, 'HIGH'));
+        }
         if (!source.mfa) warnings.push(warning('MFA_RECOMMENDED', 'MFA is disabled for setup.', 'Enable MFA for administrators before production launch.'));
         return validationResult('identitySecurity', failures.length === 0, inlineErrors, failures, warnings, cloneValue(source, 0));
     }
@@ -529,10 +576,17 @@
     function validateNotifications(values) {
         var source = isPlainObject(values) ? values : {};
         var warnings = [];
+        var failures = [];
         var channels = ['email', 'sms', 'pushNotifications', 'push'];
         var enabled = channels.some(function channel(key) { return !!(source[key] && source[key].enabled); });
         if (!enabled) warnings.push(warning('NO_NOTIFICATION_CHANNELS_ENABLED', 'No notification channels are enabled.', 'Enable email, SMS, or push before inviting employees.'));
-        return validationResult('notifications', true, {}, [], warnings, cloneValue(source, 0));
+        (source.reminderRules || []).forEach(function validateReminder(row, index) {
+            var hours = Number(row && row.hoursBefore);
+            if (!safeString(row && row.event, '') || !Number.isFinite(hours) || hours < 0 || hours > 720) {
+                failures.push(failure('REMINDER_RULE_INVALID', 'reminderRules', 'Reminder rule ' + (index + 1) + ' requires an event and hours between 0 and 720.', 'MEDIUM'));
+            }
+        });
+        return validationResult('notifications', failures.length === 0, {}, failures, warnings, cloneValue(source, 0));
     }
 
     function validateAdministrator(values) {

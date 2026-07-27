@@ -171,7 +171,7 @@ PF,DEDUCTION</textarea></div>
         <div class="panel" id="step6">
             <div class="grid">
                 <div class="fg"><label>Authentication Method *</label><select id="authenticationMethod"><option>LOCAL_AND_SSO</option><option>LOCAL_ONLY</option><option>SSO_ONLY</option></select></div>
-                <div class="fg"><label>Password Minimum Length</label><input id="passwordMinLength" type="number" min="8" value="10"></div>
+                <div class="fg"><label>Password Minimum Length</label><input id="passwordMinLength" type="number" min="12" value="12"></div>
                 <div class="fg"><label>Session Timeout Minutes *</label><input id="sessionTimeoutMinutes" type="number" min="5" value="30"></div>
                 <div class="fg"><label>MFA</label><select id="mfa"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
                 <div class="fg"><label>SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
@@ -214,7 +214,7 @@ PROFILE_COMPLETION,48</textarea></div>
         <div class="actions">
             <div class="action-left">
                 <button class="btn alt" id="backBtn" onclick="backStep()" style="visibility:hidden">Back</button>
-                <button class="btn alt" onclick="saveDraft()">Save & Resume</button>
+                <button class="btn alt" id="saveDraftBtn" onclick="saveDraft({complete:false,source:'manual'})">Save & Resume</button>
             </div>
             <div class="action-right">
                 <button class="btn" id="nextBtn" onclick="nextStep()">Next</button>
@@ -376,6 +376,10 @@ renderStep();
 (function(){
 let enterpriseStep=1;
 let wizardDraftId=sessionStorage.getItem('arthhrms_enterprise_setup_draft_id')||'';
+let workspaceReady=false;
+let workspaceInitialization=null;
+let autosaveTimer=0;
+let actionBusy=false;
 const keys=['organizationInformation','organizationStructure','workingConfiguration','leaveConfiguration','payrollConfiguration','identitySecurity','notifications','administrator','review','provisionTenant'];
 const titles={
 1:['Organization Information','Capture the legal and operating identity used for tenant provisioning.'],
@@ -390,7 +394,10 @@ const titles={
 10:['Provision Tenant','Create tenant metadata, seed configuration, administrator invite, and audit records.']
 };
 function node(id){return document.getElementById(id);}
-function authenticatedOwner(){const u=window.authService?.getCurrentUser?.();return u?.source==='supabase'&&u?.role==='platform_owner'&&u?.roleTrusted?u:null;}
+function authenticatedOwner(){
+    const u=window.authService?.getCurrentUser?.();
+    return u?.source==='supabase'&&u?.role==='super_admin'&&u?.roleTrusted===true&&u?.companyOwner===true&&u?.tenantSlug&&u?.organizationId?u:null;
+}
 function value(id){const n=node(id);return n?String(n.value||'').trim():'';}
 function setValue(id,next){const n=node(id);if(n)n.value=next??'';}
 function boolValue(id){return value(id)==='true';}
@@ -434,20 +441,20 @@ function collectDraft(){
 }
 function applyDraft(draft){
     if(!draft)return;
-    const info=draft.organizationInformation||{};
-    setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('organizationCode',info.organizationCode);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('registrationNumber',info.registrationNumber);setValue('taxId',info.taxId);setValue('website',info.website);setValue('timezone',info.timeZone);setValue('currency',info.currency);setValue('language',info.language);setValue('fiscalYearStart',info.fiscalYearStart);setValue('logoUpload',info.logoUpload?.url||info.logoUpload?.name||'');
-    const st=draft.organizationStructure||{};setValue('headOffice',st.headOffice?.name||'');setValue('headOfficeCode',st.headOffice?.locationCode||st.headOffice?.code||'HQ');setValue('branches',rowsToText(st.branches));setValue('businessUnits',rowsToText(st.businessUnits));setValue('departments',rowsToText(st.departments));setValue('costCenters',rowsToText(st.costCenters));setValue('locations',rowsToText(st.locations));
-    const work=draft.workingConfiguration||{};setCheckedValues('workWeek',work.workWeek||[]);setValue('officeStart',work.officeHours?.start||'09:30');setValue('officeEnd',work.officeHours?.end||'18:30');setValue('workingTimezone',work.timeZone||info.timeZone||'Asia/Kolkata');setValue('shiftStrategy',work.shiftStrategy||'STANDARD');setValue('attendanceMode',work.attendanceMode||'WEB_MOBILE');setValue('weekendRule',work.weekendRules?.rule||'SAT_SUN_OFF');setValue('publicHolidays',holidaysToText(work.publicHolidays));
-    const leave=draft.leaveConfiguration||{};setValue('leaveTypes',leaveTypesToText(leave.leaveTypes));setValue('accrualRule',leave.accrualRules?.frequency||'MONTHLY');setValue('carryForward',String(!!leave.carryForward?.enabled));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovalRules',(leave.approvalRules?.approvers||[]).join('\n'));
-    const pay=draft.payrollConfiguration||{};setValue('payrollFrequency',pay.payrollFrequency||'MONTHLY');setValue('salaryStructure',pay.salaryStructure||'STANDARD');setValue('paymentDay',pay.paymentCycle?.day||30);setValue('salaryComponents',componentsToText(pay.components));setValue('taxConfiguration',pay.taxConfiguration?.summary||'');
-    const ident=draft.identitySecurity||{};setValue('authenticationMethod',ident.authenticationMethod||'LOCAL_AND_SSO');setValue('passwordMinLength',ident.passwordPolicy?.minLength||10);setValue('sessionTimeoutMinutes',ident.sessionTimeoutMinutes||30);setValue('mfa',String(!!ident.mfa));setValue('ssoEnabled',String(!!ident.sso?.enabled));setValue('ssoProvider',ident.sso?.provider||'');
-    const note=draft.notifications||{};setValue('emailEnabled',String(!!note.email?.enabled));setValue('smsEnabled',String(!!note.sms?.enabled));setValue('pushEnabled',String(!!note.pushNotifications?.enabled));setValue('reminderRules',remindersToText(note.reminderRules));
-    const admin=draft.administrator||{};setValue('adminName',admin.name);setValue('adminEmail',admin.email);setValue('adminPhone',admin.phone);setValue('adminRole',admin.role||'super_admin');setValue('adminMfa',String(admin.mfa!==false));
+    const info=draft.organizationInformation;
+    if(info){setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('organizationCode',info.organizationCode);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('registrationNumber',info.registrationNumber);setValue('taxId',info.taxId);setValue('website',info.website);setValue('timezone',info.timeZone);setValue('currency',info.currency);setValue('language',info.language);setValue('fiscalYearStart',info.fiscalYearStart);setValue('logoUpload',info.logoUpload?.url||info.logoUpload?.name||'');}
+    const st=draft.organizationStructure;if(st){setValue('headOffice',st.headOffice?.name||'');setValue('headOfficeCode',st.headOffice?.locationCode||st.headOffice?.code||'HQ');setValue('branches',rowsToText(st.branches));setValue('businessUnits',rowsToText(st.businessUnits));setValue('departments',rowsToText(st.departments));setValue('costCenters',rowsToText(st.costCenters));setValue('locations',rowsToText(st.locations));}
+    const work=draft.workingConfiguration;if(work){setCheckedValues('workWeek',work.workWeek||[]);setValue('officeStart',work.officeHours?.start||'09:30');setValue('officeEnd',work.officeHours?.end||'18:30');setValue('workingTimezone',work.timeZone||info?.timeZone||'Asia/Kolkata');setValue('shiftStrategy',work.shiftStrategy||'STANDARD');setValue('attendanceMode',work.attendanceMode||'WEB_MOBILE');setValue('weekendRule',work.weekendRules?.rule||'SAT_SUN_OFF');setValue('publicHolidays',holidaysToText(work.publicHolidays));}
+    const leave=draft.leaveConfiguration;if(leave){setValue('leaveTypes',leaveTypesToText(leave.leaveTypes));setValue('accrualRule',leave.accrualRules?.frequency||'MONTHLY');setValue('carryForward',String(!!leave.carryForward?.enabled));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovalRules',(leave.approvalRules?.approvers||[]).join('\n'));}
+    const pay=draft.payrollConfiguration;if(pay){setValue('payrollFrequency',pay.payrollFrequency||'MONTHLY');setValue('salaryStructure',pay.salaryStructure||'STANDARD');setValue('paymentDay',pay.paymentCycle?.day||30);setValue('salaryComponents',componentsToText(pay.components));setValue('taxConfiguration',pay.taxConfiguration?.summary||'');}
+    const ident=draft.identitySecurity;if(ident){setValue('authenticationMethod',ident.authenticationMethod||'LOCAL_AND_SSO');setValue('passwordMinLength',ident.passwordPolicy?.minLength||12);setValue('sessionTimeoutMinutes',ident.sessionTimeoutMinutes||30);setValue('mfa',String(!!ident.mfa));setValue('ssoEnabled',String(!!ident.sso?.enabled));setValue('ssoProvider',ident.sso?.provider||'');}
+    const note=draft.notifications;if(note){setValue('emailEnabled',String(!!note.email?.enabled));setValue('smsEnabled',String(!!note.sms?.enabled));setValue('pushEnabled',String(!!note.pushNotifications?.enabled));setValue('reminderRules',remindersToText(note.reminderRules));}
+    const admin=draft.administrator;if(admin){setValue('adminName',admin.name);setValue('adminEmail',admin.email);setValue('adminPhone',admin.phone);setValue('adminRole',admin.role||'super_admin');setValue('adminMfa',String(admin.mfa!==false));}
 }
 function show(msg){const e=node('setupError');e.textContent=msg;e.style.display='block';}
 function clear(){node('setupError').style.display='none';}
 function validationText(result){return Object.values(result?.inlineErrors||{}).concat((result?.failures||[]).map(x=>x.message||x.code||x.failureCode)).filter(Boolean).join('\n');}
-function ownerError(){if(enterpriseStep!==6)return'';const owner=authenticatedOwner();if(!owner)return durableMode()?'A validated Company Owner session is required.':'A validated Platform Owner session is required.';if(!validEmail(owner.email))return'The authenticated owner email is invalid.';return'';}
+function ownerError(){const owner=authenticatedOwner();if(!owner)return'A validated Company Owner session is required.';if(!validEmail(owner.email))return'The authenticated Company Owner email is invalid.';return'';}
 function validateCurrent(){
     const owner=ownerError();if(owner)return owner;
     if(enterpriseStep===9){const review=service().generateReviewSummary(collectDraft(),wizardContext());return review.readyToProvision?'':validationText({failures:review.validationErrors})||'Review has unresolved validation errors.';}
@@ -473,35 +480,60 @@ function renderProvisionPreview(){
 function renderEnterpriseStep(){
     clear();document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));node('step'+enterpriseStep).classList.add('on');
     document.querySelectorAll('.step-dot').forEach((d,i)=>{d.classList.toggle('on',i+1===enterpriseStep);d.classList.toggle('done',i+1<enterpriseStep);});
-    node('stepTitle').textContent=titles[enterpriseStep][0];node('stepHelp').textContent=titles[enterpriseStep][1];node('backBtn').style.visibility=enterpriseStep===1?'hidden':'visible';node('nextBtn').textContent=enterpriseStep===10?'Provision Tenant':(enterpriseStep===9?'Continue to Provision':'Next');node('nextBtn').className=enterpriseStep===10?'btn good':'btn';node('setupProgress').style.width=(enterpriseStep*10)+'%';node('draftBadge').textContent=wizardDraftId?'Draft '+wizardDraftId:'Draft not saved';
+    const persisted=Number(orchestration()?.getWorkspace?.()?.progress||0);
+    node('stepTitle').textContent=titles[enterpriseStep][0];node('stepHelp').textContent=titles[enterpriseStep][1];node('backBtn').style.visibility=enterpriseStep===1?'hidden':'visible';node('nextBtn').textContent=enterpriseStep===10?'Complete Setup':(enterpriseStep===9?'Continue to Provision':'Save & Next');node('nextBtn').className=enterpriseStep===10?'btn good':'btn';node('setupProgress').style.width=Math.max(persisted,(enterpriseStep-1)*10)+'%';node('draftBadge').textContent=wizardDraftId?'Draft '+wizardDraftId:'Draft not saved';
     if(enterpriseStep===9)renderReview();if(enterpriseStep===10)renderProvisionPreview();
 }
-window.saveDraft=async function(){
+function setBusy(busy,label){
+    actionBusy=busy;
+    ['backBtn','saveDraftBtn','nextBtn'].forEach(id=>{const button=node(id);if(button)button.disabled=busy;});
+    if(label)node('draftBadge').textContent=label;
+}
+window.saveDraft=async function(options={}){
+    if(actionBusy&&options.source!=='autosave')return false;
+    const complete=options.complete===true;
     const draft=collectDraft();
-    if(durableMode()){
-        const key=keys[Math.min(enterpriseStep,9)-1]||'review';
-        const payload=key==='review'?{ready:true,reviewedAt:new Date().toISOString()}:draft[key];
-        const saved=await orchestration().saveStep({stepKey:key,payload},{actor:authenticatedOwner()});
-        if(!saved.success){show(saved.message||'Draft could not be saved.');return false;}
-        wizardDraftId=saved.workspace.id;
-        sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
-        node('draftBadge').textContent='Saved - '+saved.workspace.progress+'%';
-        return true;
+    try{
+        if(options.source!=='autosave')setBusy(true,complete?'Saving step...':'Saving draft...');
+        if(durableMode()){
+            const key=keys[Math.min(enterpriseStep,9)-1]||'review';
+            const payload=key==='review'?{ready:true,reviewedAt:new Date().toISOString()}:draft[key];
+            const saved=await orchestration().saveStep({stepKey:key,payload,complete},{actor:authenticatedOwner()});
+            if(!saved.success){show(saved.message||'Database Error: draft could not be saved.');return false;}
+            wizardDraftId=saved.workspace.id;
+            sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);
+            node('draftBadge').textContent=(complete?'Completed':'Saved')+' - '+saved.workspace.progress+'%';
+            return true;
+        }
+        const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';
+        const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},wizardContext());
+        if(!result.success){show(validationText(result)||'Validation Error: draft could not be saved.');return false;}
+        wizardDraftId=result.draft.draftId;sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);node('draftBadge').textContent='Draft saved - '+wizardDraftId;return true;
+    }catch(error){
+        show(/fetch|network|offline/i.test(String(error?.message||error))?'Network Error: check your connection and retry.':'Database Error: the setup draft could not be saved.');
+        return false;
+    }finally{
+        if(options.source!=='autosave')setBusy(false);
     }
-    const key=keys[Math.min(enterpriseStep,8)-1]||'administrator';
-    const result=service().saveStepDraft({draftId:draftId(),stepKey:key,values:draft[key],draft},wizardContext());
-    if(!result.success){show(validationText(result)||'Draft could not be saved.');return false;}
-    wizardDraftId=result.draft.draftId;sessionStorage.setItem('arthhrms_enterprise_setup_draft_id',wizardDraftId);node('draftBadge').textContent='Draft saved - '+wizardDraftId;return true;
 };
 window.nextStep=async function(){
-    const err=validateCurrent();if(err){show(err);return;}
-    if(enterpriseStep<10){if(!await window.saveDraft())return;enterpriseStep++;renderEnterpriseStep();return;}
-    if(durableMode()){
-        const completed=await orchestration().completeCoreSetup({}, {actor:authenticatedOwner()});
-        if(!completed.success){show(completed.message||'Core company setup could not be completed.');return;}
-        sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');
-        location.href='super-admin.html?section=company-setup';
+    try{
+        const err=validateCurrent();if(err){show('Validation Error: '+err);return;}
+        if(autosaveTimer){clearTimeout(autosaveTimer);autosaveTimer=0;}
+        if(enterpriseStep<10){if(!await window.saveDraft({complete:true,source:'next'}))return;enterpriseStep++;renderEnterpriseStep();return;}
+        if(durableMode()){
+            setBusy(true,'Completing setup...');
+            const completed=await orchestration().completeCoreSetup({}, {actor:authenticatedOwner()});
+            if(!completed.success){show(completed.message||'Database Error: core company setup could not be completed.');return;}
+            sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');
+            location.href='super-admin.html?section=company-setup';
+            return;
+        }
+    }catch(error){
+        show(/fetch|network|offline/i.test(String(error?.message||error))?'Network Error: check your connection and retry.':'Configuration Error: company setup could not continue.');
         return;
+    }finally{
+        if(enterpriseStep===10)setBusy(false);
     }
     const draft=collectDraft();let setupResult={ok:true,ownerUser:null};
     if(DB.isSetupRequired&&DB.isSetupRequired()){setupResult=DB.completeInitialSetup({company:{companyName:draft.organizationInformation.companyName,companyEmail:draft.administrator.email,timezone:draft.organizationInformation.timeZone,currency:draft.organizationInformation.currency,logoUrl:draft.organizationInformation.logoUpload.url},platformOwner:authenticatedOwner(),initialUser:{name:draft.administrator.name,email:draft.administrator.email,role:draft.administrator.role}});if(!setupResult.ok){show(setupResult.error||'Initial setup could not be completed.');return;}}
@@ -509,13 +541,25 @@ window.nextStep=async function(){
     if(!result.success){show(validationText(result)||'Tenant provisioning could not be completed.');return;}
     sessionStorage.removeItem('arthhrms_enterprise_setup_draft_id');location.href='platform-control.html';
 };
-window.backStep=function(){if(enterpriseStep>1){enterpriseStep--;renderEnterpriseStep();}};
+window.backStep=async function(){
+    if(enterpriseStep<=1)return;
+    if(durableMode()&&workspaceReady){
+        const saved=await window.saveDraft({complete:false,source:'back'});
+        if(!saved)return;
+    }
+    enterpriseStep--;
+    renderEnterpriseStep();
+};
 function syncAuthenticatedOwner(){const owner=authenticatedOwner();if(!owner)return;setValue('ownerName',owner.name||owner.email);setValue('ownerEmail',owner.email);}
 async function loadDurableWorkspace(){
     if(!durableMode())return;
+    if(workspaceInitialization)return workspaceInitialization;
+    workspaceInitialization=(async()=>{
     const owner=authenticatedOwner();
     if(!owner){
-        if(window.authService?.getCurrentUser?.()?.role==='platform_owner')location.replace('platform-control.html');
+        const current=window.authService?.getCurrentUser?.();
+        if(current?.role==='platform_owner')location.replace('platform-control.html');
+        else show('Permission Error: this setup workspace is available only to the invited Company Owner.');
         return;
     }
     const loaded=await orchestration().loadWorkspace({actor:owner});
@@ -526,9 +570,22 @@ async function loadDurableWorkspace(){
     const savedStep=keys.indexOf(loaded.workspace.current_step);
     if(savedStep>=0)enterpriseStep=savedStep+1;
     syncAuthenticatedOwner();
+    workspaceReady=true;
     renderEnterpriseStep();
+    return loaded;
+    })();
+    return workspaceInitialization;
 }
+function scheduleAutosave(){
+    if(!durableMode()||!workspaceReady||actionBusy||enterpriseStep>=9)return;
+    clearTimeout(autosaveTimer);
+    node('draftBadge').textContent='Unsaved changes';
+    autosaveTimer=setTimeout(()=>{autosaveTimer=0;window.saveDraft({complete:false,source:'autosave'});},1200);
+}
+node('setupStepper')?.closest('.wizard')?.addEventListener('input',scheduleAutosave);
+node('setupStepper')?.closest('.wizard')?.addEventListener('change',scheduleAutosave);
 globalThis.addEventListener?.('arthhrms:auth-ready',()=>{syncAuthenticatedOwner();loadDurableWorkspace();});
+window.ArthAuthGuard?.ready?.then(()=>{syncAuthenticatedOwner();loadDurableWorkspace();});
 syncAuthenticatedOwner();
 if(!durableMode()&&wizardDraftId&&service()?.resumeDraft){const resumed=service().resumeDraft({draftId:wizardDraftId},wizardContext());if(resumed.success)applyDraft(resumed.draft);syncAuthenticatedOwner();}
 renderEnterpriseStep();

@@ -52,6 +52,7 @@ async function main() {
   let signInUserId = userId;
   let signOutCount = 0;
   let sessionAvailable = true;
+  let hydrationCount = 0;
 
   function authUser() {
     return {
@@ -98,7 +99,10 @@ async function main() {
     }
   };
   global.supabasePersistenceService = {
-    async hydrateAuthenticatedState() { return { hydrated: true, tenantId: 'tenant-a' }; }
+    async hydrateAuthenticatedState() {
+      hydrationCount += 1;
+      return { hydrated: true, tenantId: 'tenant-a' };
+    }
   };
 
   load('services/authService.js');
@@ -161,6 +165,21 @@ async function main() {
     assert.equal(allowed.status, 200, `${testRole} should access its own route`);
     assert.equal(allowed.user.role, testRole);
   }
+
+  role = 'super_admin';
+  userId = 'AUTH-COMPANY-OWNER';
+  signInUserId = userId;
+  global.location.pathname = '/setup.html';
+  global.location.href = '';
+  const setupAllowed = await global.ArthAuthGuard.enforce('/setup.html');
+  assert.equal(setupAllowed.status, 200, 'Company Owner role should pass the setup route guard');
+  assert.equal(hydrationCount, 0, 'setup route must not run generic business-state hydration');
+  assert.equal(global.ArthAuthGuard.usesDedicatedPersistence('/setup.html'), true);
+
+  global.location.pathname = '/admin.html';
+  const adminAllowed = await global.ArthAuthGuard.enforce('/admin.html');
+  assert.equal(adminAllowed.status, 200);
+  assert.equal(hydrationCount, 1, 'ordinary tenant routes should retain authenticated state hydration');
 
   role = 'platform_owner';
   userId = 'AUTH-platform_owner';

@@ -131,7 +131,7 @@ function completeDraft() {
     },
     identitySecurity: {
       authenticationMethod: 'LOCAL_AND_SSO',
-      passwordPolicy: { minLength: 10, requireMfaForAdmins: true },
+      passwordPolicy: { minLength: 12, requireMfaForAdmins: true },
       mfa: true,
       sessionTimeoutMinutes: 30,
       sso: { enabled: false }
@@ -220,6 +220,47 @@ async function main() {
   assert.ok(Object.isFrozen(imported.structure.departments), 'import output should be immutable');
 
   const draft = completeDraft();
+  for (const stepKey of [
+    'organizationInformation',
+    'organizationStructure',
+    'workingConfiguration',
+    'leaveConfiguration',
+    'payrollConfiguration',
+    'identitySecurity',
+    'notifications',
+    'administrator'
+  ]) {
+    const validation = service.validateStep({
+      stepKey,
+      values: draft[stepKey]
+    }, { actor: { role: 'platform_owner', id: 'PO1' } });
+    assert.equal(validation.valid, true, `${stepKey} should accept a production-valid payload`);
+  }
+  for (const stepKey of ['review', 'provisionTenant']) {
+    const validation = service.validateStep({
+      stepKey,
+      values: draft
+    }, { actor: { role: 'platform_owner', id: 'PO1' } });
+    assert.equal(validation.valid, true, `${stepKey} should accept the complete ten-step draft`);
+  }
+
+  const invalidSteps = [
+    ['organizationStructure', { headOffice: {}, departments: [] }],
+    ['workingConfiguration', { ...draft.workingConfiguration, officeHours: { start: '09:00', end: '09:00' } }],
+    ['leaveConfiguration', { ...draft.leaveConfiguration, approvalRules: { approvers: [] } }],
+    ['payrollConfiguration', { ...draft.payrollConfiguration, paymentCycle: { day: 32 } }],
+    ['identitySecurity', { ...draft.identitySecurity, passwordPolicy: { minLength: 8 } }],
+    ['notifications', { ...draft.notifications, reminderRules: [{ event: '', hoursBefore: -1 }] }],
+    ['administrator', { ...draft.administrator, email: 'invalid-email' }]
+  ];
+  for (const [stepKey, values] of invalidSteps) {
+    const validation = service.validateStep({
+      stepKey,
+      values
+    }, { actor: { role: 'platform_owner', id: 'PO1' } });
+    assert.equal(validation.valid, false, `${stepKey} should reject an invalid payload`);
+  }
+
   const saved = service.saveStepDraft({
     draftId: draft.draftId,
     stepKey: 'organizationInformation',

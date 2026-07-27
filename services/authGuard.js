@@ -37,6 +37,7 @@
         'working-calendar-center.html': ['super_admin', 'admin', 'hr', 'hr_head']
     });
     const PUBLIC_ROUTES = Object.freeze(['arthhrms.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
+    const DEDICATED_PERSISTENCE_ROUTES = Object.freeze(['setup.html']);
     const scriptElement = global.document?.currentScript || null;
     const applicationRoot = scriptElement?.src ? new URL('../', scriptElement.src) : null;
     let resolveReady;
@@ -55,6 +56,10 @@
 
     function isPublic(pathname) {
         return PUBLIC_ROUTES.includes(pageName(pathname));
+    }
+
+    function usesDedicatedPersistence(pathname) {
+        return DEDICATED_PERSISTENCE_ROUTES.includes(pageName(pathname));
     }
 
     function hideDocument() {
@@ -179,17 +184,19 @@
                 tenantSlug: routeDecision.role === 'platform_owner' ? '' : routeDecision.tenantSlug,
                 route
             });
-            try {
-                await global.supabasePersistenceService.hydrateAuthenticatedState();
-            } catch (error) {
-                redirectToLogin('PERSISTENCE_UNAVAILABLE');
-                return {
-                    authenticated: true,
-                    authorized: false,
-                    status: 503,
-                    code: 'PERSISTENCE_UNAVAILABLE',
-                    error
-                };
+            if (!usesDedicatedPersistence(route)) {
+                try {
+                    await global.supabasePersistenceService.hydrateAuthenticatedState();
+                } catch (error) {
+                    redirectToLogin('PERSISTENCE_UNAVAILABLE');
+                    return {
+                        authenticated: true,
+                        authorized: false,
+                        status: 503,
+                        code: 'PERSISTENCE_UNAVAILABLE',
+                        error
+                    };
+                }
             }
             revealDocument();
             global.dispatchEvent?.(new CustomEvent('arthhrms:auth-ready', { detail: { user: decision.user, route } }));
@@ -203,10 +210,12 @@
     const guard = Object.freeze({
         ROUTE_POLICIES,
         PUBLIC_ROUTES,
+        DEDICATED_PERSISTENCE_ROUTES,
         ready,
         pageName,
         policyFor,
         isPublic,
+        usesDedicatedPersistence,
         enforce
     });
     global.ArthAuthGuard = guard;

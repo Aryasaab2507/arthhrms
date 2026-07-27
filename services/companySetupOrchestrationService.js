@@ -47,6 +47,7 @@
         loading: null,
         error: ''
     };
+    var mutationQueue = Promise.resolve();
 
     function freeze(value) {
         if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -75,6 +76,7 @@
             normalizeRole(actor.role) !== 'super_admin' ||
             actor.source !== 'supabase' ||
             actor.roleTrusted !== true ||
+            actor.companyOwner !== true ||
             !tenant ||
             !organization
         ) {
@@ -100,6 +102,52 @@
         try { id = global.crypto?.randomUUID?.() || ''; } catch (_error) {}
         if (!id) id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
         return String(prefix || 'company-setup') + ':' + id;
+    }
+
+    function classifiedError(error, fallbackCode, fallbackMessage) {
+        var code = String(error?.code || '').trim().toUpperCase();
+        var status = Number(error?.status || error?.statusCode || 0);
+        var rawMessage = String(error?.message || '').trim();
+        if (code === '42501' || status === 401 || status === 403 || /permission|forbidden|authorization/i.test(rawMessage)) {
+            return output(false, 'COMPANY_SETUP_PERMISSION_ERROR', 'Permission Error: your Company Owner session is not authorized for this setup operation.', {
+                category: 'PERMISSION',
+                retryable: false
+            });
+        }
+        if (code === '40001' || /revision is stale|conflict/i.test(rawMessage)) {
+            return output(false, 'COMPANY_SETUP_CONFLICT', 'Database Conflict: this setup was updated elsewhere. Refresh the workspace and try again.', {
+                category: 'DATABASE',
+                retryable: true
+            });
+        }
+        if (code === '22023' || code.startsWith('23') || /invalid|required|validation/i.test(rawMessage)) {
+            return output(false, 'COMPANY_SETUP_VALIDATION_ERROR', 'Validation Error: ' + (rawMessage || fallbackMessage), {
+                category: 'VALIDATION',
+                retryable: false
+            });
+        }
+        if (status >= 500 || code.startsWith('PGRST') || /database|postgres|relation|rpc/i.test(rawMessage)) {
+            return output(false, 'COMPANY_SETUP_DATABASE_ERROR', 'Database Error: the setup operation could not be completed. Please retry.', {
+                category: 'DATABASE',
+                retryable: true
+            });
+        }
+        if (/fetch|network|offline|timeout|connection/i.test(rawMessage)) {
+            return output(false, 'COMPANY_SETUP_NETWORK_ERROR', 'Network Error: check your connection and retry the setup operation.', {
+                category: 'NETWORK',
+                retryable: true
+            });
+        }
+        return output(false, fallbackCode, fallbackMessage, {
+            category: 'APPLICATION',
+            retryable: true
+        });
+    }
+
+    function enqueueMutation(operation) {
+        var result = mutationQueue.then(operation, operation);
+        mutationQueue = result.then(function mutationComplete() {}, function mutationRecovered() {});
+        return result;
     }
 
     function completedSet() {
@@ -176,7 +224,7 @@
                 return setupHome();
             } catch (error) {
                 cache.error = error?.message || String(error);
-                return output(false, 'COMPANY_SETUP_LOAD_FAILED', cache.error);
+                return classifiedError(error, 'COMPANY_SETUP_LOAD_FAILED', 'Configuration Error: the company setup workspace could not be loaded.');
             } finally {
                 cache.loading = null;
             }
@@ -192,60 +240,66 @@
         if (!CORE_STEPS.includes(stepKey)) {
             return output(false, 'COMPANY_SETUP_STEP_INVALID', 'Company setup step is invalid.');
         }
-        if (!cache.workspace) {
-            var loaded = await loadWorkspace({ actor: access.actor });
-            if (!loaded.ok) return loaded;
-        }
         var payload = input?.payload && typeof input.payload === 'object' && !Array.isArray(input.payload)
             ? input.payload
             : {};
-        var supabase = client();
-        try {
-            var response = await supabase.rpc('arth_save_company_setup_step', {
-                p_step_key: stepKey,
-                p_payload: payload,
-                p_expected_revision: Number(input?.expectedRevision ?? cache.workspace.revision ?? 0),
-                p_idempotency_key: String(input?.idempotencyKey || operationId('setup-step')),
-                p_complete: input?.complete !== false
-            });
-            if (response.error) throw response.error;
-            if (!response.data?.ok || !response.data?.workspace) throw new Error('Company setup save was not confirmed.');
-            cache.workspace = response.data.workspace;
-            return output(true, 'COMPANY_SETUP_STEP_SAVED', 'Company setup progress saved.', {
-                workspace: cache.workspace,
-                version: response.data.version || null,
-                home: setupHome()
-            });
-        } catch (error) {
-            return output(false, 'COMPANY_SETUP_STEP_SAVE_FAILED', error?.message || 'Company setup progress could not be saved.');
-        }
+        return enqueueMutation(async function persistStep() {
+            if (!cache.workspace) {
+                var loaded = await loadWorkspace({ actor: access.actor });
+                if (!loaded.ok) return loaded;
+            }
+            var supabase = client();
+            try {
+                var response = await supabase.rpc('arth_save_company_setup_step', {
+                    p_step_key: stepKey,
+                    p_payload: payload,
+                    p_expected_revision: Number(input?.expectedRevision ?? cache.workspace.revision ?? 0),
+                    p_idempotency_key: String(input?.idempotencyKey || operationId('setup-step')),
+                    p_complete: input?.complete !== false
+                });
+                if (response.error) throw response.error;
+                if (!response.data?.ok || !response.data?.workspace) throw new Error('Company setup save was not confirmed.');
+                cache.workspace = response.data.workspace;
+                return output(true, 'COMPANY_SETUP_STEP_SAVED', input?.complete === false
+                    ? 'Company setup draft saved.'
+                    : 'Company setup step completed.', {
+                    workspace: cache.workspace,
+                    version: response.data.version || null,
+                    home: setupHome()
+                });
+            } catch (error) {
+                return classifiedError(error, 'COMPANY_SETUP_STEP_SAVE_FAILED', 'Database Error: company setup progress could not be saved.');
+            }
+        });
     }
 
     async function completeCoreSetup(options, context) {
         var access = requireCompanyOwner(context);
         if (!access.ok) return access;
         if (!enabled()) return output(false, 'COMPANY_SETUP_DISABLED', 'Durable company setup orchestration is disabled.');
-        if (!cache.workspace) {
-            var loaded = await loadWorkspace({ actor: access.actor });
-            if (!loaded.ok) return loaded;
-        }
-        var supabase = client();
-        try {
-            var response = await supabase.rpc('arth_complete_company_core_setup', {
-                p_expected_revision: Number(options?.expectedRevision ?? cache.workspace.revision ?? 0),
-                p_idempotency_key: String(options?.idempotencyKey || operationId('core-setup-complete'))
-            });
-            if (response.error) throw response.error;
-            if (!response.data?.ok || !response.data?.workspace) throw new Error('Core company setup completion was not confirmed.');
-            cache.workspace = response.data.workspace;
-            return output(true, 'COMPANY_CORE_SETUP_COMPLETED', 'Core company setup completed.', {
-                workspace: cache.workspace,
-                lifecycle: response.data.lifecycle || null,
-                home: setupHome()
-            });
-        } catch (error) {
-            return output(false, 'COMPANY_CORE_SETUP_FAILED', error?.message || 'Core company setup could not be completed.');
-        }
+        return enqueueMutation(async function completeSetup() {
+            if (!cache.workspace) {
+                var loaded = await loadWorkspace({ actor: access.actor });
+                if (!loaded.ok) return loaded;
+            }
+            var supabase = client();
+            try {
+                var response = await supabase.rpc('arth_complete_company_core_setup', {
+                    p_expected_revision: Number(options?.expectedRevision ?? cache.workspace.revision ?? 0),
+                    p_idempotency_key: String(options?.idempotencyKey || operationId('core-setup-complete'))
+                });
+                if (response.error) throw response.error;
+                if (!response.data?.ok || !response.data?.workspace) throw new Error('Core company setup completion was not confirmed.');
+                cache.workspace = response.data.workspace;
+                return output(true, 'COMPANY_CORE_SETUP_COMPLETED', 'Core company setup completed.', {
+                    workspace: cache.workspace,
+                    lifecycle: response.data.lifecycle || null,
+                    home: setupHome()
+                });
+            } catch (error) {
+                return classifiedError(error, 'COMPANY_CORE_SETUP_FAILED', 'Database Error: core company setup could not be completed.');
+            }
+        });
     }
 
     function getDraft() {
