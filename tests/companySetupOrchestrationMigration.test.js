@@ -27,6 +27,14 @@ const setupIndexSql = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260727093827_index_company_setup_foreign_keys.sql'),
   'utf8'
 );
+const masterDataSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727113000_company_setup_master_data.sql'),
+  'utf8'
+);
+const masterDataUpsertFixSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727121500_fix_company_setup_master_data_upsert.sql'),
+  'utf8'
+);
 const setupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const adminPage = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 const guard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
@@ -58,6 +66,8 @@ assert.match(guard, /DEDICATED_PERSISTENCE_ROUTES/);
 assert.match(guard, /usesDedicatedPersistence/);
 assert.doesNotMatch(guard, /legacyPlatformSetup/);
 assert.match(setupPage, /services\/companySetupOrchestrationService\.js/);
+assert.match(setupPage, /services\/companySetupMasterDataService\.js/);
+assert.match(setupPage, /services\/authInviteService\.js/);
 assert.doesNotMatch(setupPage, /<script src="services\/authService\.js"/);
 assert.doesNotMatch(setupPage, /<script src="services\/supabaseClient\.js"/);
 assert.doesNotMatch(setupPage, /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase/);
@@ -67,10 +77,17 @@ assert.match(setupPage, /owner\?\.companyOwner!==true/);
 assert.match(setupPage, /persistCurrent\(\{complete:false,source:'manual'\}\)/);
 assert.match(setupPage, /source:'autosave'/);
 assert.match(setupPage, /source:'previous'/);
-assert.match(setupPage, /id="passwordMinLength"[^>]*min="12"/);
+assert.match(setupPage, /id="passwordPolicyPreset"/);
+assert.match(setupPage, /id="passwordMinLength" type="hidden"/);
 assert.match(setupPage, /setValue\('passwordMinLength','12'\)/);
 assert.equal((setupPage.match(/<section class="panel" data-step="/g) || []).length, 10);
 assert.equal((setupPage.match(/<script>/g) || []).length, 1);
+assert.equal((setupPage.match(/<textarea/g) || []).length, 0);
+assert.match(setupPage, /class SmartSelect/);
+assert.match(setupPage, /id="masterDataDialog"/);
+assert.match(setupPage, /id="hierarchyBuilder"/);
+assert.match(setupPage, /id="approvalBuilder"/);
+assert.match(setupPage, /await masterData\(\)\.inviteEmployee/);
 assert.match(setupPage, /changeVersionAtStart/);
 assert.match(setupPage, /function armAutosave/);
 assert.match(setupPage, /if\(!navigator\.onLine\)\{[\s\S]*state\.autosaveInFlight=false/);
@@ -140,5 +157,22 @@ for (const index of [
 ]) {
   assert.match(setupIndexSql, new RegExp(`create index if not exists ${index}`));
 }
+
+assert.match(masterDataSql, /arth_get_company_setup_reference_data/);
+assert.match(masterDataSql, /arth_upsert_company_setup_master_data/);
+assert.match(masterDataSql, /private\.arth_company_setup_owner_allowed/);
+assert.match(masterDataSql, /hrms_departments/);
+assert.match(masterDataSql, /hrms_designations/);
+assert.match(masterDataSql, /hrms_settings/);
+assert.match(masterDataSql, /hrms_payroll_records/);
+assert.match(masterDataSql, /hrms_workflow_records/);
+assert.match(masterDataSql, /CompanySetupMasterDataUpserted/);
+assert.doesNotMatch(masterDataSql, /disable row level security/i);
+assert.doesNotMatch(masterDataSql, /service_role/i);
+assert.match(masterDataUpsertFixSql, /master_record_id text/);
+assert.match(masterDataUpsertFixSql, /CompanySetupMasterDataUpserted/);
+assert.doesNotMatch(masterDataUpsertFixSql, /^\s*record_id text;/m);
+assert.doesNotMatch(masterDataUpsertFixSql, /disable row level security/i);
+assert.doesNotMatch(masterDataUpsertFixSql, /service_role/i);
 
 console.log('companySetupOrchestrationMigration.test.js passed');

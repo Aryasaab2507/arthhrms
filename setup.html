@@ -8,8 +8,10 @@
   <title>Company Setup | ArthHRMS</title>
   <script src="services/frontendSecurityService.js"></script>
   <script src="services/authGuard.js"></script>
+  <script src="services/authInviteService.js"></script>
   <script src="services/enterpriseOrganizationSetupWizardService.js"></script>
   <script src="services/companySetupOrchestrationService.js"></script>
+  <script src="services/companySetupMasterDataService.js"></script>
   <style>
     *{box-sizing:border-box}
     :root{
@@ -19,8 +21,8 @@
       --danger:#b42318;--danger-bg:#fef3f2;--focus:#84adff
     }
     html,body{margin:0;min-height:100%;background:#eef2f6;color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif;letter-spacing:0}
-    button,input,select,textarea{font:inherit}
-    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+    button,input,select{font:inherit}
+    button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
     .app{min-height:100vh;display:grid;grid-template-columns:292px minmax(0,1fr)}
     .rail{background:var(--nav);color:#fff;padding:24px 20px;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh;overflow:auto}
     .brand{display:flex;align-items:center;gap:12px;padding:2px 4px 20px;border-bottom:1px solid rgba(255,255,255,.12)}
@@ -59,16 +61,38 @@
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px}
     .field{min-width:0}.field.full{grid-column:1/-1}.field label,.group-label{display:block;font-size:.73rem;font-weight:800;color:#344054;margin-bottom:6px}
     .required::after{content:" *";color:var(--danger)}
-    .field input,.field select,.field textarea{width:100%;border:1px solid #b8c1cf;background:#fff;color:var(--ink);padding:10px 11px;border-radius:4px;font-size:.84rem;min-height:41px}
-    .field textarea{min-height:96px;resize:vertical;line-height:1.45}.field input.invalid,.field select.invalid,.field textarea.invalid{border-color:#f04438;background:#fffafa}
+    .field input,.field select{width:100%;border:1px solid #b8c1cf;background:#fff;color:var(--ink);padding:10px 11px;border-radius:4px;font-size:.84rem;min-height:41px}
+    .field input.invalid,.field select.invalid,.smart-select.invalid .smart-select-control{border-color:#f04438;background:#fffafa}
     .hint{font-size:.69rem;color:var(--muted);line-height:1.4;margin-top:5px}.field-error{font-size:.7rem;color:var(--danger);font-weight:700;min-height:16px;margin-top:4px}
     .choice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
     .choice{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--subtle);padding:9px;border-radius:4px;font-size:.75rem;font-weight:700}
     .choice input{width:auto;min-height:auto;margin:0}
     .divider{height:1px;background:var(--line);margin:23px 0}
+    .smart-select{position:relative}.smart-select-control{min-height:43px;border:1px solid #b8c1cf;background:#fff;border-radius:4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:6px 38px 6px 7px;position:relative}
+    .smart-select-control:focus-within{outline:3px solid var(--focus);outline-offset:1px}.smart-select-search{border:0!important;outline:0!important;box-shadow:none!important;padding:4px!important;min-height:27px!important;flex:1 1 130px;width:auto!important;min-width:90px}
+    .smart-select-toggle{position:absolute;right:5px;top:5px;width:31px;height:31px;border:0;background:transparent;color:#475467;cursor:pointer;font-size:.85rem}
+    .chip{display:inline-flex;align-items:center;gap:5px;background:#eff4ff;color:#1849a9;border:1px solid #c7d7fe;border-radius:999px;padding:4px 7px;font-size:.7rem;font-weight:800;max-width:100%}
+    .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip button{border:0;background:transparent;color:#475467;padding:0;width:16px;height:16px;cursor:pointer;font-size:.8rem;line-height:1}
+    .smart-select-menu{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid #b8c1cf;box-shadow:0 12px 26px rgba(16,24,40,.16);max-height:250px;overflow:auto;border-radius:4px;padding:5px}
+    .smart-option{width:100%;border:0;background:#fff;text-align:left;padding:9px 10px;display:flex;justify-content:space-between;gap:12px;cursor:pointer;border-radius:3px;color:#344054;font-size:.78rem}
+    .smart-option:hover,.smart-option[aria-selected="true"]{background:#eff8ff;color:#175cd3}.smart-option-code{color:#98a2b3;font-size:.66rem;font-weight:800}
+    .smart-add{width:100%;border:0;border-top:1px solid var(--line);background:#fff;color:#175cd3;text-align:left;padding:10px;cursor:pointer;font-size:.76rem;font-weight:800;position:sticky;bottom:0}.smart-empty{padding:11px;color:var(--muted);font-size:.74rem}
+    .builder{border:1px solid var(--line);background:#fbfcfe;border-radius:5px;padding:13px}.builder-row{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr) 34px;gap:8px;align-items:center;margin-bottom:8px}
+    .builder-row:last-child{margin-bottom:0}.builder-arrow{text-align:center;color:#98a2b3;font-weight:900}.icon-button{width:34px;height:34px;border:1px solid #b8c1cf;background:#fff;color:#475467;border-radius:4px;cursor:pointer;font-weight:900}
+    .inline-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px}.link-button{border:0;background:transparent;color:#175cd3;padding:5px 0;font-size:.73rem;font-weight:800;cursor:pointer}
+    .toggle-field{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fbfcfe;padding:10px 12px;border-radius:4px}.toggle-field label{margin:0}.toggle{width:42px!important;height:22px;min-height:22px!important}
+    .provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px}
+    .employee-search-results{border:1px solid var(--line);border-radius:4px;margin-top:5px;max-height:220px;overflow:auto}.employee-result{width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;padding:10px;cursor:pointer}.employee-result:last-child{border-bottom:0}.employee-result:hover{background:#f5f8ff}.employee-result strong{display:block;font-size:.78rem}.employee-result span{font-size:.7rem;color:var(--muted)}
+    .selected-employee{display:none;border:1px solid #b2ddff;background:#eff8ff;padding:12px;border-radius:4px;margin-top:9px}.selected-employee.show{display:flex;justify-content:space-between;gap:10px;align-items:center}.selected-employee strong{display:block;font-size:.79rem}.selected-employee span{font-size:.7rem;color:#475467}
+    .invitation-table{width:100%;border-collapse:collapse;font-size:.73rem}.invitation-table th,.invitation-table td{padding:10px;border-bottom:1px solid var(--line);text-align:left}.invitation-table th{color:#475467;background:#f8fafc}.invitation-actions{display:flex;gap:5px}
+    .readiness-hero{display:grid;grid-template-columns:170px 1fr;gap:22px;align-items:center;padding:18px;background:#f8fafc;border-bottom:1px solid var(--line);margin:-26px -26px 20px}.readiness-score{width:116px;height:116px;border-radius:50%;display:grid;place-items:center;margin:auto;background:conic-gradient(var(--success) var(--score),#e4e7ec 0);position:relative}.readiness-score::after{content:"";position:absolute;inset:11px;background:#fff;border-radius:50%}.readiness-score strong{position:relative;z-index:1;font-size:1.35rem}.readiness-hero h3{margin:0 0 5px;font-size:1rem}.readiness-hero p{margin:0;color:var(--muted);font-size:.76rem;line-height:1.5}
+    .review-list{grid-template-columns:repeat(2,minmax(0,1fr))}.review-row{grid-template-columns:28px 1fr}.review-detail{grid-column:2}.provision-checklist{max-width:620px;margin:0 auto 25px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.provision-check{border:1px solid var(--line);background:#fff;padding:11px;text-align:left;font-size:.75rem;font-weight:800;color:#344054}.provision-check span{color:var(--success);margin-right:7px}
+    .modal{border:0;padding:0;width:min(520px,calc(100vw - 30px));box-shadow:0 20px 45px rgba(16,24,40,.24);border-radius:6px}.modal::backdrop{background:rgba(16,24,40,.55)}.modal-header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-header h3{margin:0;font-size:1rem}.modal-body{padding:20px}.modal-footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:#f8fafc}
+    .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.modal-grid .full{grid-column:1/-1}
+    .toast-region{position:fixed;right:18px;bottom:18px;z-index:80;display:grid;gap:8px;width:min(360px,calc(100vw - 36px))}.toast{border:1px solid var(--line);background:#fff;box-shadow:0 10px 25px rgba(16,24,40,.18);padding:12px 14px;border-left:4px solid #2e90fa;border-radius:4px;font-size:.76rem;line-height:1.4}.toast.success{border-left-color:#12b76a}.toast.error{border-left-color:#f04438}
     .role-block{border-top:1px solid var(--line);padding:15px 0 2px}.role-block:first-of-type{border-top:0;padding-top:0}
     .role-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.role-heading strong{font-size:.79rem}.role-heading label{font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:7px}
-    .review-list{display:grid;gap:9px}.review-row{border:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:28px 170px 1fr;gap:10px;align-items:start}
+    .review-list{display:grid;gap:9px}.review-row{border:1px solid var(--line);padding:12px 14px;display:grid;gap:10px;align-items:start;border-radius:5px}
     .review-icon{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.69rem;font-weight:900;background:var(--success-bg);color:var(--success)}
     .review-icon.warning{background:var(--warning-bg);color:var(--warning)}.review-label{font-size:.77rem;font-weight:800;padding-top:4px}.review-detail{font-size:.75rem;color:var(--muted);line-height:1.5;padding-top:3px}
     .provision-state{padding:28px 20px;text-align:center}.provision-state h3{font-size:1.1rem;margin:13px 0 6px}.provision-state p{max-width:590px;margin:0 auto;color:var(--muted);font-size:.8rem;line-height:1.55}
@@ -84,7 +108,7 @@
     @keyframes shimmer{50%{background:#f2f4f7}}
     [hidden]{display:none!important}
     @media(max-width:860px){.app{grid-template-columns:1fr}.rail{position:static;height:auto;min-height:0}.step-list{grid-template-columns:repeat(5,minmax(0,1fr))}.step-button{display:flex;justify-content:center;padding:8px}.step-name{display:none}.rail-footer{display:none}.main{padding:20px}.topbar{display:block}.status-cluster{justify-content:flex-start;margin-top:12px}}
-    @media(max-width:620px){.main{padding:12px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.choice-grid{grid-template-columns:1fr 1fr}.workspace-header,.panel,.workspace-actions{padding:18px}.workspace-actions{display:grid}.action-group{display:grid;grid-template-columns:1fr 1fr}.button{width:100%}.review-row{grid-template-columns:28px 1fr}.review-detail{grid-column:2}.alert.show{grid-template-columns:1fr}.topbar h1{font-size:1.3rem}}
+    @media(max-width:620px){.main{padding:12px}.form-grid,.provider-grid,.modal-grid{grid-template-columns:1fr}.field.full,.modal-grid .full{grid-column:auto}.choice-grid{grid-template-columns:1fr 1fr}.workspace-header,.panel,.workspace-actions{padding:18px}.workspace-actions{display:grid}.action-group{display:grid;grid-template-columns:1fr 1fr}.button{width:100%}.review-list{grid-template-columns:1fr}.review-row{grid-template-columns:28px 1fr}.review-detail{grid-column:2}.alert.show{grid-template-columns:1fr}.topbar h1{font-size:1.3rem}.builder-row{grid-template-columns:1fr 24px 1fr 34px}.readiness-hero{grid-template-columns:1fr;margin:-18px -18px 18px}.readiness-hero{text-align:center}.provision-checklist{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -145,7 +169,7 @@
           <div class="form-grid">
             <div class="field"><label class="required" for="companyName">Company name</label><input id="companyName" autocomplete="organization" maxlength="160"><div class="field-error" data-error-for="companyName"></div></div>
             <div class="field"><label class="required" for="legalName">Legal name</label><input id="legalName" maxlength="200"><div class="field-error" data-error-for="legalName"></div></div>
-            <div class="field"><label class="required" for="industry">Industry</label><input id="industry" maxlength="100"><div class="field-error" data-error-for="industry"></div></div>
+            <div class="field"><label class="required" id="industryLabel">Industry</label><div class="smart-select" id="industrySelector" data-master-type="industry" data-add-label="Add Industry" aria-labelledby="industryLabel"></div><div class="field-error" data-error-for="industry"></div></div>
             <div class="field"><label class="required" for="companySize">Company size</label><select id="companySize"><option value="">Select</option><option>1-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1001-5000</option><option>5001-10000</option><option>10000+</option></select><div class="field-error" data-error-for="companySize"></div></div>
             <div class="field"><label class="required" for="country">Country</label><select id="country"><option value="">Select</option><option value="IN">India</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US">United States</option><option value="SG">Singapore</option></select><div class="field-error" data-error-for="country"></div></div>
             <div class="field"><label class="required" for="timeZone">Timezone</label><select id="timeZone"><option value="">Select</option><option>Asia/Kolkata</option><option>Asia/Dubai</option><option>Asia/Singapore</option><option>Europe/London</option><option>America/New_York</option><option>UTC</option></select><div class="field-error" data-error-for="timeZone"></div></div>
@@ -157,13 +181,13 @@
         </section>
 
         <section class="panel" data-step="2">
-          <p class="section-title">Organization structure</p><p class="section-help">Enter one item per line. Add an optional code after a vertical bar.</p>
+          <p class="section-title">Build your organization</p><p class="section-help">Choose common values or add tenant-specific master data. New values become available across Company Administration.</p>
           <div class="form-grid">
-            <div class="field"><label class="required" for="departments">Departments</label><textarea id="departments" placeholder="Human Resources | HR&#10;Operations | OPS"></textarea><div class="field-error" data-error-for="departments"></div></div>
-            <div class="field"><label for="businessUnits">Business units</label><textarea id="businessUnits" placeholder="Manufacturing | MFG"></textarea><div class="field-error" data-error-for="businessUnits"></div></div>
-            <div class="field"><label class="required" for="branches">Branches</label><textarea id="branches" placeholder="Head Office | HQ"></textarea><div class="field-error" data-error-for="branches"></div></div>
-            <div class="field"><label class="required" for="designations">Designations</label><textarea id="designations" placeholder="HR Manager | HR-MGR&#10;Executive | EXEC"></textarea><div class="field-error" data-error-for="designations"></div></div>
-            <div class="field full"><label class="required" for="reportingHierarchy">Reporting hierarchy</label><textarea id="reportingHierarchy" placeholder="Executive | Manager&#10;Manager | Department Head"></textarea><div class="field-error" data-error-for="reportingHierarchy"></div></div>
+            <div class="field"><label class="required" id="departmentsLabel">Departments</label><div class="smart-select" id="departmentsSelector" data-master-type="department" data-multiple="true" data-add-label="Add Department" aria-labelledby="departmentsLabel"></div><div class="field-error" data-error-for="departments"></div></div>
+            <div class="field"><label id="businessUnitsLabel">Business units</label><div class="smart-select" id="businessUnitsSelector" data-master-type="business_unit" data-multiple="true" data-add-label="Add Business Unit" aria-labelledby="businessUnitsLabel"></div><div class="field-error" data-error-for="businessUnits"></div></div>
+            <div class="field"><label class="required" id="branchesLabel">Branches</label><div class="smart-select" id="branchesSelector" data-master-type="branch" data-multiple="true" data-add-label="Add Branch" aria-labelledby="branchesLabel"></div><div class="field-error" data-error-for="branches"></div></div>
+            <div class="field"><label class="required" id="designationsLabel">Designations</label><div class="smart-select" id="designationsSelector" data-master-type="designation" data-multiple="true" data-add-label="Add Designation" aria-labelledby="designationsLabel"></div><div class="field-error" data-error-for="designations"></div></div>
+            <div class="field full"><label class="required">Reporting hierarchy</label><div class="builder" id="hierarchyBuilder"></div><div class="inline-toolbar"><span class="hint">Select which designation reports to another designation.</span><button class="link-button" id="addHierarchyRow" type="button">+ Add reporting level</button></div><div class="field-error" data-error-for="reportingHierarchy"></div></div>
           </div>
         </section>
 
@@ -179,71 +203,72 @@
           <div class="form-grid">
             <div class="field"><label class="required" for="officeStart">Office start</label><input id="officeStart" type="time"><div class="field-error" data-error-for="officeHours"></div></div>
             <div class="field"><label class="required" for="officeEnd">Office end</label><input id="officeEnd" type="time"></div>
-            <div class="field"><label class="required" for="attendanceMode">Attendance</label><select id="attendanceMode"><option value="">Select</option><option value="WEB_MOBILE">Web and mobile</option><option value="BIOMETRIC">Biometric</option><option value="HYBRID">Hybrid</option><option value="MANUAL">Manual</option></select><div class="field-error" data-error-for="attendanceMode"></div></div>
-            <div class="field"><label class="required" for="shiftStrategy">Shift</label><select id="shiftStrategy"><option value="">Select</option><option value="STANDARD">Standard</option><option value="FLEXIBLE">Flexible</option><option value="ROTATIONAL">Rotational</option><option value="MULTI_SHIFT">Multiple shifts</option></select><div class="field-error" data-error-for="shiftStrategy"></div></div>
-            <div class="field full"><label for="holidayCalendar">Holiday calendar</label><textarea id="holidayCalendar" placeholder="Republic Day | 2027-01-26"></textarea><div class="field-error" data-error-for="publicHolidays"></div></div>
+            <div class="field"><label class="required" id="attendancePolicyLabel">Attendance</label><div class="smart-select" id="attendanceModeSelector" data-master-type="attendance_policy" data-add-label="Add Attendance Policy" aria-labelledby="attendancePolicyLabel"></div><div class="field-error" data-error-for="attendanceMode"></div></div>
+            <div class="field"><label class="required" id="shiftLabel">Shift</label><div class="smart-select" id="shiftStrategySelector" data-master-type="shift" data-add-label="Add Shift" aria-labelledby="shiftLabel"></div><div class="field-error" data-error-for="shiftStrategy"></div></div>
+            <div class="field full"><label id="holidayCalendarLabel">Holiday calendar</label><div class="smart-select" id="holidayCalendarSelector" data-master-type="holiday_calendar" data-add-label="Add Holiday Calendar" aria-labelledby="holidayCalendarLabel"></div><div class="field-error" data-error-for="publicHolidays"></div></div>
           </div>
         </section>
 
         <section class="panel" data-step="4">
           <div class="form-grid">
-            <div class="field full"><label class="required" for="leaveTypes">Leave policies</label><textarea id="leaveTypes" placeholder="Casual Leave | CL | 12&#10;Sick Leave | SL | 10"></textarea><div class="hint">Name | Code | Annual allowance</div><div class="field-error" data-error-for="leaveTypes"></div></div>
+            <div class="field full"><label class="required" id="leaveTypesLabel">Leave types</label><div class="smart-select" id="leaveTypesSelector" data-master-type="leave_type" data-multiple="true" data-add-label="Add Leave Type" aria-labelledby="leaveTypesLabel"></div><div class="field-error" data-error-for="leaveTypes"></div></div>
             <div class="field"><label class="required" for="accrualFrequency">Accrual</label><select id="accrualFrequency"><option value="">Select</option><option value="MONTHLY">Monthly</option><option value="QUARTERLY">Quarterly</option><option value="YEARLY">Yearly</option><option value="MANUAL">Manual</option></select></div>
             <div class="field"><label for="carryForward">Carry forward</label><select id="carryForward"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
             <div class="field"><label for="encashment">Encashment</label><select id="encashment"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
-            <div class="field"><label class="required" for="leaveApprovers">Approval chain</label><textarea id="leaveApprovers" placeholder="MANAGER&#10;HR"></textarea><div class="field-error" data-error-for="approvalRules"></div></div>
+            <div class="field"><label id="approvalTemplateLabel">Approval template</label><div class="smart-select" id="approvalWorkflowSelector" data-master-type="approval_workflow" data-add-label="Add Approval Workflow" aria-labelledby="approvalTemplateLabel"></div></div>
+            <div class="field full"><label class="required">Approval chain</label><div class="builder" id="approvalBuilder"></div><div class="inline-toolbar"><span class="hint">Approvals run from top to bottom.</span><button class="link-button" id="addApproverRow" type="button">+ Add approval level</button></div><div class="field-error" data-error-for="approvalRules"></div></div>
           </div>
         </section>
 
         <section class="panel" data-step="5">
           <div class="form-grid">
-            <div class="field"><label class="required" for="payrollFrequency">Payroll frequency</label><select id="payrollFrequency"><option value="">Select</option><option value="MONTHLY">Monthly</option><option value="BI_WEEKLY">Bi-weekly</option><option value="WEEKLY">Weekly</option></select><div class="field-error" data-error-for="payrollFrequency"></div></div>
-            <div class="field"><label class="required" for="salaryStructure">Salary structure</label><input id="salaryStructure" maxlength="100" placeholder="Standard"><div class="field-error" data-error-for="salaryStructure"></div></div>
+            <div class="field"><label class="required" for="payrollFrequency">Payroll cycle</label><select id="payrollFrequency"><option value="">Select</option><option value="MONTHLY">Monthly</option><option value="WEEKLY">Weekly</option><option value="BI_WEEKLY">Bi-weekly</option><option value="SEMI_MONTHLY">Semi Monthly</option></select><div class="field-error" data-error-for="payrollFrequency"></div></div>
+            <div class="field"><label class="required" id="payrollTemplateLabel">Salary structure</label><div class="smart-select" id="salaryStructureSelector" data-master-type="payroll_template" data-add-label="Add Payroll Template" aria-labelledby="payrollTemplateLabel"></div><div class="field-error" data-error-for="salaryStructure"></div></div>
             <div class="field"><label class="required" for="paymentDay">Payment day</label><input id="paymentDay" type="number" min="1" max="31"><div class="field-error" data-error-for="paymentCycle"></div></div>
-            <div class="field"><label for="taxConfiguration">Tax configuration</label><input id="taxConfiguration" maxlength="200" placeholder="India statutory defaults"></div>
-            <div class="field full"><label class="required" for="salaryComponents">Salary components</label><textarea id="salaryComponents" placeholder="Basic Salary | EARNING&#10;Provident Fund | DEDUCTION"></textarea><div class="hint">Name | EARNING or DEDUCTION</div><div class="field-error" data-error-for="components"></div></div>
+            <div class="field"><label for="taxConfiguration">Tax configuration</label><select id="taxConfiguration"><option value="INDIA_STANDARD">India statutory defaults</option><option value="CONFIGURE_LATER">Configure later</option></select></div>
+            <div class="field full"><label class="required" id="salaryComponentsLabel">Salary components</label><div class="smart-select" id="salaryComponentsSelector" data-master-type="salary_component" data-multiple="true" data-add-label="Add Salary Component" aria-labelledby="salaryComponentsLabel"></div><div class="field-error" data-error-for="components"></div></div>
           </div>
         </section>
 
         <section class="panel" data-step="6">
           <div class="form-grid">
-            <div class="field"><label class="required" for="authenticationMethod">Authentication method</label><select id="authenticationMethod"><option value="">Select</option><option value="LOCAL_AND_SSO">Password and SSO</option><option value="LOCAL_ONLY">Password only</option><option value="SSO_ONLY">SSO only</option></select><div class="field-error" data-error-for="authenticationMethod"></div></div>
-            <div class="field"><label class="required" for="passwordMinLength">Minimum password length</label><input id="passwordMinLength" type="number" min="12" max="128"><div class="field-error" data-error-for="passwordPolicy"></div></div>
-            <div class="field"><label class="required" for="sessionTimeout">Session timeout (minutes)</label><input id="sessionTimeout" type="number" min="5" max="1440"><div class="field-error" data-error-for="sessionTimeoutMinutes"></div></div>
-            <div class="field"><label for="mfaEnabled">Administrator MFA</label><select id="mfaEnabled"><option value="true">Required</option><option value="false">Optional</option></select></div>
-            <div class="field"><label for="ssoEnabled">SSO</label><select id="ssoEnabled"><option value="false">Configure later</option><option value="true">Enabled</option></select></div>
-            <div class="field"><label for="ssoProvider">SSO provider</label><input id="ssoProvider" maxlength="100" placeholder="Microsoft Entra ID"><div class="field-error" data-error-for="sso"></div></div>
+            <div class="field"><label class="required" for="employeeIdFormat">Employee ID format</label><select id="employeeIdFormat"><option value="EMP-{0000}">EMP-0001</option><option value="{DEPT}-{0000}">HR-0001</option><option value="{YEAR}-{0000}">2026-0001</option></select></div>
+            <div class="field"><label class="required" for="authenticationMethod">Authentication method</label><select id="authenticationMethod"><option value="LOCAL_ONLY">Password only</option><option value="MICROSOFT_ENTRA">Microsoft Entra</option><option value="GOOGLE_WORKSPACE">Google Workspace</option><option value="OKTA">Okta</option><option value="SAML">SAML</option><option value="OAUTH">OAuth</option></select><div class="field-error" data-error-for="authenticationMethod"></div></div>
+            <div class="field"><label class="required" for="passwordPolicyPreset">Password policy</label><select id="passwordPolicyPreset"><option value="STANDARD">Standard (12 characters)</option><option value="STRONG">Strong (14 characters)</option><option value="MAXIMUM">Maximum (16 characters)</option></select><input id="passwordMinLength" type="hidden"><div class="field-error" data-error-for="passwordPolicy"></div></div>
+            <div class="field"><label class="required" for="sessionTimeout">Session timeout</label><select id="sessionTimeout"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option><option value="480">8 hours</option></select><div class="field-error" data-error-for="sessionTimeoutMinutes"></div></div>
+            <div class="field full"><div class="toggle-field"><label for="mfaEnabled"><strong>Multi-factor authentication</strong><span class="hint">Require MFA for tenant administrators.</span></label><input class="toggle" id="mfaEnabled" type="checkbox"></div></div>
+            <div class="field full" id="identityProviderFields" hidden><label class="required" for="ssoProvider">Identity provider name</label><input id="ssoProvider" maxlength="100" placeholder="Your organization identity provider"><div class="hint">Advanced provider configuration remains in Settings → Security → Identity Provider.</div><div class="field-error" data-error-for="sso"></div></div>
           </div>
         </section>
 
         <section class="panel" data-step="7">
-          <div class="form-grid">
-            <div class="field"><label for="emailNotifications">Email notifications</label><select id="emailNotifications"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-            <div class="field"><label for="smsNotifications">SMS notifications</label><select id="smsNotifications"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>
-            <div class="field"><label for="pushNotifications">Push notifications</label><select id="pushNotifications"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
-            <div class="field full"><label for="reminderRules">Reminder rules</label><textarea id="reminderRules" placeholder="LEAVE_APPROVAL | 24&#10;PROFILE_COMPLETION | 48"></textarea><div class="hint">Event | Hours before reminder</div><div class="field-error" data-error-for="reminderRules"></div></div>
+          <div class="provider-grid">
+            <div class="field"><label id="emailProviderLabel">Email provider</label><div class="smart-select" id="emailProviderSelector" data-master-type="notification_provider" data-channel="EMAIL" data-add-label="Add Email Provider" aria-labelledby="emailProviderLabel"></div></div>
+            <div class="field"><label id="smsProviderLabel">SMS provider</label><div class="smart-select" id="smsProviderSelector" data-master-type="notification_provider" data-channel="SMS" data-add-label="Add SMS Provider" aria-labelledby="smsProviderLabel"></div></div>
+            <div class="field"><label id="whatsappProviderLabel">WhatsApp provider</label><div class="smart-select" id="whatsappProviderSelector" data-master-type="notification_provider" data-channel="WHATSAPP" data-add-label="Add WhatsApp Provider" aria-labelledby="whatsappProviderLabel"></div></div>
+            <div class="field"><label id="pushProviderLabel">Push provider</label><div class="smart-select" id="pushProviderSelector" data-master-type="notification_provider" data-channel="PUSH" data-add-label="Add Push Provider" aria-labelledby="pushProviderLabel"></div></div>
+            <div class="field"><label for="reminderRule">Reminder schedule</label><select id="reminderRule"><option value="LEAVE_APPROVAL|24">Leave approvals · 24 hours</option><option value="PROFILE_COMPLETION|48">Profile completion · 48 hours</option><option value="NONE">Configure later</option></select><div class="field-error" data-error-for="reminderRules"></div></div>
           </div>
         </section>
 
         <section class="panel" data-step="8">
-          <p class="section-title">Primary administrator</p><p class="section-help">The Company Owner remains the tenant root. Configure the first operational administrator.</p>
-          <div class="form-grid">
-            <div class="field"><label class="required" for="administratorName">Name</label><input id="administratorName" maxlength="160"><div class="field-error" data-error-for="name"></div></div>
-            <div class="field"><label class="required" for="administratorEmail">Email</label><input id="administratorEmail" type="email" maxlength="254"><div class="field-error" data-error-for="email"></div></div>
-            <div class="field"><label for="administratorPhone">Phone</label><input id="administratorPhone" maxlength="32"></div>
-            <div class="field"><label class="required" for="administratorRole">Role</label><select id="administratorRole"><option value="super_admin">Company Owner</option><option value="admin">Administrator</option><option value="hr">HR</option></select><div class="field-error" data-error-for="role"></div></div>
-          </div>
+          <p class="section-title">Company Owner</p><p class="section-help">Your trusted Company Owner account remains the tenant root administrator.</p>
+          <div class="selected-employee show"><div><strong id="ownerDisplayName">Company Owner</strong><span id="ownerDisplayEmail"></span></div><span class="status saved"><span class="status-dot"></span>Active</span></div>
           <div class="divider"></div>
-          <p class="section-title">Invitation handoff</p><p class="section-help">Prepare tenant roles for the existing Invitation Center. Invitations require matching employee records.</p>
-          <div id="invitationIntents">
-            <div class="role-block" data-invite-role="hr"><div class="role-heading"><strong>HR invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
-            <div class="role-block" data-invite-role="admin"><div class="role-heading"><strong>Administrator invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
-            <div class="role-block" data-invite-role="manager"><div class="role-heading"><strong>Manager invitation</strong><label><input type="checkbox" data-intent-enabled> Prepare</label></div><div class="form-grid"><div class="field"><label>Name</label><input data-intent-name maxlength="160"></div><div class="field"><label>Email</label><input data-intent-email type="email" maxlength="254"></div><div class="field"><label>Employee ID</label><input data-intent-employee maxlength="80"></div></div></div>
+          <p class="section-title">Invite your administration team</p><p class="section-help">Search an employee already created for this tenant, assign an official role, and send a real Supabase invitation.</p>
+          <div class="form-grid">
+            <div class="field full"><label for="employeeSearch">Search employee</label><input id="employeeSearch" type="search" autocomplete="off" placeholder="Search by name, email, employee ID, or department"><div class="employee-search-results" id="employeeSearchResults" hidden></div><div class="selected-employee" id="selectedEmployee"><div><strong id="selectedEmployeeName"></strong><span id="selectedEmployeeDetail"></span></div><button class="icon-button" id="clearEmployee" type="button" aria-label="Clear selected employee">×</button></div></div>
+            <div class="field"><label for="inviteRole">Assign role</label><select id="inviteRole"><option value="hr">HR</option><option value="admin">Administrator</option><option value="hr_head">HR Head</option><option value="manager">Manager</option><option value="director">Director</option><option value="employee">Employee</option></select></div>
+            <div class="field"><label>&nbsp;</label><button class="button" id="sendInvitationButton" type="button" disabled>Send Invitation</button></div>
           </div>
           <div class="field-error" data-error-for="invitationIntents"></div>
+          <div class="divider"></div>
+          <p class="section-title">Invitation status</p>
+          <div style="overflow:auto"><table class="invitation-table"><thead><tr><th>Employee</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody id="invitationRows"></tbody></table></div>
         </section>
 
         <section class="panel" data-step="9">
+          <div class="readiness-hero"><div class="readiness-score" id="readinessScore" style="--score:0%"><strong id="readinessValue">0%</strong></div><div><h3 id="readinessTitle">Review company setup</h3><p id="readinessSummary">Each setup area is validated independently. Resolve required items before provisioning.</p></div></div>
           <div class="review-list" id="reviewList"></div>
         </section>
 
@@ -251,7 +276,13 @@
           <div class="provision-state" id="provisionState">
             <div class="completion-mark" id="provisionMark">10</div>
             <h3 id="provisionTitle">Ready to finish setup</h3>
-            <p id="provisionMessage">The saved configuration will be finalized and the tenant lifecycle will advance to Company Administration.</p>
+            <p id="provisionMessage">Review the persisted readiness checks, then activate the Company Administration workspace.</p>
+          </div>
+          <div class="provision-checklist" id="provisionChecklist">
+            <div class="provision-check"><span>✓</span>Company Created</div><div class="provision-check"><span>✓</span>Tenant Ready</div>
+            <div class="provision-check"><span>✓</span>Workspace Ready</div><div class="provision-check"><span>✓</span>HRMS Activated</div>
+            <div class="provision-check"><span>✓</span>Admin Ready</div><div class="provision-check"><span>✓</span>Notification Ready</div>
+            <div class="provision-check"><span>✓</span>Security Ready</div>
           </div>
         </section>
 
@@ -271,6 +302,26 @@
     </section>
   </main>
 </div>
+
+<dialog class="modal" id="masterDataDialog" aria-labelledby="masterDialogTitle">
+  <form id="masterDataForm" method="dialog">
+    <div class="modal-header"><h3 id="masterDialogTitle">Add master data</h3><button class="icon-button" id="closeMasterDialog" type="button" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="field"><label class="required" for="masterName">Name</label><input id="masterName" maxlength="160" autocomplete="off"><div class="field-error" data-modal-error="name"></div></div>
+        <div class="field"><label class="required" for="masterCode">Code</label><input id="masterCode" maxlength="80" autocomplete="off"><div class="field-error" data-modal-error="code"></div></div>
+        <div class="field full"><label for="masterDescription">Description</label><input id="masterDescription" maxlength="300" autocomplete="off"></div>
+        <div class="field" id="masterAllowanceField" hidden><label for="masterAllowance">Annual allowance</label><input id="masterAllowance" type="number" min="0" max="365"></div>
+        <div class="field" id="masterSubtypeField" hidden><label for="masterSubtype" id="masterSubtypeLabel">Type</label><select id="masterSubtype"></select></div>
+        <div class="field" id="masterStartField" hidden><label for="masterStart">Start time</label><input id="masterStart" type="time"></div>
+        <div class="field" id="masterEndField" hidden><label for="masterEnd">End time</label><input id="masterEnd" type="time"></div>
+      </div>
+      <div class="validation-summary" id="masterValidation" role="alert"></div>
+    </div>
+    <div class="modal-footer"><button class="button secondary" id="cancelMasterDialog" type="button">Cancel</button><button class="button" id="saveMasterData" type="submit">Save</button></div>
+  </form>
+</dialog>
+<div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 (function companyOwnerSetupWizard(global) {
@@ -292,17 +343,18 @@
   const state = {
     owner:null, workspace:null, company:null, draft:{}, current:0, busy:false, dirty:false,
     autosaveTimer:0, autosaveInFlight:false, changeVersion:0, retryAction:null, lastError:null, initialized:false,
-    completed:new Set(), completionRedirectTimer:0
+    completed:new Set(), completionRedirectTimer:0, selectedEmployee:null, modalTarget:null
   };
 
   const byId = id => document.getElementById(id);
   const service = () => global.CompanySetupOrchestrationService || global.companySetupOrchestrationService;
   const validator = () => global.EnterpriseOrganizationSetupWizardService || global.enterpriseOrganizationSetupWizardService;
+  const masterData = () => global.CompanySetupMasterDataService || global.companySetupMasterDataService;
+  const selectors = new Map();
   const value = id => String(byId(id)?.value || '').trim();
   const boolValue = id => value(id) === 'true';
+  const checked = id => !!byId(id)?.checked;
   const setValue = (id, next) => { const element=byId(id); if(element) element.value=next ?? ''; };
-  const lines = text => String(text || '').split(/\r?\n/).map(row => row.trim()).filter(Boolean);
-  const splitRow = line => line.split(/\||,/).map(cell => cell.trim());
   const validEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
   const validHttpsUrl = input => {
     if(!input) return true;
@@ -310,59 +362,93 @@
   };
   const slug = input => String(input || '').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
 
-  function namedRows(text) {
-    return lines(text).map(line => {
-      const cells=splitRow(line);
-      return {name:cells[0] || '',code:slug(cells[1] || cells[0] || '')};
-    }).filter(row => row.name);
+  function toast(message,kind='info') {
+    const row=document.createElement('div');row.className=`toast ${kind}`;row.textContent=message;
+    byId('toastRegion').appendChild(row);
+    global.setTimeout(() => row.remove(),4500);
   }
 
-  function namedRowsText(rows) {
-    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.code || ''}`.trim()).join('\n');
+  function recordName(row) {
+    return String(row?.name || row?.policyName || row?.title || row?.code || '').trim();
   }
 
-  function leaveRows(text) {
-    return lines(text).map(line => {
-      const cells=splitRow(line);
-      return {name:cells[0] || '',code:slug(cells[1] || cells[0] || ''),annualAllowance:Number(cells[2] || 0)};
-    }).filter(row => row.name);
+  function recordCode(row) {
+    return String(row?.code || row?.policyCode || row?.id || slug(recordName(row))).trim();
   }
 
-  function leaveRowsText(rows) {
-    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.code || ''} | ${Number(row.annualAllowance || 0)}`).join('\n');
-  }
-
-  function componentRows(text) {
-    return lines(text).map(line => {
-      const cells=splitRow(line);
-      return {name:cells[0] || '',type:String(cells[1] || 'EARNING').toUpperCase()};
-    }).filter(row => row.name);
-  }
-
-  function componentRowsText(rows) {
-    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.type || 'EARNING'}`).join('\n');
-  }
-
-  function holidayRows(text) {
-    return lines(text).map(line => {
-      const cells=splitRow(line);
-      return {name:cells[0] || '',date:cells[1] || ''};
-    }).filter(row => row.name || row.date);
-  }
-
-  function holidayRowsText(rows) {
-    return (Array.isArray(rows) ? rows : []).map(row => `${row.name || ''} | ${row.date || ''}`).join('\n');
-  }
-
-  function reminderRows(text) {
-    return lines(text).map(line => {
-      const cells=splitRow(line);
-      return {event:String(cells[0] || '').toUpperCase(),hoursBefore:Number(cells[1] || 24)};
-    }).filter(row => row.event);
-  }
-
-  function reminderRowsText(rows) {
-    return (Array.isArray(rows) ? rows : []).map(row => `${row.event || ''} | ${Number(row.hoursBefore || 0)}`).join('\n');
+  class SmartSelect {
+    constructor(root) {
+      this.root=root;this.type=root.dataset.masterType;this.multiple=root.dataset.multiple==='true';
+      this.channel=String(root.dataset.channel || '').toUpperCase();this.selected=[];this.open=false;
+      this.control=document.createElement('div');this.control.className='smart-select-control';
+      this.chips=document.createElement('div');this.chips.style.display='contents';
+      this.search=document.createElement('input');this.search.type='search';this.search.className='smart-select-search';
+      this.search.placeholder=this.multiple ? 'Search and select' : 'Search options';
+      this.search.setAttribute('autocomplete','off');this.search.setAttribute('aria-label','Search options');
+      this.toggle=document.createElement('button');this.toggle.type='button';this.toggle.className='smart-select-toggle';
+      this.toggle.textContent='▾';this.toggle.setAttribute('aria-label','Open options');this.toggle.setAttribute('aria-expanded','false');
+      this.menu=document.createElement('div');this.menu.className='smart-select-menu';this.menu.hidden=true;
+      this.control.append(this.chips,this.search,this.toggle);root.append(this.control,this.menu);
+      this.search.addEventListener('focus',() => this.show());
+      this.search.addEventListener('input',() => {this.show();this.renderMenu();});
+      this.toggle.addEventListener('click',() => this.open ? this.hide() : this.show());
+      this.control.addEventListener('click',event => {if(event.target===this.control)this.search.focus();});
+      this.render();
+    }
+    options() {return masterData()?.list?.(this.type,{channel:this.channel}) || [];}
+    selectedKeys() {return new Set(this.selected.map(row => recordCode(row).toLowerCase()));}
+    getValues() {return this.selected.map(row => ({...row}));}
+    getValue() {return this.getValues()[0] || null;}
+    setValues(rows) {
+      const source=Array.isArray(rows) ? rows : rows ? [rows] : [];
+      const catalog=this.options();this.selected=source.map(row => {
+        const key=recordCode(row).toLowerCase();
+        return catalog.find(option => recordCode(option).toLowerCase()===key) || {...row,name:recordName(row),code:recordCode(row)};
+      }).filter(row => recordName(row));
+      if(!this.multiple && this.selected.length>1)this.selected=this.selected.slice(0,1);
+      this.render();
+    }
+    addSelection(row) {
+      if(!row)return;
+      const key=recordCode(row).toLowerCase();
+      if(this.multiple){
+        if(!this.selected.some(existing => recordCode(existing).toLowerCase()===key))this.selected.push(row);
+      }else this.selected=[row];
+      this.search.value='';this.render();this.hide();this.emit();
+    }
+    removeSelection(code) {
+      this.selected=this.selected.filter(row => recordCode(row)!==code);this.render();this.emit();
+    }
+    emit() {this.root.dispatchEvent(new CustomEvent('change',{bubbles:true,detail:{values:this.getValues()}}));}
+    show() {this.open=true;this.menu.hidden=false;this.toggle.setAttribute('aria-expanded','true');this.renderMenu();}
+    hide() {this.open=false;this.menu.hidden=true;this.toggle.setAttribute('aria-expanded','false');}
+    render() {this.renderChips();if(this.open)this.renderMenu();}
+    renderChips() {
+      this.chips.replaceChildren();
+      this.selected.forEach(row => {
+        const chip=document.createElement('span');chip.className='chip';
+        const label=document.createElement('span');label.textContent=recordName(row);
+        const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',`Remove ${recordName(row)}`);
+        remove.addEventListener('click',event => {event.stopPropagation();this.removeSelection(recordCode(row));});
+        chip.append(label,remove);this.chips.appendChild(chip);
+      });
+      this.search.placeholder=this.selected.length ? (this.multiple ? 'Add another' : '') : (this.multiple ? 'Search and select' : 'Search options');
+    }
+    renderMenu() {
+      const term=this.search.value.trim().toLowerCase();const selected=this.selectedKeys();
+      this.menu.replaceChildren();
+      const options=this.options().filter(row => !term || [recordName(row),recordCode(row)].some(part => part.toLowerCase().includes(term)));
+      if(!options.length){const empty=document.createElement('div');empty.className='smart-empty';empty.textContent='No matching options';this.menu.appendChild(empty);}
+      options.forEach(row => {
+        const option=document.createElement('button');option.type='button';option.className='smart-option';
+        option.setAttribute('aria-selected',String(selected.has(recordCode(row).toLowerCase())));
+        const name=document.createElement('span');name.textContent=recordName(row);
+        const code=document.createElement('span');code.className='smart-option-code';code.textContent=recordCode(row);
+        option.append(name,code);option.addEventListener('click',() => this.addSelection(row));this.menu.appendChild(option);
+      });
+      const add=document.createElement('button');add.type='button';add.className='smart-add';add.textContent=`+ ${this.root.dataset.addLabel || 'Add New'}`;
+      add.addEventListener('click',() => openMasterDialog(this));this.menu.appendChild(add);
+    }
   }
 
   function checkedWorkingDays() {
@@ -374,26 +460,195 @@
     document.querySelectorAll('#workingDays input').forEach(input => { input.checked=selected.has(input.value); });
   }
 
-  function collectInvitationIntents() {
-    return Array.from(document.querySelectorAll('[data-invite-role]')).map(block => ({
-      role:block.dataset.inviteRole,
-      enabled:!!block.querySelector('[data-intent-enabled]')?.checked,
-      name:String(block.querySelector('[data-intent-name]')?.value || '').trim(),
-      email:String(block.querySelector('[data-intent-email]')?.value || '').trim().toLowerCase(),
-      employeeId:String(block.querySelector('[data-intent-employee]')?.value || '').trim(),
-      status:'PREPARED'
-    }));
+  function selector(id) {
+    return selectors.get(id);
   }
 
-  function applyInvitationIntents(rows) {
-    const byRole=new Map((Array.isArray(rows) ? rows : []).map(row => [row.role,row]));
-    document.querySelectorAll('[data-invite-role]').forEach(block => {
-      const row=byRole.get(block.dataset.inviteRole) || {};
-      block.querySelector('[data-intent-enabled]').checked=!!row.enabled;
-      block.querySelector('[data-intent-name]').value=row.name || '';
-      block.querySelector('[data-intent-email]').value=row.email || '';
-      block.querySelector('[data-intent-employee]').value=row.employeeId || '';
+  function createRoleSelect(selected='',className='') {
+    const select=document.createElement('select');select.className=className;
+    ['CEO','DIRECTOR','HR_HEAD','HR','MANAGER','TEAM_LEAD','EXECUTIVE','EMPLOYEE'].forEach(role => {
+      const option=document.createElement('option');option.value=role;option.textContent=role.replaceAll('_',' ');
+      option.selected=role===selected;select.appendChild(option);
     });
+    return select;
+  }
+
+  function createDesignationSelect(selected='') {
+    const select=document.createElement('select');
+    const options=selector('designationsSelector')?.getValues() || masterData()?.list?.('designation') || [];
+    const blank=document.createElement('option');blank.value='';blank.textContent='Select designation';select.appendChild(blank);
+    options.forEach(row => {const option=document.createElement('option');option.value=recordName(row);option.textContent=recordName(row);option.selected=option.value===selected;select.appendChild(option);});
+    return select;
+  }
+
+  function addHierarchyRow(row={}) {
+    const wrapper=document.createElement('div');wrapper.className='builder-row';
+    const role=createDesignationSelect(row.role || '');
+    const arrow=document.createElement('span');arrow.className='builder-arrow';arrow.textContent='→';
+    const reportsTo=createDesignationSelect(row.reportsTo || '');
+    const remove=document.createElement('button');remove.type='button';remove.className='icon-button';remove.textContent='×';remove.setAttribute('aria-label','Remove reporting level');
+    remove.addEventListener('click',() => {wrapper.remove();scheduleAutosave();});
+    wrapper.append(role,arrow,reportsTo,remove);byId('hierarchyBuilder').appendChild(wrapper);
+  }
+
+  function collectHierarchy() {
+    return Array.from(byId('hierarchyBuilder').querySelectorAll('.builder-row')).map(row => ({
+      role:String(row.querySelectorAll('select')[0]?.value || ''),
+      reportsTo:String(row.querySelectorAll('select')[1]?.value || '')
+    })).filter(row => row.role && row.reportsTo);
+  }
+
+  function applyHierarchy(rows) {
+    byId('hierarchyBuilder').replaceChildren();
+    (Array.isArray(rows) && rows.length ? rows : [{role:'Executive',reportsTo:'Manager'}]).forEach(addHierarchyRow);
+  }
+
+  function addApproverRow(role='MANAGER') {
+    const wrapper=document.createElement('div');wrapper.className='builder-row';wrapper.style.gridTemplateColumns='28px minmax(0,1fr) 34px';
+    const order=document.createElement('span');order.className='builder-arrow';order.textContent=String(byId('approvalBuilder').children.length+1);
+    const select=createRoleSelect(role);
+    const remove=document.createElement('button');remove.type='button';remove.className='icon-button';remove.textContent='×';remove.setAttribute('aria-label','Remove approval level');
+    remove.addEventListener('click',() => {wrapper.remove();renumberApprovers();scheduleAutosave();});
+    wrapper.append(order,select,remove);byId('approvalBuilder').appendChild(wrapper);renumberApprovers();
+  }
+
+  function renumberApprovers() {
+    Array.from(byId('approvalBuilder').children).forEach((row,index) => {row.querySelector('.builder-arrow').textContent=String(index+1);});
+  }
+
+  function collectApprovers() {
+    return Array.from(byId('approvalBuilder').querySelectorAll('select')).map(select => select.value).filter(Boolean);
+  }
+
+  function applyApprovers(rows) {
+    byId('approvalBuilder').replaceChildren();
+    (Array.isArray(rows) && rows.length ? rows : ['MANAGER','HR']).forEach(addApproverRow);
+  }
+
+  function reminderRows() {
+    const current=value('reminderRule');
+    if(!current || current==='NONE')return[];
+    const [event,hours]=current.split('|');
+    return [{event,hoursBefore:Number(hours || 24)}];
+  }
+
+  function setReminderRows(rows) {
+    const first=Array.isArray(rows) ? rows[0] : null;
+    setValue('reminderRule',first?.event ? `${first.event}|${Number(first.hoursBefore || 24)}` : 'NONE');
+  }
+
+  function invitationRowsFromSnapshot() {
+    return masterData()?.snapshot?.().invitations || [];
+  }
+
+  function renderEmployeeResults() {
+    const container=byId('employeeSearchResults');container.replaceChildren();
+    const rows=masterData()?.searchEmployees?.(value('employeeSearch')) || [];
+    if(!value('employeeSearch')){container.hidden=true;return;}
+    container.hidden=false;
+    if(!rows.length){const empty=document.createElement('div');empty.className='smart-empty';empty.textContent='No eligible employees found';container.appendChild(empty);return;}
+    rows.forEach(employee => {
+      const button=document.createElement('button');button.type='button';button.className='employee-result';
+      const name=document.createElement('strong');name.textContent=employee.name || employee.id;
+      const detail=document.createElement('span');detail.textContent=[employee.id,employee.email,employee.department].filter(Boolean).join(' · ');
+      button.append(name,detail);button.addEventListener('click',() => selectEmployee(employee));container.appendChild(button);
+    });
+  }
+
+  function selectEmployee(employee) {
+    state.selectedEmployee=employee;byId('employeeSearch').value='';byId('employeeSearchResults').hidden=true;
+    byId('selectedEmployeeName').textContent=employee.name || employee.id;
+    byId('selectedEmployeeDetail').textContent=[employee.id,employee.email,employee.department].filter(Boolean).join(' · ');
+    byId('selectedEmployee').classList.add('show');byId('sendInvitationButton').disabled=false;
+  }
+
+  function clearEmployee() {
+    state.selectedEmployee=null;byId('selectedEmployee').classList.remove('show');byId('sendInvitationButton').disabled=true;
+  }
+
+  function invitationStatus(row) {
+    return String(row.activationStatus || row.inviteStatus || row.status || 'Pending');
+  }
+
+  function renderInvitations() {
+    const body=byId('invitationRows');body.replaceChildren();const rows=invitationRowsFromSnapshot();
+    if(!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.className='smart-empty';td.textContent='No invitations sent yet';tr.appendChild(td);body.appendChild(tr);return;}
+    rows.forEach(row => {
+      const tr=document.createElement('tr');
+      [row.name || row.email || row.empId || 'Employee',String(row.role || 'employee').replaceAll('_',' '),invitationStatus(row)].forEach(text => {const td=document.createElement('td');td.textContent=text;tr.appendChild(td);});
+      const actions=document.createElement('td');actions.className='invitation-actions';
+      const status=invitationStatus(row).toLowerCase();
+      if(!/active|accepted|cancelled/.test(status)){
+        const resend=document.createElement('button');resend.type='button';resend.className='link-button';resend.textContent='Resend';resend.addEventListener('click',() => mutateInvitation('resend',row.inviteId));
+        const cancel=document.createElement('button');cancel.type='button';cancel.className='link-button';cancel.textContent='Cancel';cancel.addEventListener('click',() => mutateInvitation('cancel',row.inviteId));
+        actions.append(resend,cancel);
+      }else actions.textContent='—';
+      tr.appendChild(actions);body.appendChild(tr);
+    });
+  }
+
+  async function sendInvitation() {
+    if(!state.selectedEmployee)return;
+    const button=byId('sendInvitationButton');setBusy(true,button);clearError();
+    try{
+      await masterData().inviteEmployee({employeeId:state.selectedEmployee.id,role:value('inviteRole')});
+      toast('Invitation sent successfully.','success');clearEmployee();renderInvitations();
+    }catch(error){presentError({message:error?.message || 'Invitation could not be sent.'},sendInvitation);}
+    finally{setBusy(false,button);}
+  }
+
+  async function mutateInvitation(action,inviteId) {
+    setBusy(true);clearError();
+    try{
+      if(action==='resend')await masterData().resendInvitation(inviteId);
+      else await masterData().cancelInvitation(inviteId);
+      toast(action==='resend' ? 'Invitation resent.' : 'Invitation cancelled.','success');renderInvitations();
+    }catch(error){presentError({message:error?.message || 'Invitation status could not be updated.'},() => mutateInvitation(action,inviteId));}
+    finally{setBusy(false);}
+  }
+
+  function openMasterDialog(target) {
+    state.modalTarget=target;target.hide();
+    const type=target.type;const label=target.root.dataset.addLabel || 'Add New';
+    byId('masterDialogTitle').textContent=label;byId('masterName').value='';byId('masterCode').value='';byId('masterDescription').value='';
+    byId('masterAllowance').value=type==='leave_type' ? '12' : '0';
+    byId('masterAllowanceField').hidden=type!=='leave_type';
+    byId('masterStartField').hidden=type!=='shift';byId('masterEndField').hidden=type!=='shift';
+    byId('masterStart').value='09:00';byId('masterEnd').value='18:00';
+    const subtype=byId('masterSubtype');subtype.replaceChildren();let options=[];let subtypeLabel='Type';
+    if(type==='salary_component'){options=[['EARNING','Earning'],['DEDUCTION','Deduction']];subtypeLabel='Component type';}
+    if(type==='notification_provider'){options=[[target.channel || 'EMAIL',target.channel || 'Email']];subtypeLabel='Channel';}
+    if(type==='attendance_policy'){options=[['WEB','Web'],['BIOMETRIC','Biometric'],['MOBILE','Mobile'],['GPS','GPS'],['CUSTOM','Custom']];subtypeLabel='Attendance mode';}
+    byId('masterSubtypeField').hidden=!options.length;byId('masterSubtypeLabel').textContent=subtypeLabel;
+    options.forEach(([key,text]) => {const option=document.createElement('option');option.value=key;option.textContent=text;subtype.appendChild(option);});
+    byId('masterValidation').classList.remove('show');byId('masterValidation').textContent='';
+    byId('masterDataDialog').showModal();byId('masterName').focus();
+  }
+
+  function closeMasterDialog() {
+    byId('masterDataDialog').close();state.modalTarget=null;
+  }
+
+  async function saveMasterData(event) {
+    event.preventDefault();const target=state.modalTarget;if(!target)return;
+    const name=value('masterName');const code=slug(value('masterCode') || name);
+    if(!name || code.length<2){
+      byId('masterValidation').textContent='Enter a name and a valid code.';byId('masterValidation').classList.add('show');return;
+    }
+    const payload={name,code,description:value('masterDescription')};const type=target.type;
+    if(type==='leave_type')payload.annualAllowance=Number(value('masterAllowance') || 0);
+    if(type==='shift'){payload.startTime=value('masterStart');payload.endTime=value('masterEnd');}
+    if(type==='salary_component')payload.type=value('masterSubtype');
+    if(type==='notification_provider')payload.channel=value('masterSubtype');
+    if(type==='attendance_policy')payload.mode=value('masterSubtype');
+    const button=byId('saveMasterData');button.classList.add('busy');button.disabled=true;
+    try{
+      const record=await masterData().add(type,payload);target.addSelection(record);closeMasterDialog();
+      selectors.forEach(instance => {if(instance.type===type)instance.render();});
+      toast(`${name} is now available across this tenant.`,'success');
+    }catch(error){
+      byId('masterValidation').textContent=error?.message || 'Master data could not be saved.';byId('masterValidation').classList.add('show');
+    }finally{button.classList.remove('busy');button.disabled=false;}
   }
 
   function collectStep(index=state.current) {
@@ -401,55 +656,69 @@
     const organizationCode=slug(state.company?.slug || state.company?.tenant_id || value('companyName'));
     if(key==='organizationInformation') return {
       companyName:value('companyName'),legalName:value('legalName'),organizationCode,
-      industry:value('industry'),companySize:value('companySize'),country:value('country'),
+      industry:selector('industrySelector')?.getValue()?.name || '',companySize:value('companySize'),country:value('country'),
       timeZone:value('timeZone'),language:value('language'),currency:value('currency'),
       website:value('website'),fiscalYearStart:'04-01',
       logoUpload:{url:value('logoUrl'),name:value('logoUrl') ? value('logoUrl').split('/').pop() : ''}
     };
     if(key==='organizationStructure') {
-      const departments=namedRows(value('departments'));
-      const businessUnits=namedRows(value('businessUnits'));
-      const branches=namedRows(value('branches'));
-      const designations=namedRows(value('designations'));
-      const hierarchy=lines(value('reportingHierarchy')).map(line => {
-        const cells=splitRow(line);
-        return {role:cells[0] || '',reportsTo:cells[1] || ''};
-      }).filter(row => row.role);
+      const departments=selector('departmentsSelector')?.getValues() || [];
+      const businessUnits=selector('businessUnitsSelector')?.getValues() || [];
+      const branches=selector('branchesSelector')?.getValues() || [];
+      const designations=selector('designationsSelector')?.getValues() || [];
+      const hierarchy=collectHierarchy();
       return {
         headOffice:{name:branches[0]?.name || `${value('companyName')} Head Office`,locationCode:branches[0]?.code || 'HQ'},
         departments,businessUnits,branches,designations,reportingHierarchy:hierarchy,
         locations:branches,costCenters:[]
       };
     }
+    const attendance=selector('attendanceModeSelector')?.getValue();
+    const shift=selector('shiftStrategySelector')?.getValue();
+    const holiday=selector('holidayCalendarSelector')?.getValue();
     if(key==='workingConfiguration') return {
       workWeek:checkedWorkingDays(),officeHours:{start:value('officeStart'),end:value('officeEnd')},
-      timeZone:value('timeZone'),attendanceMode:value('attendanceMode'),shiftStrategy:value('shiftStrategy'),
-      weekendRules:{rule:'NON_WORKING_DAYS'},publicHolidays:holidayRows(value('holidayCalendar'))
+      timeZone:value('timeZone'),attendanceMode:attendance?.mode || attendance?.code || '',
+      attendancePolicy:attendance || null,shiftStrategy:shift?.code || '',shift:shift || null,
+      weekendRules:{rule:'NON_WORKING_DAYS'},holidayCalendar:holiday || null,publicHolidays:[]
     };
+    const leaveWorkflow=selector('approvalWorkflowSelector')?.getValue();
     if(key==='leaveConfiguration') return {
-      leaveTypes:leaveRows(value('leaveTypes')),accrualRules:{frequency:value('accrualFrequency')},
+      leaveTypes:selector('leaveTypesSelector')?.getValues() || [],accrualRules:{frequency:value('accrualFrequency')},
       carryForward:{enabled:boolValue('carryForward'),maxDays:12},encashment:{enabled:boolValue('encashment')},
-      approvalRules:{approvers:lines(value('leaveApprovers')).map(row => row.toUpperCase())}
+      approvalRules:{workflowId:leaveWorkflow?.id || '',workflowName:leaveWorkflow?.name || '',approvers:collectApprovers()}
     };
+    const payrollTemplate=selector('salaryStructureSelector')?.getValue();
     if(key==='payrollConfiguration') return {
-      payrollFrequency:value('payrollFrequency'),salaryStructure:value('salaryStructure'),
-      paymentCycle:{day:Number(value('paymentDay') || 0)},components:componentRows(value('salaryComponents')),
+      payrollFrequency:value('payrollFrequency'),salaryStructure:payrollTemplate?.code || payrollTemplate?.name || '',
+      salaryTemplate:payrollTemplate || null,paymentCycle:{day:Number(value('paymentDay') || 0)},
+      components:selector('salaryComponentsSelector')?.getValues() || [],
       taxConfiguration:{summary:value('taxConfiguration')}
     };
+    const identityMethod=value('authenticationMethod');const ssoEnabled=identityMethod!=='LOCAL_ONLY';
     if(key==='identitySecurity') return {
-      authenticationMethod:value('authenticationMethod'),
+      employeeIdFormat:value('employeeIdFormat'),authenticationMethod:identityMethod,
       passwordPolicy:{minLength:Number(value('passwordMinLength') || 0),requireUppercase:true,requireLowercase:true,requireNumber:true,requireSymbol:true},
-      sessionTimeoutMinutes:Number(value('sessionTimeout') || 0),mfa:boolValue('mfaEnabled'),
-      sso:{enabled:boolValue('ssoEnabled'),provider:value('ssoProvider')}
+      sessionTimeoutMinutes:Number(value('sessionTimeout') || 0),mfa:checked('mfaEnabled'),
+      sso:{enabled:ssoEnabled,provider:ssoEnabled ? value('ssoProvider') : ''}
     };
+    const emailProvider=selector('emailProviderSelector')?.getValue();
+    const smsProvider=selector('smsProviderSelector')?.getValue();
+    const whatsappProvider=selector('whatsappProviderSelector')?.getValue();
+    const pushProvider=selector('pushProviderSelector')?.getValue();
     if(key==='notifications') return {
-      email:{enabled:boolValue('emailNotifications')},sms:{enabled:boolValue('smsNotifications')},
-      pushNotifications:{enabled:boolValue('pushNotifications')},reminderRules:reminderRows(value('reminderRules'))
+      email:{enabled:!!emailProvider,provider:emailProvider || null},
+      sms:{enabled:!!smsProvider,provider:smsProvider || null},
+      whatsapp:{enabled:!!whatsappProvider,provider:whatsappProvider || null},
+      pushNotifications:{enabled:!!pushProvider,provider:pushProvider || null},reminderRules:reminderRows()
     };
     if(key==='administrator') return {
-      name:value('administratorName'),email:value('administratorEmail').toLowerCase(),
-      phone:value('administratorPhone'),role:value('administratorRole'),mfa:true,
-      invitationIntents:collectInvitationIntents()
+      name:state.owner?.name || 'Company Owner',email:String(state.owner?.email || '').toLowerCase(),
+      phone:'',role:'super_admin',mfa:true,
+      invitationIntents:invitationRowsFromSnapshot().map(row => ({
+        role:row.role || 'employee',name:row.name || '',email:row.email || '',
+        employeeId:row.empId || '',status:invitationStatus(row),inviteId:row.inviteId || ''
+      }))
     };
     if(key==='review') return {ready:true,reviewedAt:new Date().toISOString()};
     return {};
@@ -462,34 +731,54 @@
   }
 
   function setDefaults() {
-    setValue('industry','Manufacturing');setValue('companySize','201-500');setValue('country','IN');
+    setValue('companySize','201-500');setValue('country','IN');
     setValue('timeZone','Asia/Kolkata');setValue('language','en');setValue('currency','INR');
     setWorkingDays(['MON','TUE','WED','THU','FRI']);setValue('officeStart','09:30');setValue('officeEnd','18:30');
-    setValue('attendanceMode','WEB_MOBILE');setValue('shiftStrategy','STANDARD');
     setValue('accrualFrequency','MONTHLY');setValue('carryForward','true');setValue('encashment','false');
-    setValue('payrollFrequency','MONTHLY');setValue('salaryStructure','STANDARD');setValue('paymentDay','30');
-    setValue('authenticationMethod','LOCAL_AND_SSO');setValue('passwordMinLength','12');setValue('sessionTimeout','30');
-    setValue('mfaEnabled','true');setValue('ssoEnabled','false');setValue('emailNotifications','true');
-    setValue('smsNotifications','false');setValue('pushNotifications','true');setValue('administratorRole','super_admin');
+    setValue('payrollFrequency','MONTHLY');setValue('paymentDay','30');setValue('taxConfiguration','INDIA_STANDARD');
+    setValue('employeeIdFormat','EMP-{0000}');setValue('authenticationMethod','LOCAL_ONLY');setValue('passwordPolicyPreset','STANDARD');
+    setValue('passwordMinLength','12');setValue('sessionTimeout','30');byId('mfaEnabled').checked=true;setValue('reminderRule','LEAVE_APPROVAL|24');
+    selector('industrySelector')?.setValues(masterData().list('industry').filter(row => row.code==='MANUFACTURING'));
+    selector('departmentsSelector')?.setValues(masterData().list('department').filter(row => ['HR','FIN','OPS'].includes(row.code)));
+    selector('businessUnitsSelector')?.setValues(masterData().list('business_unit').filter(row => row.code==='CORP'));
+    selector('branchesSelector')?.setValues(masterData().list('branch').filter(row => row.code==='HQ'));
+    selector('designationsSelector')?.setValues(masterData().list('designation').filter(row => ['CEO','DIR','MGR','EXEC'].includes(row.code)));
+    selector('attendanceModeSelector')?.setValues(masterData().list('attendance_policy').filter(row => row.code==='WEB'));
+    selector('shiftStrategySelector')?.setValues(masterData().list('shift').filter(row => row.code==='GENERAL'));
+    selector('holidayCalendarSelector')?.setValues(masterData().list('holiday_calendar').filter(row => row.code==='IN-NATIONAL'));
+    selector('leaveTypesSelector')?.setValues(masterData().list('leave_type').filter(row => ['CL','SL','EL'].includes(row.code)));
+    selector('approvalWorkflowSelector')?.setValues(masterData().list('approval_workflow').filter(row => row.code==='MANAGER-HR'));
+    selector('salaryStructureSelector')?.setValues(masterData().list('payroll_template').filter(row => row.code==='CORPORATE'));
+    selector('salaryComponentsSelector')?.setValues(masterData().list('salary_component').filter(row => ['BASIC','HRA','PF'].includes(row.code)));
+    selector('emailProviderSelector')?.setValues(masterData().list('notification_provider',{channel:'EMAIL'}).slice(0,1));
+    selector('pushProviderSelector')?.setValues(masterData().list('notification_provider',{channel:'PUSH'}).slice(0,1));
+    applyHierarchy([{role:'Executive',reportsTo:'Manager'},{role:'Manager',reportsTo:'Director'}]);applyApprovers(['MANAGER','HR']);updateIdentityFields();
   }
 
   function applyDraft(draft) {
     const info=draft.organizationInformation;
-    if(info){setValue('companyName',info.companyName);setValue('legalName',info.legalName);setValue('industry',info.industry);setValue('companySize',info.companySize);setValue('country',info.country);setValue('timeZone',info.timeZone);setValue('language',info.language);setValue('currency',info.currency);setValue('website',info.website);setValue('logoUrl',info.logoUpload?.url || '');}
+    if(info){setValue('companyName',info.companyName);setValue('legalName',info.legalName);selector('industrySelector')?.setValues(info.industry ? {name:info.industry,code:slug(info.industry)} : null);setValue('companySize',info.companySize);setValue('country',info.country);setValue('timeZone',info.timeZone);setValue('language',info.language);setValue('currency',info.currency);setValue('website',info.website);setValue('logoUrl',info.logoUpload?.url || '');}
     const structure=draft.organizationStructure;
-    if(structure){setValue('departments',namedRowsText(structure.departments));setValue('businessUnits',namedRowsText(structure.businessUnits));setValue('branches',namedRowsText(structure.branches));setValue('designations',namedRowsText(structure.designations));setValue('reportingHierarchy',(structure.reportingHierarchy || []).map(row => `${row.role || ''} | ${row.reportsTo || ''}`).join('\n'));}
+    if(structure){selector('departmentsSelector')?.setValues(structure.departments);selector('businessUnitsSelector')?.setValues(structure.businessUnits);selector('branchesSelector')?.setValues(structure.branches);selector('designationsSelector')?.setValues(structure.designations);applyHierarchy(structure.reportingHierarchy);}
     const working=draft.workingConfiguration;
-    if(working){setWorkingDays(working.workWeek);setValue('officeStart',working.officeHours?.start);setValue('officeEnd',working.officeHours?.end);setValue('attendanceMode',working.attendanceMode);setValue('shiftStrategy',working.shiftStrategy);setValue('holidayCalendar',holidayRowsText(working.publicHolidays));}
+    if(working){setWorkingDays(working.workWeek);setValue('officeStart',working.officeHours?.start);setValue('officeEnd',working.officeHours?.end);selector('attendanceModeSelector')?.setValues(working.attendancePolicy || {name:working.attendanceMode,code:working.attendanceMode});selector('shiftStrategySelector')?.setValues(working.shift || {name:working.shiftStrategy,code:working.shiftStrategy});selector('holidayCalendarSelector')?.setValues(working.holidayCalendar || (working.publicHolidays || [])[0] || null);}
     const leave=draft.leaveConfiguration;
-    if(leave){setValue('leaveTypes',leaveRowsText(leave.leaveTypes));setValue('accrualFrequency',leave.accrualRules?.frequency);setValue('carryForward',String(leave.carryForward?.enabled !== false));setValue('encashment',String(!!leave.encashment?.enabled));setValue('leaveApprovers',(leave.approvalRules?.approvers || []).join('\n'));}
+    if(leave){selector('leaveTypesSelector')?.setValues(leave.leaveTypes);setValue('accrualFrequency',leave.accrualRules?.frequency);setValue('carryForward',String(leave.carryForward?.enabled !== false));setValue('encashment',String(!!leave.encashment?.enabled));applyApprovers(leave.approvalRules?.approvers);if(leave.approvalRules?.workflowName)selector('approvalWorkflowSelector')?.setValues({id:leave.approvalRules.workflowId,name:leave.approvalRules.workflowName,code:leave.approvalRules.workflowId || leave.approvalRules.workflowName});}
     const payroll=draft.payrollConfiguration;
-    if(payroll){setValue('payrollFrequency',payroll.payrollFrequency);setValue('salaryStructure',payroll.salaryStructure);setValue('paymentDay',payroll.paymentCycle?.day);setValue('salaryComponents',componentRowsText(payroll.components));setValue('taxConfiguration',payroll.taxConfiguration?.summary);}
+    if(payroll){setValue('payrollFrequency',payroll.payrollFrequency);selector('salaryStructureSelector')?.setValues(payroll.salaryTemplate || {name:payroll.salaryStructure,code:payroll.salaryStructure});setValue('paymentDay',payroll.paymentCycle?.day);selector('salaryComponentsSelector')?.setValues(payroll.components);setValue('taxConfiguration',payroll.taxConfiguration?.summary==='CONFIGURE_LATER'?'CONFIGURE_LATER':'INDIA_STANDARD');}
     const identity=draft.identitySecurity;
-    if(identity){setValue('authenticationMethod',identity.authenticationMethod);setValue('passwordMinLength',identity.passwordPolicy?.minLength);setValue('sessionTimeout',identity.sessionTimeoutMinutes);setValue('mfaEnabled',String(!!identity.mfa));setValue('ssoEnabled',String(!!identity.sso?.enabled));setValue('ssoProvider',identity.sso?.provider);}
+    if(identity){const legacyMethod=String(identity.authenticationMethod || 'LOCAL_ONLY');const mappedMethod=legacyMethod==='LOCAL_AND_SSO'||legacyMethod==='SSO_ONLY' ? (/google/i.test(identity.sso?.provider || '')?'GOOGLE_WORKSPACE':/okta/i.test(identity.sso?.provider || '')?'OKTA':'MICROSOFT_ENTRA') : legacyMethod;setValue('employeeIdFormat',identity.employeeIdFormat || 'EMP-{0000}');setValue('authenticationMethod',mappedMethod);setValue('passwordMinLength',identity.passwordPolicy?.minLength);setValue('passwordPolicyPreset',Number(identity.passwordPolicy?.minLength)>=16?'MAXIMUM':Number(identity.passwordPolicy?.minLength)>=14?'STRONG':'STANDARD');setValue('sessionTimeout',identity.sessionTimeoutMinutes);byId('mfaEnabled').checked=!!identity.mfa;setValue('ssoProvider',identity.sso?.provider);updateIdentityFields();}
     const notifications=draft.notifications;
-    if(notifications){setValue('emailNotifications',String(!!notifications.email?.enabled));setValue('smsNotifications',String(!!notifications.sms?.enabled));setValue('pushNotifications',String(!!notifications.pushNotifications?.enabled));setValue('reminderRules',reminderRowsText(notifications.reminderRules));}
+    if(notifications){selector('emailProviderSelector')?.setValues(notifications.email?.provider || (notifications.email?.enabled ? masterData().list('notification_provider',{channel:'EMAIL'})[0] : null));selector('smsProviderSelector')?.setValues(notifications.sms?.provider || (notifications.sms?.enabled ? masterData().list('notification_provider',{channel:'SMS'})[0] : null));selector('whatsappProviderSelector')?.setValues(notifications.whatsapp?.provider || (notifications.whatsapp?.enabled ? masterData().list('notification_provider',{channel:'WHATSAPP'})[0] : null));selector('pushProviderSelector')?.setValues(notifications.pushNotifications?.provider || (notifications.pushNotifications?.enabled ? masterData().list('notification_provider',{channel:'PUSH'})[0] : null));setReminderRows(notifications.reminderRules);}
     const administrator=draft.administrator;
-    if(administrator){setValue('administratorName',administrator.name);setValue('administratorEmail',administrator.email);setValue('administratorPhone',administrator.phone);setValue('administratorRole',administrator.role || 'super_admin');applyInvitationIntents(administrator.invitationIntents);}
+    if(administrator){renderInvitations();}
+  }
+
+  function updateIdentityFields() {
+    const method=value('authenticationMethod');const advanced=method && method!=='LOCAL_ONLY';
+    byId('identityProviderFields').hidden=!advanced;
+    const lengths={STANDARD:12,STRONG:14,MAXIMUM:16};setValue('passwordMinLength',lengths[value('passwordPolicyPreset')] || 12);
+    if(!advanced)setValue('ssoProvider','');
   }
 
   function clearValidation() {
@@ -500,11 +789,15 @@
 
   function setFieldError(field,message) {
     const aliases={
-      logoUpload:'logoUrl',headOffice:'branches',workWeek:'workingDays',officeHours:'officeStart',
-      publicHolidays:'holidayCalendar',approvalRules:'leaveApprovers',paymentCycle:'paymentDay',
-      components:'salaryComponents',passwordPolicy:'passwordMinLength',
+      logoUpload:'logoUrl',headOffice:'branchesSelector',workWeek:'workingDays',officeHours:'officeStart',
+      publicHolidays:'holidayCalendarSelector',approvalRules:'approvalBuilder',paymentCycle:'paymentDay',
+      components:'salaryComponentsSelector',passwordPolicy:'passwordPolicyPreset',
       sessionTimeoutMinutes:'sessionTimeout',sso:'ssoProvider',
-      name:'administratorName',email:'administratorEmail',role:'administratorRole'
+      name:'ownerDisplayName',email:'ownerDisplayEmail',role:'ownerDisplayName',
+      industry:'industrySelector',
+      departments:'departmentsSelector',businessUnits:'businessUnitsSelector',branches:'branchesSelector',
+      designations:'designationsSelector',reportingHierarchy:'hierarchyBuilder',leaveTypes:'leaveTypesSelector',
+      attendanceMode:'attendanceModeSelector',shiftStrategy:'shiftStrategySelector',salaryStructure:'salaryStructureSelector'
     };
     const renderedField=aliases[field] || field;
     const target=document.querySelector(`[data-error-for="${CSS.escape(field)}"]`)
@@ -528,10 +821,7 @@
       if(!payload.reportingHierarchy.length) errors.reportingHierarchy='Add at least one reporting relationship.';
       if(!payload.businessUnits.length) warnings.push('No business unit has been configured.');
     }
-    if(index===7){
-      const invalidIntent=payload.invitationIntents.find(row => row.enabled && (!row.name || !validEmail(row.email) || !row.employeeId));
-      if(invalidIntent) errors.invitationIntents=`${invalidIntent.role.toUpperCase()} invitation requires name, valid email, and employee ID.`;
-    }
+    if(index===7 && !validEmail(payload.email)) errors.email='The Company Owner account requires a valid email.';
     return {errors,warnings};
   }
 
@@ -579,6 +869,10 @@
 
   function renderReview(rows) {
     const list=byId('reviewList');list.replaceChildren();
+    const ready=rows.filter(row => row.valid).length;const score=Math.round((ready/Math.max(1,rows.length))*100);
+    byId('readinessScore').style.setProperty('--score',`${score}%`);byId('readinessValue').textContent=`${score}%`;
+    byId('readinessTitle').textContent=score===100 ? 'Company setup is ready' : `${rows.length-ready} setup area${rows.length-ready===1?'':'s'} need attention`;
+    byId('readinessSummary').textContent=score===100 ? 'All required configuration is valid and ready for provisioning.' : 'Open any incomplete section from the progress rail, resolve its fields, and return to Review.';
     rows.forEach(row => {
       const item=document.createElement('div');item.className='review-row';
       const icon=document.createElement('span');icon.className=`review-icon${row.valid ? '' : ' warning'}`;icon.textContent=row.valid ? 'OK' : '!';
@@ -605,8 +899,10 @@
     byId('saveDraftButton').disabled=busy;
     byId('nextButton').disabled=busy;
     document.querySelectorAll('.step-button').forEach(element => {element.disabled=busy || Number(element.dataset.index)>maximumUnlockedIndex();});
-    document.querySelectorAll('#wizardForm input,#wizardForm select,#wizardForm textarea').forEach(element => {element.disabled=busy;});
-    if(button)button.classList.toggle('busy',busy);
+    document.querySelectorAll('#wizardForm input,#wizardForm select').forEach(element => {element.disabled=busy;});
+    document.querySelectorAll('.smart-select-toggle,.smart-add,.smart-option,.icon-button,.link-button').forEach(element => {element.disabled=busy;});
+    if(button){button.classList.toggle('busy',busy);button.disabled=busy || (button===byId('sendInvitationButton') && !state.selectedEmployee);}
+    if(!busy)byId('sendInvitationButton').disabled=!state.selectedEmployee;
   }
 
   function errorCategory(result) {
@@ -682,7 +978,26 @@
     byId('nextButton').textContent=state.current===8 ? 'Confirm Review' : state.current===9 ? 'Finish Setup' : 'Save & Next';
     const progress=Number(state.workspace?.progress || 0);byId('progressValue').style.width=`${progress}%`;byId('progressText').textContent=`${progress}%`;
     if(state.current===8)validateReview();
+    if(state.current===9)renderProvisionChecklist();
     renderSteps();updateAuditStatus();
+  }
+
+  function renderProvisionChecklist() {
+    const checks=[
+      ['Company Created',!!state.company],
+      ['Tenant Ready',!!state.owner?.tenantSlug],
+      ['Workspace Ready',!!state.workspace?.id],
+      ['HRMS Activated',state.workspace?.status==='CORE_SETUP_COMPLETE'],
+      ['Admin Ready',state.completed.has('administrator')],
+      ['Notification Ready',state.completed.has('notifications')],
+      ['Security Ready',state.completed.has('identitySecurity')]
+    ];
+    const list=byId('provisionChecklist');list.replaceChildren();
+    checks.forEach(([label,complete]) => {
+      const row=document.createElement('div');row.className='provision-check';
+      const icon=document.createElement('span');icon.textContent=complete ? '✓' : '○';icon.style.color=complete ? 'var(--success)' : 'var(--muted)';
+      row.append(icon,document.createTextNode(label));list.appendChild(row);
+    });
   }
 
   async function persistCurrent({complete=false,source='manual'}={}) {
@@ -779,7 +1094,7 @@
       byId('provisionMark').textContent='OK';byId('provisionTitle').textContent='Company setup completed';
       byId('provisionMessage').textContent='Core configuration is saved. Continue to Company Administration for invitations, workforce import, readiness, and go-live.';
       byId('dashboardButton').hidden=false;byId('nextButton').hidden=true;byId('saveDraftButton').hidden=true;
-      updateStatus('saved','Setup complete');renderSteps();updateAuditStatus();
+      updateStatus('saved','Setup complete');renderSteps();renderProvisionChecklist();updateAuditStatus();
       state.completionRedirectTimer=global.setTimeout(openDashboard,1800);
     }catch(error){
       presentError({category:'APPLICATION',message:error?.message || 'Company setup could not be completed.'},completeSetup);
@@ -795,6 +1110,21 @@
     const owner=global.authService?.getCurrentUser?.();
     if(owner?.source!=='supabase' || owner?.role!=='super_admin' || owner?.roleTrusted!==true || owner?.companyOwner!==true || !owner?.tenantSlug || !owner?.organizationId)return null;
     return owner;
+  }
+
+  function initializeSmartSelectors() {
+    document.querySelectorAll('.smart-select[data-master-type]').forEach(root => {
+      if(!selectors.has(root.id))selectors.set(root.id,new SmartSelect(root));
+    });
+    selector('designationsSelector')?.root.addEventListener('change',refreshHierarchyOptions);
+    selector('approvalWorkflowSelector')?.root.addEventListener('change',() => {
+      const selected=selector('approvalWorkflowSelector').getValue();
+      if(Array.isArray(selected?.approvers) && selected.approvers.length)applyApprovers(selected.approvers);
+    });
+  }
+
+  function refreshHierarchyOptions() {
+    const rows=collectHierarchy();applyHierarchy(rows.length ? rows : [{role:'Executive',reportsTo:'Manager'}]);
   }
 
   async function initialize() {
@@ -814,13 +1144,18 @@
     }
     byId('tenantLabel').textContent=state.owner.tenantSlug;
     try{
-      const loaded=await service().loadWorkspace({actor:state.owner});
+      const [loaded]=await Promise.all([
+        service().loadWorkspace({actor:state.owner}),
+        masterData().load()
+      ]);
       if(!loaded?.success){byId('loadingSkeleton').hidden=true;presentError(loaded,initialize);return;}
       state.workspace=loaded.workspace;state.company=loaded.company;state.draft=loaded.workspace.draft_payload || {};
       state.completed=new Set(loaded.workspace.completed_steps || []);
+      initializeSmartSelectors();
       setDefaults();applyDraft(state.draft);
-      if(!value('administratorName'))setValue('administratorName',state.owner.name || '');
-      if(!value('administratorEmail'))setValue('administratorEmail',state.owner.email || '');
+      byId('ownerDisplayName').textContent=state.owner.name || 'Company Owner';
+      byId('ownerDisplayEmail').textContent=state.owner.email || '';
+      renderInvitations();
       const currentIndex=STEPS.findIndex(step => step.key===loaded.workspace.current_step);
       state.current=currentIndex>=0 ? currentIndex : 0;
       state.initialized=true;byId('loadingSkeleton').hidden=true;byId('workspace').hidden=false;
@@ -851,6 +1186,21 @@
   byId('dashboardButton').addEventListener('click',openDashboard);
   byId('retryButton').addEventListener('click',() => state.retryAction?.());
   byId('reportButton').addEventListener('click',reportIssue);
+  byId('addHierarchyRow').addEventListener('click',() => {addHierarchyRow();scheduleAutosave();});
+  byId('addApproverRow').addEventListener('click',() => {addApproverRow();scheduleAutosave();});
+  byId('authenticationMethod').addEventListener('change',updateIdentityFields);
+  byId('passwordPolicyPreset').addEventListener('change',updateIdentityFields);
+  byId('employeeSearch').addEventListener('input',renderEmployeeResults);
+  byId('clearEmployee').addEventListener('click',clearEmployee);
+  byId('sendInvitationButton').addEventListener('click',sendInvitation);
+  byId('masterDataForm').addEventListener('submit',saveMasterData);
+  byId('closeMasterDialog').addEventListener('click',closeMasterDialog);
+  byId('cancelMasterDialog').addEventListener('click',closeMasterDialog);
+  byId('masterName').addEventListener('input',() => {if(!value('masterCode'))setValue('masterCode',slug(value('masterName')));});
+  document.addEventListener('click',event => {
+    selectors.forEach(instance => {if(instance.open && !instance.root.contains(event.target))instance.hide();});
+    if(!byId('employeeSearchResults').contains(event.target) && event.target!==byId('employeeSearch'))byId('employeeSearchResults').hidden=true;
+  });
   global.addEventListener('online',onlineChanged);global.addEventListener('offline',onlineChanged);
   global.addEventListener('beforeunload',event => {if(state.dirty){event.preventDefault();event.returnValue='';}});
   global.addEventListener('unhandledrejection',event => {

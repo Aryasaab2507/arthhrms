@@ -71,6 +71,19 @@ async function main() {
   assert.equal(calledBody.redirectTo, 'https://hrms.example.com/auth-callback.html?flow=invite', 'invite uses a typed callback redirect');
   assert.equal(global.DB.getEmployee('EMP002').authUserId, '00000000-0000-4000-8000-000000000111', 'invite links auth_user_id to employee');
 
+  const durableSent = await global.authInviteService.sendDurableInvite({
+    email:'mapping.target@example.com',
+    role:'manager',
+    empId:'EMP003',
+    name:'Mapping Target',
+    tenantId:'tenant-a',
+    companyId:'tenant-a'
+  });
+  assert.equal(durableSent.ok, true, 'dedicated setup flow should use the same live invite endpoint');
+  assert.equal(calledBody.action, 'send');
+  assert.equal(calledBody.empId, 'EMP003');
+  assert.equal(calledBody.redirectTo, 'https://hrms.example.com/auth-callback.html?flow=invite');
+
   global.__mockAuthUser = { id:'00000000-0000-4000-8000-000000000111', email:'new.user@example.com', email_confirmed_at:'2026-05-18T00:00:00.000Z', app_metadata:{ role:'employee', empId:'EMP002' }, user_metadata:{ full_name:'New User' } };
   const activated = await global.authInviteService.handleInviteCallback({
     session: {

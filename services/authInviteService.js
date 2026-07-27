@@ -96,7 +96,7 @@
         const role = normalizeRole(payload.role || 'employee');
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Valid email is required');
         if (!TENANT_INVITE_ROLES.includes(role)) errors.push('Privileged roles must be created through secure release onboarding');
-        if (payload.empId) {
+        if (payload.empId && db()?.get && db()?.resolveEmployeeId) {
             const duplicate = (db().get().employees || []).find(e => e.authUserId && e.id !== db().resolveEmployeeId(payload.empId) && e.authUserId === payload.authUserId);
             if (duplicate) errors.push(`Auth user already linked to ${duplicate.id}`);
         }
@@ -204,6 +204,66 @@
             db().writeAuditLog(request.invitedByRole, request.invitedBy, 'invite failed', 'Auth Invite', localRow.inviteId, `Invite failed for ${request.email}`);
             return { ok: false, invite: failed, error: failed.failureReason };
         }
+    }
+
+    function durableInviteId() {
+        let suffix = '';
+        try { suffix = global.crypto?.randomUUID?.() || ''; } catch (_error) {}
+        if (!suffix) suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+        return `AUTH-INV-${suffix}`;
+    }
+
+    async function sendDurableInvite(payload = {}) {
+        const validation = validateInvitePayload(payload);
+        if (!validation.ok) return { ok: false, errors: validation.errors };
+        const actor = global.authService?.getCurrentUser?.() || {};
+        if (!inviteEnabled()) {
+            return { ok: false, error: 'Live Supabase invite endpoint is not configured.' };
+        }
+        const request = {
+            action: 'send',
+            inviteId: String(payload.inviteId || durableInviteId()),
+            empId: String(payload.empId || '').trim(),
+            email: validation.email,
+            role: validation.role,
+            name: String(payload.name || '').trim(),
+            tenantId: String(payload.tenantId || actor.tenantSlug || actor.tenantId || '').trim(),
+            organizationId: String(payload.organizationId || payload.companyId || actor.organizationId || actor.companyId || '').trim(),
+            redirectTo: payload.redirectTo || redirectTo()
+        };
+        if (!request.empId) return { ok: false, error: 'An existing employee is required for an invitation.' };
+        try {
+            const result = await callInviteEndpoint(request);
+            return { ok: true, mode: 'live', invite: { ...request, ...result, status: INVITE_STATES.SENT }, result };
+        } catch (error) {
+            return { ok: false, error: error?.message || String(error) };
+        }
+    }
+
+    async function mutateDurableInvite(action, inviteId) {
+        const normalizedAction = String(action || '').trim().toLowerCase();
+        if (!['resend', 'cancel'].includes(normalizedAction)) return { ok: false, error: 'Unsupported invitation action.' };
+        if (!inviteEnabled()) return { ok: false, error: 'Live Supabase invite endpoint is not configured.' };
+        const id = String(inviteId || '').trim();
+        if (!id) return { ok: false, error: 'Invitation identifier is required.' };
+        try {
+            const result = await callInviteEndpoint({
+                action: normalizedAction,
+                inviteId: id,
+                redirectTo: redirectTo()
+            });
+            return { ok: true, mode: 'live', invite: { ...result, inviteId: id }, result };
+        } catch (error) {
+            return { ok: false, error: error?.message || String(error) };
+        }
+    }
+
+    function resendDurableInvite(inviteId) {
+        return mutateDurableInvite('resend', inviteId);
+    }
+
+    function cancelDurableInvite(inviteId) {
+        return mutateDurableInvite('cancel', inviteId);
     }
 
     async function handleInviteCallback(input = {}) {
@@ -528,6 +588,9 @@
         isCompanyOwnerInviteEnabled: companyOwnerInviteEnabled,
         validateInvitePayload,
         sendInvite,
+        sendDurableInvite,
+        resendDurableInvite,
+        cancelDurableInvite,
         resendInvite,
         cancelInvite,
         sendCompanyOwnerInvite,
