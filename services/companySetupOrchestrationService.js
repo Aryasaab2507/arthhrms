@@ -109,43 +109,74 @@
         return String(prefix || 'company-setup') + ':' + id;
     }
 
+    function backendError(error) {
+        var message = String(error?.message || '').trim();
+        var details = String(error?.details || '').trim();
+        var hint = String(error?.hint || '').trim();
+        var reason = [message, details && details !== message ? details : '', hint ? 'Hint: ' + hint : '']
+            .filter(Boolean)
+            .join(' ');
+        return {
+            code: String(error?.code || '').trim().toUpperCase(),
+            status: Number(error?.status || error?.statusCode || 0),
+            message: message,
+            details: details,
+            hint: hint,
+            reason: reason
+        };
+    }
+
     function classifiedError(error, fallbackCode, fallbackMessage) {
-        var code = String(error?.code || '').trim().toUpperCase();
-        var status = Number(error?.status || error?.statusCode || 0);
-        var rawMessage = String(error?.message || '').trim();
+        var backend = backendError(error);
+        var code = backend.code;
+        var status = backend.status;
+        var rawMessage = backend.reason;
+        var diagnostic = {
+            backendCode: backend.code,
+            backendMessage: backend.message,
+            backendDetails: backend.details,
+            backendHint: backend.hint,
+            httpStatus: backend.status || null
+        };
         if (code === '42501' || status === 401 || status === 403 || /permission|forbidden|authorization/i.test(rawMessage)) {
-            return output(false, 'COMPANY_SETUP_PERMISSION_ERROR', 'Permission Error: your Company Owner session is not authorized for this setup operation.', {
+            return output(false, 'COMPANY_SETUP_PERMISSION_ERROR', 'Permission Error: ' + (rawMessage || 'your Company Owner session is not authorized for this setup operation.'), {
                 category: 'PERMISSION',
-                retryable: false
+                retryable: false,
+                ...diagnostic
             });
         }
         if (code === '40001' || /revision is stale|conflict/i.test(rawMessage)) {
-            return output(false, 'COMPANY_SETUP_CONFLICT', 'Database Conflict: this setup was updated elsewhere. Refresh the workspace and try again.', {
+            return output(false, 'COMPANY_SETUP_CONFLICT', 'Database Conflict: ' + (rawMessage || 'this setup was updated elsewhere. Refresh the workspace and try again.'), {
                 category: 'DATABASE',
-                retryable: true
+                retryable: true,
+                ...diagnostic
             });
         }
         if (code === '22023' || code.startsWith('23') || /invalid|required|validation/i.test(rawMessage)) {
             return output(false, 'COMPANY_SETUP_VALIDATION_ERROR', 'Validation Error: ' + (rawMessage || fallbackMessage), {
                 category: 'VALIDATION',
-                retryable: false
+                retryable: false,
+                ...diagnostic
             });
         }
         if (status >= 500 || code.startsWith('PGRST') || /database|postgres|relation|rpc/i.test(rawMessage)) {
-            return output(false, 'COMPANY_SETUP_DATABASE_ERROR', 'Database Error: the setup operation could not be completed. Please retry.', {
+            return output(false, 'COMPANY_SETUP_DATABASE_ERROR', 'Database Error: ' + (rawMessage || fallbackMessage), {
                 category: 'DATABASE',
-                retryable: true
+                retryable: true,
+                ...diagnostic
             });
         }
         if (/fetch|network|offline|timeout|connection/i.test(rawMessage)) {
-            return output(false, 'COMPANY_SETUP_NETWORK_ERROR', 'Network Error: check your connection and retry the setup operation.', {
+            return output(false, 'COMPANY_SETUP_NETWORK_ERROR', 'Network Error: ' + (rawMessage || 'check your connection and retry the setup operation.'), {
                 category: 'NETWORK',
-                retryable: true
+                retryable: true,
+                ...diagnostic
             });
         }
-        return output(false, fallbackCode, fallbackMessage, {
+        return output(false, fallbackCode, rawMessage || fallbackMessage, {
             category: 'APPLICATION',
-            retryable: true
+            retryable: true,
+            ...diagnostic
         });
     }
 

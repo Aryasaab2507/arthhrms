@@ -36,6 +36,7 @@ async function main() {
   const calls = [];
   let auditShouldFail = false;
   let transientSaveFailures = 1;
+  let forcedSaveError = null;
 
   const client = {
     async rpc(name, params) {
@@ -58,6 +59,9 @@ async function main() {
       }
       if (name === 'arth_save_company_setup_step') {
         assert.equal(params.p_expected_revision, workspace.revision);
+        if (forcedSaveError) {
+          return { data: null, error: forcedSaveError };
+        }
         if (transientSaveFailures > 0) {
           transientSaveFailures -= 1;
           return { data: null, error: { message: 'Network timeout while saving setup' } };
@@ -65,7 +69,7 @@ async function main() {
         const complete = params.p_complete !== false;
         workspace = {
           ...workspace,
-          status: 'IN_PROGRESS',
+          status: params.p_step_key === 'review' && complete ? 'READY_FOR_PROVISION' : 'IN_PROGRESS',
           current_step: complete ? 'organizationStructure' : workspace.current_step,
           completed_steps: complete ? [params.p_step_key] : workspace.completed_steps,
           progress: complete ? 10 : workspace.progress,
@@ -88,7 +92,7 @@ async function main() {
         assert.equal(params.p_expected_revision, workspace.revision);
         workspace = {
           ...workspace,
-          status: 'CORE_SETUP_COMPLETE',
+          status: 'COMPLETED',
           current_step: 'provisionTenant',
           completed_steps: [
             'organizationInformation', 'organizationStructure',
@@ -171,7 +175,7 @@ async function main() {
     idempotencyKey: 'company-core-complete-0001'
   }, { actor });
   assert.equal(completed.ok, true);
-  assert.equal(completed.workspace.status, 'CORE_SETUP_COMPLETE');
+  assert.equal(completed.workspace.status, 'COMPLETED');
   assert.equal(completed.lifecycle.state, 'ORG_STRUCTURE');
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(
@@ -193,6 +197,24 @@ async function main() {
   assert.equal(queuedAudit.category, 'AUDIT');
   assert.match(service.getAuditState().lastError, /Audit delivery unavailable/);
   assert.ok(Object.isFrozen(completed));
+
+  forcedSaveError = {
+    code: '22023',
+    status: 400,
+    message: 'Company setup workspace state COMPLETED is read-only.',
+    details: 'Editable states are DRAFT, IN_PROGRESS, REVIEW, and READY_FOR_PROVISION.'
+  };
+  const backendFailure = await service.saveStep({
+    stepKey: 'organizationInformation',
+    payload: { companyName: 'Tabsons India Pvt Ltd' },
+    idempotencyKey: 'company-setup-read-only-0001'
+  }, { actor });
+  assert.equal(backendFailure.ok, false);
+  assert.equal(backendFailure.code, 'COMPANY_SETUP_VALIDATION_ERROR');
+  assert.equal(backendFailure.backendCode, '22023');
+  assert.equal(backendFailure.httpStatus, 400);
+  assert.match(backendFailure.message, /state COMPLETED is read-only/);
+  assert.match(backendFailure.backendDetails, /Editable states/);
 
   console.log('companySetupOrchestrationService.test.js passed');
 }

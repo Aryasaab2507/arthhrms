@@ -918,7 +918,12 @@
   function presentError(result,retryAction) {
     const category=errorCategory(result);
     const titles={PERMISSION:'Permission Error',NETWORK:'Network Error',CONFIGURATION:'Configuration Error',VALIDATION:'Validation Error',DATABASE:'Database Error',APPLICATION:'Application Error'};
-    const reason=String(result?.message || result?.error || 'The operation could not be completed.');
+    const backendParts=[
+      result?.backendMessage,
+      result?.backendDetails && result.backendDetails!==result.backendMessage ? result.backendDetails : '',
+      result?.backendHint ? `Hint: ${result.backendHint}` : ''
+    ].filter(Boolean);
+    const reason=String(backendParts.join(' ') || result?.message || result?.error || 'The operation could not be completed.');
     state.lastError={category,reason,code:result?.code || '',at:new Date().toISOString()};
     state.retryAction=typeof retryAction==='function' ? retryAction : null;
     byId('errorTitle').textContent=titles[category] || 'Application Error';
@@ -974,7 +979,7 @@
     byId('stepTitle').textContent=step.title;byId('stepDescription').textContent=step.description;byId('stepCount').textContent=`Step ${state.current+1} of ${STEPS.length}`;
     byId('previousButton').disabled=state.busy || state.current===0;
     byId('saveDraftButton').hidden=state.current>=8;
-    byId('nextButton').hidden=state.current===9 && state.workspace?.status==='CORE_SETUP_COMPLETE';
+    byId('nextButton').hidden=state.current===9 && state.workspace?.status==='COMPLETED';
     byId('nextButton').textContent=state.current===8 ? 'Confirm Review' : state.current===9 ? 'Finish Setup' : 'Save & Next';
     const progress=Number(state.workspace?.progress || 0);byId('progressValue').style.width=`${progress}%`;byId('progressText').textContent=`${progress}%`;
     if(state.current===8)validateReview();
@@ -987,7 +992,7 @@
       ['Company Created',!!state.company],
       ['Tenant Ready',!!state.owner?.tenantSlug],
       ['Workspace Ready',!!state.workspace?.id],
-      ['HRMS Activated',state.workspace?.status==='CORE_SETUP_COMPLETE'],
+      ['HRMS Activated',state.workspace?.status==='COMPLETED'],
       ['Admin Ready',state.completed.has('administrator')],
       ['Notification Ready',state.completed.has('notifications')],
       ['Security Ready',state.completed.has('identitySecurity')]

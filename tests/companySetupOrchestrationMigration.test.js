@@ -35,6 +35,10 @@ const masterDataUpsertFixSql = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260727121500_fix_company_setup_master_data_upsert.sql'),
   'utf8'
 );
+const workspaceLifecycleSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727142343_fix_company_setup_workspace_lifecycle.sql'),
+  'utf8'
+);
 const setupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const adminPage = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
 const guard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
@@ -174,5 +178,26 @@ assert.match(masterDataUpsertFixSql, /CompanySetupMasterDataUpserted/);
 assert.doesNotMatch(masterDataUpsertFixSql, /^\s*record_id text;/m);
 assert.doesNotMatch(masterDataUpsertFixSql, /disable row level security/i);
 assert.doesNotMatch(masterDataUpsertFixSql, /service_role/i);
+for (const status of [
+  'DRAFT',
+  'IN_PROGRESS',
+  'REVIEW',
+  'READY_FOR_PROVISION',
+  'PROVISIONING',
+  'COMPLETED'
+]) {
+  assert.match(workspaceLifecycleSql, new RegExp(`'${status}'`));
+}
+assert.match(
+  workspaceLifecycleSql,
+  /workspace_row\.status not in \('DRAFT', 'IN_PROGRESS', 'REVIEW', 'READY_FOR_PROVISION'\)/
+);
+assert.match(workspaceLifecycleSql, /state % is read-only\. Editable states are DRAFT, IN_PROGRESS, REVIEW, and READY_FOR_PROVISION/);
+assert.match(workspaceLifecycleSql, /workspace_row\.status <> 'READY_FOR_PROVISION'/);
+assert.match(workspaceLifecycleSql, /set status = 'PROVISIONING'/);
+assert.match(workspaceLifecycleSql, /set status = 'COMPLETED'/);
+assert.doesNotMatch(workspaceLifecycleSql, /disable row level security/i);
+assert.doesNotMatch(workspaceLifecycleSql, /service_role/i);
+assert.doesNotMatch(setupPage, /CORE_SETUP_COMPLETE/);
 
 console.log('companySetupOrchestrationMigration.test.js passed');

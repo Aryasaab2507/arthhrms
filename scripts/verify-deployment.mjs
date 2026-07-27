@@ -6,9 +6,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
 const read = (file) => readFile(path.join(root, file), 'utf8');
+const isVercelBuild = process.env.VERCEL === '1';
 
 const requiredFiles = [
-  'package.json', 'package-lock.json', 'Dockerfile', '.dockerignore', '.gitignore',
+  'package.json', 'package-lock.json', 'Dockerfile',
   'README.md', 'LICENSE', '_headers', 'vercel.json', 'deploy/nginx.conf',
   '.github/workflows/ci.yml', '.github/workflows/release.yml',
   'context/DEPLOYMENT_CHECKLIST.md', 'context/ROLLBACK_RUNBOOK.md',
@@ -30,6 +31,9 @@ const requiredFiles = [
   'supabase/functions/invite-company-owner/index.ts',
   'dist/health.json', 'dist/runtime-config.js'
 ];
+if (!isVercelBuild) {
+  requiredFiles.push('.dockerignore', '.gitignore');
+}
 for (const file of requiredFiles) {
   try { await access(path.join(root, file)); } catch { failures.push(`Missing deployment artifact: ${file}`); }
 }

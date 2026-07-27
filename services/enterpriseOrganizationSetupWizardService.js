@@ -1264,5 +1264,6 @@
         }
     }
 
-    if (!db()) warn('Optional DB dependency not detected. Wizard persistence will be disabled safely.');
+    // setup.html consumes this service for validation only. Durable production
+    // persistence is owned by CompanySetupOrchestrationService and Supabase RPCs.
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
