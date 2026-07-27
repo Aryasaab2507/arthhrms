@@ -199,7 +199,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
           <div class="access-list">
             <div class="access-row"><span>Monitor onboarding</span><b>Allowed</b></div>
             <div class="access-row"><span>Provision tenant</span><b>Allowed</b></div>
-            <div class="access-row"><span>Open setup.html</span><b class="denied">Denied</b></div>
+            <div class="access-row"><span>Open Organization Import Center</span><b class="denied">Denied</b></div>
             <div class="access-row"><span>Access tenant HR data</span><b class="denied">Denied</b></div>
           </div>
         </div>
@@ -555,7 +555,7 @@ function renderHandoff(){
   setPill('handoffStatus',accepted?'Transferred':'Pending');
   byId('handoffTitle').textContent=accepted?'Company Owner control is active':'Waiting for Company Owner';
   byId('handoffMessage').textContent=accepted
-    ?'The Company Owner now signs in through the company login. Incomplete onboarding is routed to setup.html; Platform Owner access remains control-plane only.'
+    ?'The Company Owner now signs in through the company login. Incomplete onboarding is routed to the Organization Import Center; Platform Owner access remains control-plane only.'
     :'The Company Owner must accept the secure Supabase invitation before tenant setup can begin.';
 }
 

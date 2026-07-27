@@ -39,7 +39,7 @@ function setupRuntime() {
     href: '',
     origin: 'https://tabsons.arthhrms.com',
     hostname: 'tabsons.arthhrms.com',
-    pathname: '/company-profile-center.html',
+    pathname: '/admin.html',
     replace(url) { this.href = url; }
   };
   global.document = {

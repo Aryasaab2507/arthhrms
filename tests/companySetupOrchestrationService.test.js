@@ -25,12 +25,10 @@ async function main() {
     tenant_id: 'tabsons-india',
     organization_id: 'tabsons-india',
     status: 'DRAFT',
-    current_step: 'organizationInformation',
+    current_step: 'organizationStructure',
     completed_steps: [],
     progress: 0,
-    draft_payload: {
-      organizationInformation: { companyName: 'Tabsons India Pvt Ltd' }
-    },
+    draft_payload: {},
     revision: 0
   };
   const calls = [];
@@ -70,9 +68,9 @@ async function main() {
         workspace = {
           ...workspace,
           status: params.p_step_key === 'review' && complete ? 'READY_FOR_PROVISION' : 'IN_PROGRESS',
-          current_step: complete ? 'organizationStructure' : workspace.current_step,
+          current_step: complete ? 'workingConfiguration' : workspace.current_step,
           completed_steps: complete ? [params.p_step_key] : workspace.completed_steps,
-          progress: complete ? 10 : workspace.progress,
+          progress: complete ? 11 : workspace.progress,
           draft_payload: {
             ...workspace.draft_payload,
             [params.p_step_key]: params.p_payload
@@ -95,8 +93,7 @@ async function main() {
           status: 'COMPLETED',
           current_step: 'provisionTenant',
           completed_steps: [
-            'organizationInformation', 'organizationStructure',
-            'workingConfiguration', 'leaveConfiguration',
+            'organizationStructure', 'workingConfiguration', 'leaveConfiguration',
             'payrollConfiguration', 'identitySecurity',
             'notifications', 'administrator', 'review', 'provisionTenant'
           ],
@@ -125,8 +122,8 @@ async function main() {
   load('services/companySetupOrchestrationService.js');
   const service = global.CompanySetupOrchestrationService;
   assert.ok(Object.isFrozen(service));
-  assert.equal(service.CORE_STEPS.length, 10);
-  assert.equal(service.SETUP_TASKS.length, 21);
+  assert.equal(service.CORE_STEPS.length, 9);
+  assert.equal(service.SETUP_TASKS.length, 18);
 
   const denied = await service.loadWorkspace({
     actor: { ...actor, role: 'hr' }
@@ -139,37 +136,40 @@ async function main() {
   assert.equal(loaded.ok, true);
   assert.equal(loaded.workspace.tenant_id, 'tabsons-india');
   assert.equal(loaded.tasks.find((task) => task.key === 'companyOwner').completed, true);
-  assert.equal(loaded.tasks.find((task) => task.key === 'companyProfile').completed, false);
+  assert.equal(loaded.tasks.some((task) => task.key === 'companyProfile'), false);
 
   auditShouldFail = true;
   const saved = await service.saveStep({
-    stepKey: 'organizationInformation',
-    payload: { companyName: 'Tabsons India Pvt Ltd' },
+    stepKey: 'organizationStructure',
+    payload: {
+      headOffice: { name: 'Mumbai HQ' },
+      departments: [{ name: 'HR', code: 'HR' }]
+    },
     idempotencyKey: 'company-setup-step-0001'
   }, { actor });
   assert.equal(saved.ok, true);
   assert.equal(saved.attempts, 2);
   assert.equal(saved.workspace.revision, 1);
-  assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').status, 'DRAFTED');
-  assert.equal(saved.home.tasks.find((task) => task.key === 'companyProfile').completed, false);
+  assert.equal(saved.home.tasks.find((task) => task.key === 'departments').status, 'DRAFTED');
+  assert.equal(saved.home.tasks.find((task) => task.key === 'departments').completed, false);
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(service.getAuditState().lastError, /Audit delivery unavailable/);
   auditShouldFail = false;
   assert.equal((await service.flushAuditQueue({ actor })).ok, true);
 
   const draftSaved = await service.saveStep({
-    stepKey: 'organizationStructure',
+    stepKey: 'workingConfiguration',
     payload: {
-      headOffice: { name: 'Mumbai HQ' },
-      departments: [{ name: 'HR', code: 'HR' }]
+      workWeek: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+      officeHours: { start: '09:30', end: '18:30' }
     },
     complete: false,
     idempotencyKey: 'company-setup-draft-0001'
   }, { actor });
   assert.equal(draftSaved.ok, true);
-  assert.equal(draftSaved.workspace.current_step, 'organizationStructure');
-  assert.deepEqual(draftSaved.workspace.completed_steps, ['organizationInformation']);
-  assert.equal(draftSaved.workspace.progress, 10);
+  assert.equal(draftSaved.workspace.current_step, 'workingConfiguration');
+  assert.deepEqual(draftSaved.workspace.completed_steps, ['organizationStructure']);
+  assert.equal(draftSaved.workspace.progress, 11);
 
   const completed = await service.completeCoreSetup({
     idempotencyKey: 'company-core-complete-0001'
@@ -205,8 +205,8 @@ async function main() {
     details: 'Editable states are DRAFT, IN_PROGRESS, REVIEW, and READY_FOR_PROVISION.'
   };
   const backendFailure = await service.saveStep({
-    stepKey: 'organizationInformation',
-    payload: { companyName: 'Tabsons India Pvt Ltd' },
+    stepKey: 'organizationStructure',
+    payload: { headOffice: { name: 'Mumbai HQ' }, departments: [{ name: 'HR' }] },
     idempotencyKey: 'company-setup-read-only-0001'
   }, { actor });
   assert.equal(backendFailure.ok, false);

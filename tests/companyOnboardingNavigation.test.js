@@ -6,7 +6,8 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const platformControl = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
 const companyAdmin = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
-const companySetup = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
+const companySetup = fs.readFileSync(path.join(root, 'organization-import-center.html'), 'utf8');
+const legacySetup = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const platformOnboarding = fs.readFileSync(path.join(root, 'company-setup.html'), 'utf8');
 const companyLogin = fs.readFileSync(path.join(root, 'ArthHRMS.html'), 'utf8');
 const authGuard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
@@ -40,10 +41,11 @@ assert.doesNotMatch(platformOnboarding, /location\.href\s*=\s*['"]setup\.html/, 
 
 assert.match(
   companyAdmin,
-  /Number\(setupHome\?\.coreProgress\|\|0\)<100&&!requestedSection[\s\S]+setup\.html\?source=company-owner-login/,
-  'An authenticated Company Owner must enter setup automatically while core onboarding is incomplete.'
+  /Number\(setupHome\?\.coreProgress\|\|0\)<100&&!requestedSection[\s\S]+organization-import-center\.html\?source=company-owner-login/,
+  'An authenticated Company Owner must enter the Organization Import Center automatically while core onboarding is incomplete.'
 );
 assert.match(companySetup, /CompanySetupOrchestrationService/, 'The durable Company Setup route must remain present.');
+assert.match(legacySetup, /location\.replace\('organization-import-center\.html'\)/, 'The retired setup route must redirect safely.');
 assert.match(
   companySetup,
   /loaded\.workspace\?\.status==='COMPLETED'[\s\S]+super-admin\.html\?section=company-setup&source=setup-complete/,
@@ -57,12 +59,12 @@ assert.match(
 );
 assert.match(
   authGuard,
-  /'setup\.html': \['super_admin'\]/,
-  'Company Setup must remain restricted to the Company Owner role in every environment.'
+  /'organization-import-center\.html': \['super_admin'\]/,
+  'Organization Import Center must remain restricted to the Company Owner role in every environment.'
 );
 assert.doesNotMatch(
   authGuard,
-  /'setup\.html': \[[^\]]*platform_owner/,
+  /'organization-import-center\.html': \[[^\]]*platform_owner/,
   'Platform Owner must never be authorized for tenant setup.'
 );
 

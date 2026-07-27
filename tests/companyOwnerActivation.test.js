@@ -63,7 +63,7 @@ async function main() {
   assert.equal(activated.ok, true);
   assert.equal(activated.user.role, 'super_admin');
   assert.equal(activated.user.tenantId, 'tabsons-india');
-  assert.equal(activated.redirectTo, 'super-admin.html');
+  assert.equal(activated.redirectTo, 'organization-import-center.html?source=company-owner-invite');
   assert.equal(activated.invite.state, 'OWNER_ACCEPTED');
   assert.equal(activationCalls, 1);
   assert.equal(linkCalls, 0, 'Company Owner activation must never link an employee');

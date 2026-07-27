@@ -6,7 +6,6 @@
         'admin.html': ['admin'],
         'attendance-policy-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
         'backup-disaster-recovery-center.html': ['platform_owner', 'super_admin'],
-        'company-profile-center.html': ['super_admin', 'admin'],
         'director.html': ['director'],
         'duplicate-resolution-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
         'employee-data-quality-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
@@ -24,7 +23,8 @@
         'manager.html': ['manager'],
         'operations-monitoring.html': ['platform_owner', 'super_admin', 'admin'],
         'organization-hierarchy-center.html': ['super_admin', 'admin', 'hr', 'hr_head'],
-        'organization-import-center.html': ['super_admin', 'admin', 'hr_head'],
+        'organization-import-center.html': ['super_admin'],
+        'organization-structure-import.html': ['super_admin', 'admin', 'hr', 'hr_head'],
         'payroll-configuration-center.html': ['super_admin', 'admin', 'hr_head'],
         'performance-testing-center.html': ['platform_owner', 'super_admin', 'admin'],
         'platform-control.html': ['platform_owner'],
@@ -37,7 +37,7 @@
         'working-calendar-center.html': ['super_admin', 'admin', 'hr', 'hr_head']
     });
     const PUBLIC_ROUTES = Object.freeze(['arthhrms.html', 'index.html', 'platform-login.html', 'password-recovery.html', 'auth-callback.html', '403.html']);
-    const DEDICATED_PERSISTENCE_ROUTES = Object.freeze(['setup.html']);
+    const DEDICATED_PERSISTENCE_ROUTES = Object.freeze(['organization-import-center.html', 'setup.html']);
     const scriptElement = global.document?.currentScript || null;
     const applicationRoot = scriptElement?.src ? new URL('../', scriptElement.src) : null;
     let resolveReady;

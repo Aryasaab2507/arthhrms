@@ -39,8 +39,14 @@ const workspaceLifecycleSql = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260727142343_fix_company_setup_workspace_lifecycle.sql'),
   'utf8'
 );
-const setupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
+const profileRemovalSql = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260727162658_remove_company_profile_setup_step.sql'),
+  'utf8'
+);
+const setupPage = fs.readFileSync(path.join(root, 'organization-import-center.html'), 'utf8');
+const legacySetupPage = fs.readFileSync(path.join(root, 'setup.html'), 'utf8');
 const adminPage = fs.readFileSync(path.join(root, 'super-admin.html'), 'utf8');
+const platformPage = fs.readFileSync(path.join(root, 'platform-control.html'), 'utf8');
 const guard = fs.readFileSync(path.join(root, 'services', 'authGuard.js'), 'utf8');
 
 for (const table of ['company_setup_workspaces', 'company_setup_step_versions']) {
@@ -65,10 +71,11 @@ assert.match(sql, /CompanySetupStepSaved/);
 assert.match(sql, /OrganizationStructureConfigured/);
 assert.doesNotMatch(sql, /user_metadata/i);
 
-assert.match(guard, /'setup\.html': \['super_admin'\]/);
+assert.match(guard, /'organization-import-center\.html': \['super_admin'\]/);
 assert.match(guard, /DEDICATED_PERSISTENCE_ROUTES/);
 assert.match(guard, /usesDedicatedPersistence/);
 assert.doesNotMatch(guard, /legacyPlatformSetup/);
+assert.match(legacySetupPage, /location\.replace\('organization-import-center\.html'\)/);
 assert.match(setupPage, /services\/companySetupOrchestrationService\.js/);
 assert.match(setupPage, /services\/companySetupMasterDataService\.js/);
 assert.match(setupPage, /services\/authInviteService\.js/);
@@ -84,7 +91,7 @@ assert.match(setupPage, /source:'previous'/);
 assert.match(setupPage, /id="passwordPolicyPreset"/);
 assert.match(setupPage, /id="passwordMinLength" type="hidden"/);
 assert.match(setupPage, /setValue\('passwordMinLength','12'\)/);
-assert.equal((setupPage.match(/<section class="panel" data-step="/g) || []).length, 10);
+assert.equal((setupPage.match(/<section class="panel" data-step="/g) || []).length, 9);
 assert.equal((setupPage.match(/<script>/g) || []).length, 1);
 assert.equal((setupPage.match(/<textarea/g) || []).length, 0);
 assert.match(setupPage, /class SmartSelect/);
@@ -199,5 +206,22 @@ assert.match(workspaceLifecycleSql, /set status = 'COMPLETED'/);
 assert.doesNotMatch(workspaceLifecycleSql, /disable row level security/i);
 assert.doesNotMatch(workspaceLifecycleSql, /service_role/i);
 assert.doesNotMatch(setupPage, /CORE_SETUP_COMPLETE/);
+assert.match(profileRemovalSql, /alter column current_step set default 'organizationStructure'/);
+assert.match(profileRemovalSql, /workspace\.draft_payload[\s\S]*- 'organizationInformation'/);
+assert.match(profileRemovalSql, /create or replace function private\.arth_get_or_create_company_setup_internal/);
+assert.match(profileRemovalSql, /'DRAFT',\s*'organizationStructure',\s*'\[\]'::jsonb,\s*0,\s*'\{\}'::jsonb/s);
+assert.match(profileRemovalSql, /jsonb_array_length\(next_completed\)::numeric \/ 9::numeric/);
+assert.doesNotMatch(
+  profileRemovalSql.match(/create or replace function public\.arth_company_setup_step_allowed[\s\S]+?\$\$;/)?.[0] || '',
+  /organizationInformation/
+);
+assert.doesNotMatch(profileRemovalSql, /disable row level security/i);
+assert.doesNotMatch(profileRemovalSql, /service_role/i);
+assert.equal(fs.existsSync(path.join(root, 'company-profile-center.html')), false);
+assert.match(setupPage, /id="registryCompanyName"/);
+assert.match(setupPage, /These values come from the Platform Company Registry and are read-only during onboarding/);
+assert.doesNotMatch(platformPage, /Organization Initialization Center/);
+assert.doesNotMatch(platformPage, /organizationInitCompanyName/);
+assert.doesNotMatch(platformPage, /services\/organizationInitializationWizardService\.js/);
 
 console.log('companySetupOrchestrationMigration.test.js passed');

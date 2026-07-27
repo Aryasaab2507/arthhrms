@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; require-trusted-types-for 'script'; trusted-types arthhrms-sanitizer default">
+<meta name="referrer" content="no-referrer">
+<script src="services/frontendSecurityService.js"></script>
+<script src="services/authGuard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="services/supabaseClient.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Structure Import - ARTHHRMS</title>
+    <script src="db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="services/workflowTelemetryService.js"></script>
+    <script src="services/auditService.js"></script>
+    <script src="services/orchestrationMetricsService.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/companyProfileConfigurationService.js"></script>
+    <script src="services/organizationImportService.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--p:#1a56db;--p2:#0891b2;--ink:#0f172a;--muted:#64748b;--bg:#f5f7fb;--card:#fff;--border:#dbe4ef;--good:#047857;--bad:#dc2626;--warn:#b45309}
+        body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+        .shell{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
+        .side{background:#111827;color:#e5e7eb;padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+        .brand{display:flex;gap:10px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+        .mark{width:40px;height:40px;border-radius:9px;background:#2563eb;display:grid;place-items:center;font-weight:900}
+        .brand h1{font-size:1rem}.brand p{font-size:.72rem;color:#94a3b8;margin-top:3px}
+        .nav{display:grid;gap:7px;margin-top:18px}.nav button,.nav a{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:10px 12px;border-radius:8px;font-weight:850;cursor:pointer;text-decoration:none;font-size:.86rem}.nav button.on,.nav button:hover,.nav a:hover{background:rgba(255,255,255,.11);color:#fff}
+        .content{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.title h2{font-size:1.42rem}.title p{color:var(--muted);font-size:.84rem;line-height:1.45;margin-top:4px}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--p);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#e2e8f0;color:#0f172a}.btn.good{background:var(--good)}.btn.warn{background:var(--warn)}.btn.bad{background:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
+        .mini-input{border:1px solid var(--border);border-radius:8px;padding:9px;background:#fff;color:#0f172a;font-weight:800;min-width:138px}.pill{border:1px solid var(--border);background:#fff;border-radius:999px;padding:8px 10px;font-size:.76rem;font-weight:900;color:#334155}
+        .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px;border-left:4px solid var(--p)}.metric.good{border-left-color:var(--good)}.metric.warn{border-left-color:var(--warn)}.metric b{display:block;font-size:1.42rem}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:900;margin-top:4px}
+        .section{display:none}.section.on{display:block}.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}.panel h3{font-size:1rem;margin-bottom:10px}.muted{color:var(--muted);font-size:.78rem;line-height:1.45}
+        .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.grid label{font-size:.72rem;font-weight:900;text-transform:uppercase;color:var(--muted)}.grid input,.grid select,.grid textarea{width:100%;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff;font-size:.88rem}.grid textarea{min-height:180px;resize:vertical}.full{grid-column:1/-1}.span2{grid-column:span 2}
+        .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:860px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:.78rem;vertical-align:top}th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:.68rem}tr:last-child td{border-bottom:0}
+        .badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1d4ed8}.warnb{background:#fef3c7;color:#92400e}
+        .error{display:none;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:9px;padding:10px;font-size:.8rem;font-weight:800;margin-bottom:12px;white-space:pre-line}.error.on{display:block}
+        .toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;border-radius:10px;padding:11px 13px;font-size:.82rem;font-weight:850;opacity:0;transform:translateY(12px);transition:.2s;z-index:10}.toast.on{opacity:1;transform:translateY(0)}
+        .tree{display:grid;gap:7px}.tree-row{border:1px solid var(--border);border-radius:9px;padding:9px;background:#f8fafc;font-size:.82rem}.tree-row b{margin-right:6px}
+        @media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr 1fr}.full,.span2{grid-column:auto}}
+        @media(max-width:640px){.content{padding:14px}.top{display:block}.toolbar{margin-top:10px}.metrics,.grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="side">
+        <div class="brand">
+            <div class="mark">OI</div>
+            <div><h1>Organization Structure Import</h1><p>Transactional structure imports</p></div>
+        </div>
+        <nav class="nav" aria-label="Organization import sections">
+            <button class="on" onclick="showSection('upload',this)">Upload & Source</button>
+            <button onclick="showSection('preview',this)">Preview Data</button>
+            <button onclick="showSection('mapping',this)">Column Mapping</button>
+            <button onclick="showSection('validation',this)">Validation</button>
+            <button onclick="showSection('hierarchy',this)">Hierarchy Preview</button>
+            <button onclick="showSection('dryrun',this)">Dry Run</button>
+            <button onclick="showSection('summary',this)">Summary & Rollback</button>
+            <button onclick="showSection('templates',this)">Templates</button>
+            <a href="organization-import-center.html">Onboarding Workspace</a>
+            <a href="super-admin.html?section=company-setup">Company Administration</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <div class="top">
+            <div class="title">
+                <h2>Enterprise Organization Import</h2>
+                <p>Import branches, locations, business units, departments, divisions, cost centers, profit centers, and reporting hierarchy with dry runs, auditability, and rollback.</p>
+            </div>
+            <div class="toolbar">
+                <span class="pill" id="tenantBadge">tenant</span>
+                <input class="mini-input" id="tenantScope" placeholder="tenant slug">
+                <button class="btn alt" onclick="refreshCenter()">Refresh</button>
+                <button class="btn good" onclick="runDryRun()">Dry Run</button>
+                <button class="btn warn" onclick="commitImport()">Import</button>
+            </div>
+        </div>
+        <div class="error" id="errorBox"></div>
+        <div class="metrics" id="metricBox"></div>
+
+        <section class="section on" id="section-upload">
+            <div class="panel">
+                <h3>Upload File</h3>
+                <div class="grid">
+                    <label>Import Source<input type="file" id="fileInput" accept=".csv,.tsv,.xlsx,.xls"></label>
+                    <label>Conflict Strategy<select id="conflictStrategy"><option>MERGE</option><option>SKIP</option><option>OVERWRITE</option><option>RENAME</option><option>MANUAL_REVIEW</option></select></label>
+                    <label>Change Reason<input id="importReason" value="Organization structure import"></label>
+                    <label class="full">Paste CSV / TSV Data<textarea id="sourceText"></textarea></label>
+                </div>
+                <div class="toolbar" style="margin-top:12px">
+                    <button class="btn" onclick="loadSample()">Load Sample</button>
+                    <button class="btn alt" onclick="parseSource()">Parse Source</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-preview">
+            <div class="panel">
+                <h3>Preview Data</h3>
+                <div class="table-wrap"><table id="previewTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-mapping">
+            <div class="panel">
+                <h3>Column Mapping</h3>
+                <p class="muted" style="margin-bottom:10px">Mappings are detected automatically. Edit source headers in the upload data if a column maps incorrectly.</p>
+                <div class="table-wrap"><table id="mappingTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-validation">
+            <div class="panel">
+                <h3>Validation Results</h3>
+                <div class="table-wrap"><table id="validationTable"></table></div>
+            </div>
+            <div class="panel">
+                <h3>Conflict Resolution</h3>
+                <div class="table-wrap"><table id="conflictTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-hierarchy">
+            <div class="panel">
+                <h3>Hierarchy Preview</h3>
+                <div class="tree" id="treeBox"></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-dryrun">
+            <div class="panel">
+                <h3>Transactional Dry Run</h3>
+                <div class="table-wrap"><table id="dryRunTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-summary">
+            <div class="panel">
+                <h3>Import History</h3>
+                <div class="table-wrap"><table id="historyTable"></table></div>
+            </div>
+            <div class="panel">
+                <h3>Rollback History</h3>
+                <div class="table-wrap"><table id="rollbackTable"></table></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-templates">
+            <div class="panel">
+                <h3>Template Management</h3>
+                <div class="toolbar" style="margin-bottom:10px">
+                    <select class="mini-input" id="templateModule"><option>Departments</option><option>Branches</option><option>Locations</option><option>Business Units</option><option>Divisions</option><option>Cost Centers</option><option>Profit Centers</option><option>Hierarchy</option></select>
+                    <button class="btn" onclick="generateTemplate()">Generate Template</button>
+                    <button class="btn alt" onclick="downloadTemplate()">Download CSV</button>
+                </div>
+                <div class="table-wrap"><table id="templateTable"></table></div>
+            </div>
+        </section>
+    </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let activeSection='upload';
+let centerState=null;
+let parsedState=null;
+let mappingState=null;
+let validationState=null;
+let conflictState=null;
+let hierarchyState=null;
+let dryRunState=null;
+let latestTemplate=null;
+let selectedWorkbook=null;
+const sampleCsv=[
+  'Record Type,Name,Code,Parent Code,Country,State,City,Postal Code,Timezone',
+  'Business Unit,Manufacturing,MFG,,,,,,',
+  'Division,India Operations,IN-OPS,MFG,,,,,',
+  'Department,Engineering,ENG,IN-OPS,,,,,',
+  'Department,Operations,OPS,IN-OPS,,,,,',
+  'Cost Center,Factory Cost,FACT,ENG,,,,,',
+  'Profit Center,Domestic Sales,DOMSALES,OPS,,,,,',
+  'Location,Pune Plant,PUNE,,India,Maharashtra,Pune,411001,Asia/Kolkata',
+  'Branch,Pune Branch,PUN-BR,,India,Maharashtra,Pune,411001,Asia/Kolkata'
+].join('\n');
+function svc(){return window.OrganizationImportService||window.organizationImportService;}
+function currentUser(){return authService.getCurrentUser()||{};}
+function tenant(){try{return rbacEnforcementService.resolveTenant(document.getElementById('tenantScope').value.trim()||undefined)}catch(error){return''}}
+function ctx(){const user=currentUser();return{tenantSlug:tenant(),routeType:'tenant',actor:user};}
+function val(id){return (document.getElementById(id)?.value||'').trim();}
+function setVal(id,value){const node=document.getElementById(id);if(node)node.value=value??'';}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+function clearError(){document.getElementById('errorBox').classList.remove('on');}
+function showError(result){const box=document.getElementById('errorBox');box.textContent=(result?.failures||[]).map(x=>x.message||x.code).join('\n')||'Organization import action failed safely.';box.classList.add('on');}
+function table(id,headers,rows){document.getElementById(id).innerHTML='<thead><tr>'+headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(cell=>`<td>${cell}</td>`).join('')+'</tr>').join('')+'</tbody>';}
+function sourcePayload(){const file=document.getElementById('fileInput').files[0];const payload={tenantSlug:tenant(),fileName:file?.name||'pasted-organization.csv',content:val('sourceText'),conflictStrategy:val('conflictStrategy'),reason:val('importReason')};if(selectedWorkbook)payload.workbook=selectedWorkbook;return payload;}
+function renderMetrics(analytics){document.getElementById('metricBox').innerHTML=[
+ ['Quality',String(analytics?.importQualityScore||0)+'%','good'],
+ ['Integrity',String(analytics?.organizationIntegrityScore||0)+'%','good'],
+ ['Imported',String(analytics?.importedRecords||0),''],
+ ['Rollbacks',String(analytics?.rollbackEvents||0),'warn'],
+ ['Depth',String(analytics?.hierarchyDepth||0),'']
+].map(([label,value,cls])=>`<div class="metric ${cls}"><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');}
+function renderPreview(){const rows=parsedState?.rows||[];const headers=parsedState?.headers||Object.keys(rows[0]||{});table('previewTable',headers,rows.slice(0,50).map(row=>headers.map(h=>escapeHtml(row[h]||''))));}
+function renderMapping(){const mapping=mappingState?.mapping||{};table('mappingTable',['Source Column','Mapped Field','Status'],Object.keys(mapping).map(key=>[escapeHtml(key),escapeHtml(mapping[key]),'<span class="badge ok">Mapped</span>']).concat((mappingState?.unmappedColumns||[]).map(key=>[escapeHtml(key),'','<span class="badge warnb">Unmapped</span>'])));}
+function renderValidation(){const failures=validationState?.failures||[];table('validationTable',['Severity','Code','Message'],failures.length?failures.map(row=>[escapeHtml(row.severity),escapeHtml(row.code),escapeHtml(row.message)]):[['INFO','VALID','<span class="badge ok">No validation errors</span>']]);const conflicts=conflictState?.conflicts||[];table('conflictTable',['Category','Code','Strategy'],conflicts.length?conflicts.map(row=>[escapeHtml(row.category),escapeHtml(row.code),escapeHtml(row.strategy)]):[['INFO','NONE','<span class="badge ok">No conflicts detected</span>']]);}
+function renderHierarchy(){const nodes=hierarchyState?.visualPreview||[];document.getElementById('treeBox').innerHTML=nodes.length?nodes.map(node=>`<div class="tree-row"><b>${escapeHtml(node.id)}</b>${escapeHtml(node.label)} <span class="badge info">${escapeHtml(node.category)}</span> ${node.parent?'<span class="badge warnb">Parent '+escapeHtml(node.parent)+'</span>':''}</div>`).join(''):'<p class="muted">Run validation to preview hierarchy.</p>';}
+function renderDryRun(){const s=dryRunState?.summary||{};table('dryRunTable',['Metric','Value'],[['Transactional',dryRunState?.transactional?'Yes':'No'],['Reversible',dryRunState?.reversible?'Yes':'No'],['Imported Records',String(s.importedRecords||0)],['Validation Errors',String(s.validationErrors||0)],['Duplicate Records',String(s.duplicateRecords||0)],['Hierarchy Depth',String(s.hierarchyDepth||0)],['Rollback Available',s.rollbackAvailable?'Yes':'No']]);}
+function renderHistory(){const jobs=centerState?.jobs||[];table('historyTable',['Import','File','Status','Records','Created','Rollback'],jobs.map(row=>[escapeHtml(row.importId),escapeHtml(row.fileName),`<span class="badge ${row.status==='COMMITTED'?'ok':'warnb'}">${escapeHtml(row.status)}</span>`,String(row.summary?.importedRecords||0),escapeHtml(row.createdAt),`<button class="btn alt" onclick="rollbackImport('${escapeHtml(row.importId)}')">Rollback</button>`]));const tx=centerState?.transactions||[];table('rollbackTable',['Import','Transaction','Rolled Back','Rollback At'],tx.map(row=>[escapeHtml(row.importId),escapeHtml(row.transactionId),row.rolledBack?'<span class="badge ok">Yes</span>':'<span class="badge info">No</span>',escapeHtml(row.rollbackAt||'')]));}
+function renderTemplates(){const templates=centerState?.templates||[];table('templateTable',['Template','Module','Version','Required Fields','Created'],templates.map(row=>[escapeHtml(row.templateId),escapeHtml(row.module),String(row.version),escapeHtml((row.requiredFields||[]).join(', ')),escapeHtml(row.createdAt)]));}
+function refreshCenter(){clearError();document.getElementById('tenantBadge').textContent='Tenant: '+tenant();const result=svc().getImportCenter({tenantSlug:tenant()},ctx());if(!result.success){showError(result);return;}centerState=result;renderMetrics(result.analytics);renderHistory();renderTemplates();}
+async function readSelectedFile(){const file=document.getElementById('fileInput').files[0];selectedWorkbook=null;if(!file)return;const validation=await FrontendSecurityService.validateFile(file,'spreadsheet');if(!validation.valid){showError({failures:validation.errors.map(message=>({message}))});return;}const lower=validation.fileName.toLowerCase();if(lower.endsWith('.xlsx')||lower.endsWith('.xls')){if(!window.XLSX){showError({failures:[{message:'XLSX parser is unavailable. Paste CSV/TSV data or try again online.'}]});return;}const buffer=await file.arrayBuffer();const workbook=window.XLSX.read(buffer,{type:'array'});selectedWorkbook={};workbook.SheetNames.forEach(name=>{selectedWorkbook[name]=window.XLSX.utils.sheet_to_json(workbook.Sheets[name],{defval:''});});setVal('sourceText','');showToast('Workbook loaded for parsing.');return;}setVal('sourceText',await file.text());showToast('File loaded.');}
+async function parseSource(){clearError();await readSelectedFile();const parsed=svc().parseImportSource(sourcePayload(),ctx());if(!parsed.success){showError(parsed);return;}parsedState=parsed;mappingState=svc().autoMapColumns({rows:parsed.rows,headers:parsed.headers},ctx());renderPreview();renderMapping();showToast('Source parsed and mapped.');}
+async function validateSource(){clearError();if(!parsedState)await parseSource();if(!parsedState||!mappingState)return;validationState=svc().validateImportRows({tenantSlug:tenant(),rows:parsedState.rows,mapping:mappingState.mapping},ctx());if(!validationState.success){renderValidation();showError(validationState);return;}conflictState=svc().detectConflicts({tenantSlug:tenant(),records:validationState.normalizedRecords,conflictStrategy:val('conflictStrategy')},ctx());hierarchyState=svc().buildHierarchyPreview({tenantSlug:tenant(),records:validationState.normalizedRecords},ctx());renderValidation();renderHierarchy();showToast('Validation complete.');}
+function runDryRun(){clearError();const result=svc().dryRunImport(sourcePayload(),ctx());if(!result.success){showError(result);return;}dryRunState=result;parsedState=result.parsed;mappingState={mapping:result.mapping,unmappedColumns:[]};validationState=result.validation;conflictState={conflicts:result.conflicts};hierarchyState=result.hierarchy;renderPreview();renderMapping();renderValidation();renderHierarchy();renderDryRun();showToast('Dry run complete.');}
+function commitImport(){clearError();const result=svc().commitImport(sourcePayload(),ctx());if(!result.success){showError(result);return;}dryRunState=result;renderDryRun();refreshCenter();showToast('Import committed transactionally.');}
+function rollbackImport(importId){clearError();const result=svc().rollbackImport({tenantSlug:tenant(),importId,reason:'Rollback from Organization Structure Import'},ctx());if(!result.success){showError(result);return;}refreshCenter();showToast('Import rollback completed.');}
+function generateTemplate(){clearError();const result=svc().generateImportTemplate({tenantSlug:tenant(),module:val('templateModule')},ctx());if(!result.success){showError(result);return;}latestTemplate=result.template;refreshCenter();showToast('Template generated.');}
+function downloadTemplate(){if(!latestTemplate)generateTemplate();const fields=[...(latestTemplate?.requiredFields||['Record Type','Name','Code']),...(latestTemplate?.optionalFields||[])];const rows=[fields.join(','),'Department,Engineering,ENG,IN-OPS,,,,,,'];const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(latestTemplate?.module||'organization')+'-template-v'+(latestTemplate?.version||1)+'.csv';a.click();URL.revokeObjectURL(a.href);}
+function loadSample(){selectedWorkbook=null;setVal('sourceText',sampleCsv);showToast('Sample import loaded.');}
+function showSection(id,btn){activeSection=id;document.querySelectorAll('.section').forEach(x=>x.classList.remove('on'));document.getElementById('section-'+id).classList.add('on');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));if(btn)btn.classList.add('on');if(id==='validation')validateSource();if(id==='hierarchy')renderHierarchy();if(id==='dryrun')renderDryRun();if(id==='summary'){refreshCenter();renderHistory();}if(id==='templates')renderTemplates();}
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('tenantScope').value=tenant();loadSample();refreshCenter();});
+</script>
+</body>
+</html>

@@ -146,17 +146,15 @@
                     'setup-' + row.key,
                     row.label,
                     row.completed ? 'Configuration confirmed.' : 'Continue the guided company setup.',
-                    row.route || 'setup.html',
+                    row.route || 'organization-import-center.html',
                     row.completed,
                     row.required ? 'HIGH' : 'MEDIUM'
                 );
             });
         }
-        var company = state.companySettings || state.companyProfileConfigurations || {};
         return [
-            makeTask('company-profile', 'Complete company profile', 'Add legal identity, address, timezone, and branding.', 'setup.html', !!String(company.companyName || company.legalName || '').trim(), 'HIGH'),
-            makeTask('organization-structure', 'Create organization structure', 'Add departments and designations before onboarding employees.', 'setup.html', configured(state, ['departments']) && configured(state, ['designations']), 'HIGH'),
-            makeTask('policies', 'Configure workforce policies', 'Complete attendance, leave, and payroll basics.', 'setup.html', configured(state, ['attendancePolicyDefinitions']) && configured(state, ['leavePolicyDefinitions']) && configured(state, ['payrollConfigurations']), 'HIGH')
+            makeTask('organization-structure', 'Build organization structure', 'Add departments, business units, branches, designations, and reporting relationships.', 'organization-import-center.html', configured(state, ['departments']) && configured(state, ['designations']), 'HIGH'),
+            makeTask('policies', 'Configure company operations', 'Complete working configuration, attendance, leave, payroll, identity, and notifications.', 'organization-import-center.html', configured(state, ['attendancePolicyDefinitions']) && configured(state, ['leavePolicyDefinitions']) && configured(state, ['payrollConfigurations']), 'HIGH')
         ];
     }
 
@@ -190,8 +188,8 @@
 
         if (access.role === 'admin') {
             return [
-                makeTask('organization-settings', 'Verify organization settings', 'Confirm company and working-calendar configuration.', 'company-profile-center.html', configured(state, ['companyProfileConfigurations']) || !!String(state.companySettings?.companyName || '').trim(), 'HIGH'),
-                makeTask('organization-structure', 'Verify departments and designations', 'Resolve missing organization references.', 'organization-import-center.html', configured(state, ['departments']) && configured(state, ['designations']), 'HIGH'),
+                makeTask('organization-settings', 'Verify organization settings', 'Confirm company and working-calendar configuration.', 'admin.html', !!String(state.companySettings?.companyName || '').trim(), 'HIGH'),
+                makeTask('organization-structure', 'Verify departments and designations', 'Resolve missing organization references.', 'organization-structure-import.html', configured(state, ['departments']) && configured(state, ['designations']), 'HIGH'),
                 makeTask('document-readiness', 'Review onboarding documents', 'Complete outstanding employee document checks.', 'admin.html#docverify', (state.documentVerifications || []).length > 0 || employees.length === 0, 'MEDIUM')
             ];
         }

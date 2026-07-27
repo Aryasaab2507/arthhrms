@@ -227,6 +227,7 @@ for (const servicePath of [
 }
 const platformControlSource = await read('platform-control.html');
 const platformCompanySetupSource = await read('company-setup.html');
+const organizationImportCenterSource = await read('organization-import-center.html');
 check(platformControlSource.includes('services/platformAggregateIntegrationService.js'), 'Platform Control does not load durable platform aggregates.');
 check(platformControlSource.includes('platformAggregateSvc()?.load'), 'Platform Control does not initialize aggregate integrations after authentication.');
 check(platformControlSource.includes("label:'Continue Setup',focus:'company-information'"), 'Company Registry lacks the CREATED-to-Platform-Onboarding action.');
@@ -242,6 +243,11 @@ check(platformCompanySetupSource.includes('provisionCompany'), 'Platform onboard
 check(platformCompanySetupSource.includes('sendCompanyOwnerInvite'), 'Platform onboarding workspace cannot send Company Owner invitations.');
 check(platformCompanySetupSource.includes('getCompanyWorkspace'), 'Platform onboarding workspace cannot monitor persisted lifecycle state.');
 check(!/location\.href\s*=\s*['"]setup\.html/.test(platformCompanySetupSource), 'Platform Owner onboarding workspace can enter tenant setup.');
+check(organizationImportCenterSource.includes('id="registryCompanyName"'), 'Organization Import Center does not load read-only Company Registry information.');
+check(!organizationImportCenterSource.includes("key:'organizationInformation'"), 'Organization Import Center still exposes the removed Company Profile step.');
+check(!platformControlSource.includes('Organization Initialization Center'), 'Platform Control retains the duplicate organization initialization form.');
+check(!platformControlSource.includes('organizationInitCompanyName'), 'Platform Control retains duplicate company identity inputs.');
+check(!platformControlSource.includes('services/organizationInitializationWizardService.js'), 'Platform Control still loads the retired initialization controller.');
 check(platformControlSource.includes("'Enterprise Operations Center':'Operations Summary'"), 'Platform Operations lacks focused lazy initialization.');
 check(platformControlSource.includes('tasks=preferred===summary?[summary]:[summary,preferred]'), 'Platform module navigation still schedules every center.');
 check(platformControlSource.includes('const renderKey=`${resolvedPanelId}:${resolvedHeading}`'), 'Platform render cache is not isolated by module.');
@@ -266,8 +272,9 @@ const authGuardSource = await read('services/authGuard.js');
 check(/'go-live-certification-center\.html': \['platform_owner'\]/.test(authGuardSource), 'Final certification is not isolated to the Platform Owner.');
 check(/'go-live-readiness-center\.html': \['super_admin'\]/.test(authGuardSource), 'Company readiness is not isolated to the Company Owner.');
 check(/'company-setup\.html': \['platform_owner'\]/.test(authGuardSource), 'Platform onboarding workspace is not isolated to the Platform Owner.');
-check(/'setup\.html': \['super_admin'\]/.test(authGuardSource), 'Tenant setup is not isolated to the Company Owner.');
-check(!/'setup\.html': \[[^\]]*platform_owner/.test(authGuardSource), 'Platform Owner retains access to tenant setup.');
+check(/'organization-import-center\.html': \['super_admin'\]/.test(authGuardSource), 'Organization Import Center is not isolated to the Company Owner.');
+check(!/'organization-import-center\.html': \[[^\]]*platform_owner/.test(authGuardSource), 'Platform Owner retains access to tenant onboarding.');
+check(!authGuardSource.includes("'company-profile-center.html'"), 'The removed Company Profile route remains in the authorization policy.');
 for (const [page, mount] of [
   ['super-admin.html', 'saLifecycleExperience'],
   ['hr-dashboard.html', 'hrLifecycleExperience'],

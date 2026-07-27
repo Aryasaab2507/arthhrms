@@ -4,7 +4,6 @@
 
     var FLAG = 'USE_COMPANY_SETUP_ORCHESTRATION';
     var CORE_STEPS = Object.freeze([
-        'organizationInformation',
         'organizationStructure',
         'workingConfiguration',
         'leaveConfiguration',
@@ -16,22 +15,19 @@
         'provisionTenant'
     ]);
     var SETUP_TASKS = Object.freeze([
-        { key: 'companyProfile', label: 'Company Profile', route: 'company-profile-center.html', owner: 'Company Owner', minutes: 10 },
-        { key: 'branding', label: 'Branding', route: 'company-profile-center.html', owner: 'Company Owner', minutes: 10 },
-        { key: 'legalInformation', label: 'Legal Information', route: 'company-profile-center.html', owner: 'Company Owner', minutes: 10 },
-        { key: 'locations', label: 'Locations', route: 'company-profile-center.html', owner: 'Company Owner', minutes: 10 },
+        { key: 'locations', label: 'Locations', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 10 },
         { key: 'departments', label: 'Departments', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 15 },
         { key: 'businessUnits', label: 'Business Units', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 10 },
         { key: 'designations', label: 'Designations', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 10 },
-        { key: 'workingCalendar', label: 'Working Calendar', route: 'working-calendar-center.html', owner: 'Company Owner', minutes: 15 },
-        { key: 'holidayCalendar', label: 'Holiday Calendar', route: 'working-calendar-center.html', owner: 'Company Owner', minutes: 10 },
-        { key: 'attendanceRules', label: 'Attendance Rules', route: 'attendance-policy-center.html', owner: 'HR Admin', minutes: 20 },
-        { key: 'leaveRules', label: 'Leave Rules', route: 'leave-policy-center.html', owner: 'HR Admin', minutes: 20 },
-        { key: 'payrollBasics', label: 'Payroll Basics', route: 'payroll-configuration-center.html', owner: 'Company Owner', minutes: 25 },
-        { key: 'approvalWorkflow', label: 'Approval Workflow', route: 'organization-hierarchy-center.html', owner: 'HR Admin', minutes: 20 },
+        { key: 'workingCalendar', label: 'Working Calendar', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 15 },
+        { key: 'holidayCalendar', label: 'Holiday Calendar', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 10 },
+        { key: 'attendanceRules', label: 'Attendance Rules', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 20 },
+        { key: 'leaveRules', label: 'Leave Rules', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 20 },
+        { key: 'payrollBasics', label: 'Payroll Basics', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 25 },
+        { key: 'approvalWorkflow', label: 'Approval Workflow', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 20 },
         { key: 'companyOwner', label: 'Company Owner', route: 'super-admin.html', owner: 'Company Owner', minutes: 0 },
-        { key: 'hrAdmin', label: 'HR Admin', route: 'super-admin.html', owner: 'Company Owner', minutes: 5 },
-        { key: 'managers', label: 'Managers', route: 'organization-hierarchy-center.html', owner: 'HR Admin', minutes: 15 },
+        { key: 'hrAdmin', label: 'HR Admin', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 5 },
+        { key: 'managers', label: 'Managers', route: 'organization-import-center.html', owner: 'Company Owner', minutes: 15 },
         { key: 'employeeImport', label: 'Employee Import', route: 'employee-migration-center.html', owner: 'HR Admin', minutes: 30 },
         { key: 'validation', label: 'Validation', route: 'employee-data-quality-center.html', owner: 'HR Admin', minutes: 20 },
         { key: 'readiness', label: 'Readiness', route: 'go-live-readiness-center.html', owner: 'Company Owner', minutes: 15 },
@@ -224,9 +220,6 @@
 
     function taskState(task, completed) {
         var mappings = {
-            companyProfile: 'organizationInformation',
-            branding: 'organizationInformation',
-            legalInformation: 'organizationInformation',
             locations: 'organizationStructure',
             departments: 'organizationStructure',
             businessUnits: 'organizationStructure',

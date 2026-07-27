@@ -321,7 +321,9 @@
                     user: mapped,
                     employee: null,
                     invite: companyOwnerActivation,
-                    redirectTo: global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html'
+                    redirectTo: onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD
+                        ? 'organization-import-center.html?source=company-owner-invite'
+                        : global.authService?.getRoleRedirect?.(role) || 'ArthHRMS.html'
                 };
             }
             if (!TENANT_INVITE_ROLES.includes(role)) {

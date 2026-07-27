@@ -119,11 +119,11 @@ async function main() {
   protectedPages.forEach(file => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /services\/authGuard\.js/, `${file} must load the shared guard`);
-    if (file === 'setup.html') {
-      assert.match(guardSource, /services\/supabaseClient\.js/, 'the shared guard must load the Supabase runtime for setup.html');
-      assert.match(guardSource, /services\/authService\.js/, 'the shared guard must load enterprise authentication for setup.html');
-      assert.doesNotMatch(source, /<script src="services\/supabaseClient\.js"/, 'setup.html must not initialize a duplicate Supabase client');
-      assert.doesNotMatch(source, /<script src="services\/authService\.js"/, 'setup.html must not initialize duplicate authentication');
+    if (['setup.html', 'organization-import-center.html'].includes(file)) {
+      assert.match(guardSource, /services\/supabaseClient\.js/, `the shared guard must load the Supabase runtime for ${file}`);
+      assert.match(guardSource, /services\/authService\.js/, `the shared guard must load enterprise authentication for ${file}`);
+      assert.doesNotMatch(source, /<script src="services\/supabaseClient\.js"/, `${file} must not initialize a duplicate Supabase client`);
+      assert.doesNotMatch(source, /<script src="services\/authService\.js"/, `${file} must not initialize duplicate authentication`);
     } else {
       assert.match(source, /services\/supabaseClient\.js/, `${file} must load the Supabase runtime`);
       assert.match(source, /services\/authService\.js/, `${file} must load enterprise authentication`);
@@ -140,17 +140,17 @@ async function main() {
     assert.ok(policies[route]?.includes('platform_owner'), `Platform Control link ${route} must explicitly allow platform_owner`);
   });
   assert.doesNotMatch(platformControlSource, /href="(?:company-profile-center|organization-import-center)\.html"/i, 'Platform Control must not link Platform Owners into tenant configuration routes');
-  assert.match(platformControlSource, /openPlatformPanel\('tenant'\)/, 'Company Profile navigation must remain inside Platform Tenant Governance');
+  assert.match(platformControlSource, /openPlatformPanel\('tenant'\)/, 'Company Registry navigation must remain inside Platform Tenant Governance');
   assert.match(platformControlSource, /openPlatformPanel\('migration'\)/, 'Organization Import navigation must remain inside Platform Migration Governance');
 
   const tenantOnlyRoutes = [
     'admin.html',
-    'company-profile-center.html',
     'director.html',
     'employee-portal.html',
     'hr-dashboard.html',
     'manager.html',
     'organization-import-center.html',
+    'organization-structure-import.html',
     'super-admin.html'
   ];
   tenantOnlyRoutes.forEach(route => {
@@ -177,12 +177,12 @@ async function main() {
   role = 'super_admin';
   userId = 'AUTH-COMPANY-OWNER';
   signInUserId = userId;
-  global.location.pathname = '/setup.html';
+  global.location.pathname = '/organization-import-center.html';
   global.location.href = '';
-  const setupAllowed = await global.ArthAuthGuard.enforce('/setup.html');
-  assert.equal(setupAllowed.status, 200, 'Company Owner role should pass the setup route guard');
-  assert.equal(hydrationCount, 0, 'setup route must not run generic business-state hydration');
-  assert.equal(global.ArthAuthGuard.usesDedicatedPersistence('/setup.html'), true);
+  const setupAllowed = await global.ArthAuthGuard.enforce('/organization-import-center.html');
+  assert.equal(setupAllowed.status, 200, 'Company Owner role should pass the Organization Import Center route guard');
+  assert.equal(hydrationCount, 0, 'Organization Import Center must not run generic business-state hydration');
+  assert.equal(global.ArthAuthGuard.usesDedicatedPersistence('/organization-import-center.html'), true);
 
   global.location.pathname = '/admin.html';
   const adminAllowed = await global.ArthAuthGuard.enforce('/admin.html');

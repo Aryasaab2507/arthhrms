@@ -83,7 +83,6 @@
 <script type="application/x-arthhrms-module" data-platform-src="services/passwordResetGovernanceService.js"></script>
 <script type="application/x-arthhrms-module" data-platform-src="services/managerHierarchyService.js"></script>
 <script type="application/x-arthhrms-module" data-platform-src="services/tenantDepartmentSetupService.js"></script>
-<script type="application/x-arthhrms-module" data-platform-src="services/organizationInitializationWizardService.js"></script>
 <script type="application/x-arthhrms-module" data-platform-src="services/companyHolidayImportService.js"></script>
 <script type="application/x-arthhrms-module" data-platform-src="services/initialLeaveBalanceImportService.js"></script>
 <script type="application/x-arthhrms-module" data-platform-src="services/auditInvestigationService.js"></script>
@@ -298,7 +297,7 @@
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="chip" id="ownerChip">platform_owner</span>
-                <button type="button" class="btn alt" onclick="openPlatformPanel('tenant')">Company Profile</button>
+                <button type="button" class="btn alt" onclick="openPlatformPanel('tenant')">Company Registry</button>
                 <button type="button" class="btn alt" onclick="openPlatformPanel('migration')">Org Import</button>
                 <a class="btn alt" href="operations-monitoring.html" style="text-decoration:none">Operations</a>
                 <a class="btn alt" href="enterprise-test-lab.html" style="text-decoration:none">Test Lab</a>
@@ -2500,51 +2499,6 @@
                     </div>
                 </div>
                 <div class="table-wrap" style="margin-top:12px"><table id="departmentSetupTable"></table></div>
-            </div>
-            <div class="card" style="margin-top:12px">
-                <h3 class="section-title">Organization Initialization Center</h3>
-                <p class="muted" style="margin-bottom:10px">Enterprise company launch wizard for company profile, department readiness, hierarchy validation, employee import evidence, policy configuration, launch readiness, and activation governance. Organization activation remains blocked until readiness validation passes.</p>
-                <div class="form">
-                    <div><label>Tenant Scope<input id="organizationInitTenantScope" placeholder="Tenant slug"></label></div>
-                    <div><label>Company Name<input id="organizationInitCompanyName" placeholder="Company name"></label></div>
-                    <div><label>Company Code<input id="organizationInitCompanyCode" placeholder="COMP"></label></div>
-                    <div><label>Legal Entity<input id="organizationInitLegalEntity" placeholder="Legal entity"></label></div>
-                    <div><label>Industry<input id="organizationInitIndustry" placeholder="Manufacturing"></label></div>
-                    <div><label>Timezone<input id="organizationInitTimezone" placeholder="Asia/Kolkata"></label></div>
-                    <div><label>Country<input id="organizationInitCountry" placeholder="India"></label></div>
-                    <div><label>Currency<input id="organizationInitCurrency" placeholder="INR"></label></div>
-                    <div><label>Fiscal Year<input id="organizationInitFiscalYear" placeholder="APR-MAR"></label></div>
-                    <div><label>Review Role<select id="organizationInitRole">
-                        <option value="HR">HR Onboarding Management</option>
-                        <option value="DIRECTOR">Director Approval</option>
-                        <option value="PLATFORM_OWNER">Platform Governance Visibility</option>
-                        <option value="EMPLOYEE">Employee No Access</option>
-                    </select></label></div>
-                </div>
-                <div class="form" style="margin-top:12px">
-                    <label><input type="checkbox" id="organizationInitPermissions" checked> Permissions configured</label>
-                    <label><input type="checkbox" id="organizationInitLeavePolicies" checked> Leave policies configured</label>
-                    <label><input type="checkbox" id="organizationInitAttendance" checked> Attendance settings configured</label>
-                    <label><input type="checkbox" id="organizationInitCompanySettings" checked> Company settings configured</label>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-                    <button class="btn" onclick="initializeOrganizationWizard()">Initialize Organization</button>
-                    <button class="btn alt" onclick="reviewOrganizationInitializationChecklist()">Review Checklist</button>
-                    <button class="btn green" onclick="validateOrganizationLaunchReadiness()">Validate Launch Readiness</button>
-                    <button class="btn warn" onclick="activateInitializedOrganization()">Activate Organization</button>
-                </div>
-                <div class="grid" id="organizationInitCards" style="margin-top:12px"></div>
-                <div class="row" style="margin-top:12px">
-                    <div class="card">
-                        <h3 class="section-title">Setup Checklist</h3>
-                        <div id="organizationInitChecklistBox"></div>
-                    </div>
-                    <div class="card">
-                        <h3 class="section-title">Readiness + Governance</h3>
-                        <div id="organizationInitReadinessBox"></div>
-                    </div>
-                </div>
-                <div class="table-wrap" style="margin-top:12px"><table id="organizationInitTable"></table></div>
             </div>
             <div class="card" style="margin-top:12px">
                 <h3 class="section-title">Holiday Calendar Center</h3>
@@ -5143,7 +5097,6 @@ let _employeeProfileCompletionReport = null;
 let _passwordResetGovernanceReport = null;
 let _managerHierarchyReport = null;
 let _tenantDepartmentSetupReport = null;
-let _organizationInitializationReport = null;
 let _companyHolidayReport = null;
 let _initialLeaveBalanceReport = null;
 let _payrollGovernanceReport = null;
@@ -5376,7 +5329,6 @@ function employeeProfileCompletionSvc(){return window.EmployeeProfileCompletionS
 function passwordResetGovernanceSvc(){return window.PasswordResetGovernanceService||window.passwordResetGovernanceService;}
 function managerHierarchySvc(){return window.ManagerHierarchyService||window.managerHierarchyService;}
 function tenantDepartmentSetupSvc(){return window.TenantDepartmentSetupService||window.tenantDepartmentSetupService;}
-function organizationInitializationSvc(){return window.OrganizationInitializationWizardService||window.organizationInitializationWizardService;}
 function companyHolidayImportSvc(){return window.CompanyHolidayImportService||window.companyHolidayImportService;}
 function initialLeaveBalanceImportSvc(){return window.InitialLeaveBalanceImportService||window.initialLeaveBalanceImportService;}
 function payrollGovernanceSvc(){return window.PayrollGovernanceService||window.payrollGovernanceService;}
@@ -8263,7 +8215,7 @@ function departmentSetupInput(){
         metadata:{source:'platform-control-department-setup-center'}
     };
 }
-function organizationInitializationDefaults(tenantSlug){
+function platformTenantDefaults(tenantSlug){
     const data=DB.get?DB.get():{};
     const settings=data.companySettings||{};
     const normalized=String(tenantSlug||'').toLowerCase().replace(/^ten[-_]/,'');
@@ -8279,45 +8231,6 @@ function organizationInitializationDefaults(tenantSlug){
         country:settings.country||tenant.country||'India',
         currency:settings.currency||tenant.currency||'INR',
         fiscalYear:settings.fiscalYear||tenant.fiscalYear||'APR-MAR'
-    };
-}
-function organizationInitializationContext(skipAudit,roleOverride){
-    const selectedRole=(roleOverride||document.getElementById('organizationInitRole')?.value||'HR').trim();
-    const tenantSlug=(document.getElementById('organizationInitTenantScope')?.value||permissionGovernanceTenantSlug()).trim();
-    return {
-        actor:{...actor(),role:selectedRole||'HR',id:currentUser.id||selectedRole,empId:currentUser.empId||currentUser.id||selectedRole,tenantSlug},
-        tenantSlug,
-        routeType:'platform',
-        reviewOnly:selectedRole==='HR'||selectedRole==='DIRECTOR',
-        governanceOnly:selectedRole==='PLATFORM_OWNER',
-        skipAuditPersistence:skipAudit===true,
-        skipTelemetry:skipAudit===true,
-        skipMetrics:skipAudit===true
-    };
-}
-function organizationInitializationInput(){
-    const tenantSlug=(document.getElementById('organizationInitTenantScope')?.value||permissionGovernanceTenantSlug()).trim();
-    return {
-        tenantSlug,
-        companyProfile:{
-            companyName:(document.getElementById('organizationInitCompanyName')?.value||'').trim(),
-            companyCode:(document.getElementById('organizationInitCompanyCode')?.value||'').trim(),
-            legalEntity:(document.getElementById('organizationInitLegalEntity')?.value||'').trim(),
-            industry:(document.getElementById('organizationInitIndustry')?.value||'').trim(),
-            timezone:(document.getElementById('organizationInitTimezone')?.value||'').trim(),
-            country:(document.getElementById('organizationInitCountry')?.value||'').trim(),
-            currency:(document.getElementById('organizationInitCurrency')?.value||'').trim(),
-            fiscalYear:(document.getElementById('organizationInitFiscalYear')?.value||'').trim()
-        },
-        initializationModules:{
-            roles:['EMPLOYEE','MANAGER','HR','DIRECTOR'],
-            permissionsConfigured:document.getElementById('organizationInitPermissions')?.checked!==false,
-            leavePoliciesConfigured:document.getElementById('organizationInitLeavePolicies')?.checked!==false,
-            attendanceSettingsConfigured:document.getElementById('organizationInitAttendance')?.checked!==false,
-            companySettingsConfigured:document.getElementById('organizationInitCompanySettings')?.checked!==false
-        },
-        readinessApproved:_organizationInitializationReport?.activationReady===true||_organizationInitializationReport?.activationReadiness?.activationReady===true,
-        metadata:{source:'platform-control-organization-initialization-center'}
     };
 }
 function companyHolidayContext(skipAudit,roleOverride){
@@ -11081,11 +10994,11 @@ function renderTenantGovernance(){
             modeLine('Blocked Tenants',setupSummary.blocked||0),
             modeLine('Sensitive HR Data','Filtered')
         ].join('')
-        : '<div class="muted">No organization setup metadata recorded yet. New tenants should complete setup.html before pilot activation.</div>';
+        : '<div class="muted">No organization setup metadata recorded yet. Company Owners complete the Organization Import Center before pilot activation.</div>';
     document.getElementById('organizationSetupTable').innerHTML=`<thead><tr><th>Tenant</th><th>Stage</th><th>Readiness</th><th>Departments</th><th>Roles</th><th>Blockers</th></tr></thead><tbody>${
         setupRows.length?setupRows.map(s=>`<tr>
             <td><b>${esc(s.companyProfile?.companyName||s.tenantSlug)}</b><div class="muted">${esc(s.tenantSlug)}</div></td>
-            <td>${esc(s.currentStage||'COMPANY_PROFILE')}</td>
+            <td>${esc(s.currentStage||'ORGANIZATION_STRUCTURE')}</td>
             <td>${migrationBadge(s.activationReadiness||'BLOCKED')}</td>
             <td>${esc((s.departments||[]).map(d=>d.name||d).join(', '))}</td>
             <td>${esc((s.roleMatrix||[]).join(', '))}</td>
@@ -11854,7 +11767,6 @@ function renderPlatformMonitoring(options={}){
         renderCredentialRecoveryCenter();
         renderManagerHierarchyCenter();
         renderDepartmentSetupCenter();
-        renderOrganizationInitializationCenter();
         renderCompanyHolidayCenter();
         renderInitialLeaveMigrationCenter();
         renderImportPipelineCenter();
@@ -15296,86 +15208,6 @@ function renderDepartmentSetupCenter(){
         rows.length?rows.slice(0,40).map(row=>`<tr><td><b>${esc(row.departmentName||'')}</b><div class="muted">${esc(row.departmentCode||'')}</div></td><td>${migrationBadge(row.level||'DEPARTMENT')}</td><td>${esc(row.ownerId||'Unassigned')}<div class="muted">${esc(row.ownershipType||'')}</div></td><td>${esc(row.parentDepartmentCode||'Company Root')}</td><td>${migrationBadge(row.state||'DRAFT')}</td></tr>`).join(''):'<tr><td colspan="5" class="muted">No department rows available.</td></tr>'
     }</tbody>`;
 }
-function renderOrganizationInitializationCenter(){
-    const svc=organizationInitializationSvc();
-    if(!document.getElementById('organizationInitCards'))return;
-    if(!svc?.generateInitializationChecklist){
-        document.getElementById('organizationInitCards').innerHTML=card('red','Offline','Organization Initialization','Service file not loaded');
-        document.getElementById('organizationInitChecklistBox').innerHTML='<div class="muted">Load organizationInitializationWizardService.js before reviewing company launch readiness.</div>';
-        document.getElementById('organizationInitReadinessBox').innerHTML='<div class="muted">Organization initialization unavailable.</div>';
-        document.getElementById('organizationInitTable').innerHTML='<thead><tr><th>Status</th></tr></thead><tbody><tr><td class="muted">Service unavailable.</td></tr></tbody>';
-        return;
-    }
-    const tenantInput=document.getElementById('organizationInitTenantScope');
-    if(tenantInput&&!tenantInput.value) tenantInput.value=permissionGovernanceTenantSlug();
-    const tenantSlug=tenantInput?.value||permissionGovernanceTenantSlug();
-    const defaults=organizationInitializationDefaults(tenantSlug);
-    [
-        ['organizationInitCompanyName','companyName'],
-        ['organizationInitCompanyCode','companyCode'],
-        ['organizationInitLegalEntity','legalEntity'],
-        ['organizationInitIndustry','industry'],
-        ['organizationInitTimezone','timezone'],
-        ['organizationInitCountry','country'],
-        ['organizationInitCurrency','currency'],
-        ['organizationInitFiscalYear','fiscalYear']
-    ].forEach(([id,key])=>{
-        const el=document.getElementById(id);
-        if(el&&!el.value) el.value=defaults[key]||'';
-    });
-    const role=(document.getElementById('organizationInitRole')?.value||'HR').trim();
-    const report=_organizationInitializationReport||svc.generateInitializationChecklist({tenantSlug},organizationInitializationContext(true,role));
-    const checklistReport=report.checklist?report:svc.generateInitializationChecklist({tenantSlug},organizationInitializationContext(true,role));
-    const checklist=checklistReport.checklist||report.checklist||[];
-    const issues=report.issues||checklistReport.issues||[];
-    const integration=report.integrationHealth||checklistReport.integrationHealth||report.integrationSummary?.integrationHealth||{};
-    if(report.success===false){
-        document.getElementById('organizationInitCards').innerHTML=[
-            card('red',String(report.state||'BLOCKED').replace(/_/g,' '),'Initialization State','Governance blocked safely'),
-            card('green',report.governance?.tenantIsolationPreserved?'Preserved':'Blocked','Tenant Scope','Organization isolation'),
-            card('green',report.governance?.organizationGovernancePreserved?'Preserved':'Review','Governance','Launch rules'),
-            card('warn',(report.issues||[]).length,'Validation Issues','Readiness blockers')
-        ].join('');
-        document.getElementById('organizationInitChecklistBox').innerHTML='<div class="muted">No checklist is displayed because organization initialization access or readiness was blocked.</div>';
-        document.getElementById('organizationInitReadinessBox').innerHTML=(report.issues||[]).slice(0,10).map(item=>`<div class="risk-line"><div><b>${esc(item.code||'Initialization Issue')}</b><div class="muted">${esc(item.message||'')}</div></div>${migrationBadge(item.severity||'ERROR')}</div>`).join('')||'<div class="muted">Organization initialization blocked safely.</div>';
-        document.getElementById('organizationInitTable').innerHTML='<thead><tr><th>Status</th></tr></thead><tbody><tr><td class="muted">No initialization rows available.</td></tr></tbody>';
-        return;
-    }
-    const readyScore=report.launchReadinessScore??report.readinessScore??checklistReport.launchReadinessScore??0;
-    const onboardingScore=report.onboardingScore??checklistReport.onboardingScore??0;
-    const governanceScore=report.governanceScore??checklistReport.governanceScore??0;
-    const activationScore=report.activationScore??checklistReport.activationScore??0;
-    const completeSteps=checklist.filter(row=>row.status==='COMPLETE').length;
-    document.getElementById('organizationInitCards').innerHTML=[
-        card(report.state==='ACTIVE'?'green':String(report.state||checklistReport.state||'CONFIGURING').includes('VALIDATING')?'warn':'green',String(report.state||checklistReport.state||'CONFIGURING').replace(/_/g,' '),'Initialization State','Wizard lifecycle'),
-        card(readyScore>=80?'green':'warn',readyScore,'Launch Readiness','Company launch score'),
-        card(onboardingScore>=80?'green':'warn',onboardingScore,'Onboarding','Import, invite, activation evidence'),
-        card(governanceScore>=80?'green':'warn',governanceScore,'Governance','Departments, hierarchy, roles, policies'),
-        card(activationScore>=80?'green':'warn',activationScore,'Activation','Activation readiness score'),
-        card(completeSteps>=6?'green':'warn',`${completeSteps}/${checklist.length||9}`,'Checklist','Completed setup steps'),
-        card(issues.length?'warn':'green',issues.length,'Validation Issues','Launch blockers'),
-        card(Object.values(integration).every(Boolean)?'green':'warn',Object.values(integration).filter(Boolean).length,'Integrations','Validated service links')
-    ].join('');
-    document.getElementById('organizationInitChecklistBox').innerHTML=checklist.length?checklist.map(row=>`
-        <div class="risk-line">
-            <div><b>${esc(String(row.step||'').replace(/_/g,' '))}</b><div class="muted">Score ${esc(row.score??0)} - Evidence ${esc(row.count??0)} - Issues ${esc(row.issueCount??0)}</div></div>
-            ${migrationBadge(row.status||'PENDING')}
-        </div>
-    `).join(''):'<div class="muted">Initialize the organization to build a launch checklist.</div>';
-    document.getElementById('organizationInitReadinessBox').innerHTML=[
-        modeLine('Tenant Isolation',report.governance?.tenantIsolationPreserved||checklistReport.governance?.tenantIsolationPreserved?'Preserved':'Blocked'),
-        modeLine('Organization Governance',report.governance?.organizationGovernancePreserved||checklistReport.governance?.organizationGovernancePreserved?'Preserved':'Review'),
-        modeLine('RBAC',report.governance?.rbacPreserved||checklistReport.governance?.rbacPreserved?'Authoritative':'Review'),
-        modeLine('Activation Gate',report.activationReady||report.activationReadiness?.activationReady?'Ready':'Validation required'),
-        modeLine('Platform Owner Visibility',report.governance?.platformOwnerVisibilityOnly||checklistReport.governance?.platformOwnerVisibilityOnly?'Governance only':'Tenant role scoped'),
-        modeLine('Employee Import',integration.employeeImportIntegrated?'Integrated':'Review'),
-        modeLine('Department Setup',integration.departmentSetupIntegrated?'Integrated':'Review'),
-        modeLine('Activation Wizard',integration.activationWizardIntegrated?'Integrated':'Review')
-    ].join('')+(issues.length?`<div style="margin-top:8px">${issues.slice(0,10).map(item=>`<div class="risk-line"><div><b>${esc(item.code||'Initialization Issue')}</b><div class="muted">${esc(item.message||'')}</div></div>${migrationBadge(item.severity||'WARNING')}</div>`).join('')}</div>`:'<div class="muted" style="margin-top:8px">No launch readiness blockers in the selected organization scope.</div>');
-    document.getElementById('organizationInitTable').innerHTML=`<thead><tr><th>Step</th><th>Status</th><th>Score</th><th>Evidence</th><th>Issues</th></tr></thead><tbody>${
-        checklist.length?checklist.map(row=>`<tr><td><b>${esc(String(row.step||'').replace(/_/g,' '))}</b><div class="muted">Order ${esc(row.order||'')}</div></td><td>${migrationBadge(row.status||'PENDING')}</td><td>${esc(row.score??0)}</td><td>${esc(row.count??0)}</td><td>${esc(row.issueCount??0)}</td></tr>`).join(''):'<tr><td colspan="5" class="muted">No initialization checklist available.</td></tr>'
-    }</tbody>`;
-}
 function renderCompanyHolidayCenter(){
     const svc=companyHolidayImportSvc();
     if(!document.getElementById('companyHolidayCards'))return;
@@ -15389,7 +15221,7 @@ function renderCompanyHolidayCenter(){
     const tenantInput=document.getElementById('companyHolidayTenantScope');
     if(tenantInput&&!tenantInput.value) tenantInput.value=permissionGovernanceTenantSlug();
     const tenantSlug=tenantInput?.value||permissionGovernanceTenantSlug();
-    const defaults=organizationInitializationDefaults(tenantSlug);
+    const defaults=platformTenantDefaults(tenantSlug);
     const nameEl=document.getElementById('companyHolidayCalendarName');
     const yearEl=document.getElementById('companyHolidayYear');
     const fileEl=document.getElementById('companyHolidayFileName');
@@ -23014,37 +22846,6 @@ function reviewTenantDepartmentReadiness(){
     const role=(document.getElementById('departmentSetupRole')?.value||'DIRECTOR').trim();
     _tenantDepartmentSetupReport=svc.calculateStructureReadiness(departmentSetupInput(),departmentSetupContext(false,role));
     toast(_tenantDepartmentSetupReport.success?`Structure readiness ${_tenantDepartmentSetupReport.structureReadinessScore??0}%`:'Structure readiness blocked');
-    renderAll();
-}
-function initializeOrganizationWizard(){
-    const svc=organizationInitializationSvc();
-    if(!svc?.initializeOrganization){toast('Organization initialization service unavailable');return;}
-    _organizationInitializationReport=svc.initializeOrganization(organizationInitializationInput(),organizationInitializationContext(false,'HR'));
-    toast(_organizationInitializationReport.success?'Organization initialization started':'Organization initialization blocked');
-    renderAll();
-}
-function reviewOrganizationInitializationChecklist(){
-    const svc=organizationInitializationSvc();
-    if(!svc?.generateInitializationChecklist){toast('Organization initialization service unavailable');return;}
-    const role=(document.getElementById('organizationInitRole')?.value||'HR').trim();
-    _organizationInitializationReport=svc.generateInitializationChecklist(organizationInitializationInput(),organizationInitializationContext(false,role));
-    toast(_organizationInitializationReport.success?'Initialization checklist reviewed':'Initialization checklist blocked');
-    renderAll();
-}
-function validateOrganizationLaunchReadiness(){
-    const svc=organizationInitializationSvc();
-    if(!svc?.validateLaunchReadiness){toast('Organization initialization service unavailable');return;}
-    const role=(document.getElementById('organizationInitRole')?.value||'DIRECTOR').trim();
-    const reviewRole=role==='PLATFORM_OWNER'?'PLATFORM_OWNER':'DIRECTOR';
-    _organizationInitializationReport=svc.validateLaunchReadiness(organizationInitializationInput(),organizationInitializationContext(false,reviewRole));
-    toast(_organizationInitializationReport.success?`Launch readiness ${_organizationInitializationReport.launchReadinessScore??_organizationInitializationReport.readinessScore??0}%`:'Launch readiness has blockers');
-    renderAll();
-}
-function activateInitializedOrganization(){
-    const svc=organizationInitializationSvc();
-    if(!svc?.activateOrganization){toast('Organization initialization service unavailable');return;}
-    _organizationInitializationReport=svc.activateOrganization({...organizationInitializationInput(),readinessApproved:true},organizationInitializationContext(false,'DIRECTOR'));
-    toast(_organizationInitializationReport.success?'Organization activated':'Organization activation blocked');
     renderAll();
 }
 function importCompanyHolidayCalendar(){

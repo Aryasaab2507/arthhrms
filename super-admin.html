@@ -254,7 +254,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
             <a class="btn" href="employee-migration-center.html">Employee Import</a>
             <a class="btn" href="go-live-readiness-center.html">Readiness</a>
-            <a class="btn btn-primary" href="setup.html">Resume Guided Setup</a>
+            <a class="btn btn-primary" href="organization-import-center.html">Open Organization Import Center</a>
           </div>
         </div>
         <div id="saCompanySetupSummary"></div>
@@ -599,7 +599,7 @@ ArthAuthGuard.ready.then(async(decision)=>{
     const setupResult=await setupService.loadWorkspace({actor:__saCurrent});
     const setupHome=setupService.getSetupHome?.();
     if(setupResult?.success&&Number(setupHome?.coreProgress||0)<100&&!requestedSection){
-      location.replace('setup.html?source=company-owner-login');
+      location.replace('organization-import-center.html?source=company-owner-login');
       return;
     }
   }
