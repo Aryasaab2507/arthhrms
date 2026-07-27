@@ -1154,6 +1154,10 @@
         masterData().load()
       ]);
       if(!loaded?.success){byId('loadingSkeleton').hidden=true;presentError(loaded,initialize);return;}
+      if(loaded.workspace?.status==='COMPLETED'){
+        global.location.replace('super-admin.html?section=company-setup&source=setup-complete');
+        return;
+      }
       state.workspace=loaded.workspace;state.company=loaded.company;state.draft=loaded.workspace.draft_payload || {};
       state.completed=new Set(loaded.workspace.completed_steps || []);
       initializeSmartSelectors();

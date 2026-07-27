@@ -44,6 +44,11 @@ assert.match(
   'An authenticated Company Owner must enter setup automatically while core onboarding is incomplete.'
 );
 assert.match(companySetup, /CompanySetupOrchestrationService/, 'The durable Company Setup route must remain present.');
+assert.match(
+  companySetup,
+  /loaded\.workspace\?\.status==='COMPLETED'[\s\S]+super-admin\.html\?section=company-setup&source=setup-complete/,
+  'A completed Company Setup workspace must return to Company Administration instead of remaining editable.'
+);
 assert.match(companyLogin, /function resolveTenantLoginTarget/, 'Company login must resolve the requested Company Administration return path.');
 assert.match(
   companyLogin,
