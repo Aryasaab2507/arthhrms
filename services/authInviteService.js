@@ -16,6 +16,8 @@
         EXPIRED: 'Invite Expired',
         CANCELLED: 'Cancelled'
     };
+    const INVITE_PASSWORD_EXPIRY_SKEW_SECONDS = 30;
+    let pendingInvitePasswordSetup = null;
     function db() { return global.DB; }
 
     function config() {
@@ -266,8 +268,171 @@
         return mutateDurableInvite('cancel', inviteId);
     }
 
+    function invitePasswordValidation(password) {
+        if (global.passwordRecoveryService?.evaluatePassword) {
+            return global.passwordRecoveryService.evaluatePassword(password);
+        }
+        const value = String(password || '');
+        const checks = {
+            minimumLength: value.length >= 12,
+            uppercase: /[A-Z]/.test(value),
+            lowercase: /[a-z]/.test(value),
+            number: /[0-9]/.test(value),
+            specialCharacter: /[^A-Za-z0-9\s]/.test(value)
+        };
+        return { valid: Object.values(checks).every(Boolean), checks };
+    }
+
+    function inviteSessionIsUsable(session) {
+        const expiresAt = Number(session?.expires_at || 0);
+        return !!(
+            session?.access_token &&
+            session?.user?.id &&
+            Number.isFinite(expiresAt) &&
+            expiresAt > Math.floor(Date.now() / 1000) + INVITE_PASSWORD_EXPIRY_SKEW_SECONDS
+        );
+    }
+
+    function validateInviteSession(session) {
+        const user = session?.user;
+        if (!inviteSessionIsUsable(session) || !user) {
+            return { ok: false, code: 'INVITE_SESSION_EXPIRED', error: 'This invitation link has expired. Ask your administrator to resend it.' };
+        }
+        const email = normalizeEmail(user.email);
+        const role = normalizeRole(user.app_metadata?.role || '');
+        if (!email || !OFFICIAL_ROLES.includes(role)) {
+            return { ok: false, code: 'INVITE_CLAIMS_INVALID', error: 'This invitation does not contain a valid account identity.' };
+        }
+        if (!(user.email_confirmed_at || user.confirmed_at)) {
+            return { ok: false, code: 'INVITE_EMAIL_UNVERIFIED', error: 'This invitation email has not been verified.' };
+        }
+        const onboardingMethod = String(user.app_metadata?.onboarding_method || '').trim().toLowerCase();
+        const tenantId = String(user.app_metadata?.tenant_id || user.app_metadata?.tenantSlug || '').trim();
+        const organizationId = String(user.app_metadata?.organization_id || user.app_metadata?.organizationId || '').trim();
+        if (role !== 'platform_owner' && (!tenantId || !organizationId)) {
+            return { ok: false, code: 'INVITE_TENANT_REQUIRED', error: 'This invitation is missing trusted company details.' };
+        }
+        if (onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD && (role !== 'super_admin' || user.app_metadata?.company_owner !== true)) {
+            return { ok: false, code: 'COMPANY_OWNER_CLAIMS_INVALID', error: 'This Company Owner invitation is invalid.' };
+        }
+        if (onboardingMethod === PRIVILEGED_ONBOARDING_METHOD && !['platform_owner', 'super_admin'].includes(role)) {
+            return { ok: false, code: 'PRIVILEGED_INVITE_CLAIMS_INVALID', error: 'This privileged invitation is invalid.' };
+        }
+        if (!onboardingMethod && !TENANT_INVITE_ROLES.includes(role)) {
+            return { ok: false, code: 'INVITE_ROLE_INVALID', error: 'This invitation role is not allowed.' };
+        }
+        return { ok: true, user, email, role, onboardingMethod, tenantId, organizationId };
+    }
+
+    function classifyInviteError(error) {
+        const message = String(error?.message || error || '').trim();
+        if (/expired|invalid.*token|token.*invalid|jwt/i.test(message)) {
+            return { code: 'INVITE_SESSION_EXPIRED', error: 'This invitation link has expired. Ask your administrator to resend it.' };
+        }
+        if (/password.*(weak|short|require)|weak.*password/i.test(message)) {
+            return { code: 'INVITE_PASSWORD_WEAK', error: 'Choose a password that meets every listed requirement.' };
+        }
+        if (/network|fetch|timeout|failed to fetch/i.test(message)) {
+            return { code: 'INVITE_NETWORK_ERROR', error: 'We could not reach the authentication service. Check your connection and try again.', retryable: true };
+        }
+        return { code: 'INVITE_ACTIVATION_FAILED', error: message || 'We could not activate this invitation. Please try again.', retryable: true };
+    }
+
+    function invitationDestination(user) {
+        const onboardingMethod = String(user?.app_metadata?.onboarding_method || '').trim().toLowerCase();
+        if (onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD) {
+            return 'organization-import-center.html?source=company-owner-invite';
+        }
+        return global.authService?.getRoleRedirect?.(user?.app_metadata?.role) || 'ArthHRMS.html';
+    }
+
+    async function resolvePendingInviteSession() {
+        const expected = pendingInvitePasswordSetup;
+        if (!expected) {
+            return { ok: false, code: 'INVITE_PASSWORD_SESSION_REQUIRED', error: 'Open the invitation link again to create your password.' };
+        }
+        const client = global.supabaseClientService?.getClient?.();
+        if (!client?.auth?.getSession || !client.auth.getUser) {
+            return { ok: false, code: 'INVITE_AUTH_UNAVAILABLE', error: 'Authentication is unavailable. Refresh the page and try again.' };
+        }
+        const sessionResult = await client.auth.getSession();
+        if (sessionResult?.error || !sessionResult?.data?.session) {
+            return { ok: false, code: 'INVITE_SESSION_EXPIRED', error: 'This invitation link has expired. Ask your administrator to resend it.' };
+        }
+        const session = sessionResult.data.session;
+        const userResult = await client.auth.getUser(session.access_token);
+        if (userResult?.error || !userResult?.data?.user || userResult.data.user.id !== expected.userId) {
+            return { ok: false, code: 'INVITE_SESSION_INVALID', error: 'The invitation session could not be verified. Open the latest invitation email.' };
+        }
+        const verifiedSession = { ...session, user: userResult.data.user };
+        const validation = validateInviteSession(verifiedSession);
+        if (!validation.ok || validation.user.id !== expected.userId) return validation;
+        return { ...validation, session: verifiedSession };
+    }
+
+    function beginInvitePasswordCreation(input = {}) {
+        const validation = validateInviteSession(input.session);
+        if (!validation.ok) return { ...validation, type: 'invite' };
+        pendingInvitePasswordSetup = {
+            userId: validation.user.id,
+            email: validation.email,
+            role: validation.role,
+            expiresAt: Number(input.session.expires_at || 0)
+        };
+        global.authService?.clearSession?.();
+        return {
+            ok: true,
+            type: 'invite',
+            action: 'create_password',
+            account: { email: validation.email, role: validation.role, name: validation.user.user_metadata?.full_name || validation.email }
+        };
+    }
+
+    async function completeInvitePasswordCreation(password) {
+        const passwordValidation = invitePasswordValidation(password);
+        if (!passwordValidation?.valid) {
+            return { ok: false, type: 'invite', code: 'INVITE_PASSWORD_WEAK', error: 'Choose a password that meets every listed requirement.' };
+        }
+        try {
+            const pending = await resolvePendingInviteSession();
+            if (!pending.ok) return { ...pending, type: 'invite' };
+            const client = global.supabaseClientService.getClient();
+            const update = await client.auth.updateUser({ password: String(password) });
+            if (update?.error) return { ok: false, type: 'invite', ...classifyInviteError(update.error) };
+
+            const activation = await handleInviteCallback({ session: { ...pending.session, user: update?.data?.user || pending.user }, passwordCreated: true });
+            if (!activation?.ok) return { ...activation, type: 'invite', retryable: activation?.retryable !== false };
+
+            if (typeof client.auth.refreshSession !== 'function') {
+                return { ok: false, type: 'invite', code: 'INVITE_SESSION_REFRESH_REQUIRED', error: 'Your account was activated, but the session could not be refreshed. Sign in with your new password.' };
+            }
+            const refreshed = await client.auth.refreshSession();
+            if (refreshed?.error || !refreshed?.data?.session) {
+                return { ok: false, type: 'invite', ...classifyInviteError(refreshed?.error || 'Session refresh failed') };
+            }
+            const refreshedUser = refreshed.data.user || refreshed.data.session.user;
+            if (!refreshedUser?.id || refreshedUser.id !== pending.user.id) {
+                return { ok: false, type: 'invite', code: 'INVITE_SESSION_INVALID', error: 'The activated session could not be verified. Sign in with your new password.' };
+            }
+            pendingInvitePasswordSetup = null;
+            return {
+                ok: true,
+                type: 'invite',
+                action: 'activated',
+                message: 'Your account is ready.',
+                user: refreshedUser,
+                redirectTo: invitationDestination(refreshedUser)
+            };
+        } catch (error) {
+            return { ok: false, type: 'invite', ...classifyInviteError(error) };
+        }
+    }
+
     async function handleInviteCallback(input = {}) {
         try {
+            if (!input.passwordCreated) {
+                return { ok: false, code: 'INVITE_PASSWORD_CREATION_REQUIRED', error: 'Create a password before activating this invitation.' };
+            }
             const session = input.session;
             const user = session?.user;
             if (!user) return { ok: false, error: 'Invite session could not be established' };
