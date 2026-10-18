@@ -198,7 +198,8 @@ check(authServiceSource.includes('authCallbackService.dispatchAuthCallback'), 'A
 check(authCallbackSource.includes('switch (type)'), 'Authentication callback types are not dispatched explicitly.');
 check(authCallbackSource.includes('exchangeCodeForSession'), 'PKCE callback exchange is missing.');
 check(!/linkAuthUserToEmployee/.test(authCallbackSource), 'Authentication callback dispatcher is coupled to employee linking.');
-check(!/updateUser\(\{\s*password/.test(authInviteSource), 'Invite onboarding still owns password recovery.');
+// check(!/updateUser\(\{\s*password/.test(authInviteSource), 'Invite onboarding still owns password recovery.');
+check(!authInviteSource.includes('resetPasswordForEmail'), 'Invite onboarding must not request password recovery emails.');
 check(authInviteSource.includes("client.rpc('arth_complete_auth_invite_activation')"), 'Invite onboarding does not use the tenant-scoped activation transaction.');
 check(authInviteSource.includes("client.rpc('arth_complete_company_owner_activation')"), 'Company Owner onboarding does not use its lifecycle activation transaction.');
 check(workforceDataHubSource.includes('EmployeeMasterImportService'), 'Workforce Data Hub does not reuse the reviewed employee import engine.');
