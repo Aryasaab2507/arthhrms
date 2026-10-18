@@ -58,8 +58,12 @@ async function main() {
 
   const client = {
     async rpc(name) {
-      assert.equal(name, 'arth_complete_auth_invite_activation');
+      assert.ok(['arth_complete_auth_invite_activation', 'arth_complete_release_operator_invite_activation'].includes(name));
       activationRpcCalls += 1;
+      currentUser = {
+        ...currentUser,
+        app_metadata: { ...currentUser.app_metadata, active: true, account_status: 'active', accountStatus: 'active' }
+      };
       return {
         data: {
           ok: true,
@@ -95,6 +99,10 @@ async function main() {
       async updateUser(payload) {
         updatePayload = payload;
         return { data: { user: currentUser }, error: null };
+      },
+      async refreshSession() {
+        currentSession = sessionFor();
+        return { data: { session: currentSession, user: currentUser }, error: null };
       },
       async signOut() {
         signOutCalls += 1;
@@ -240,23 +248,30 @@ async function main() {
     id: 'AUTH-INVITE-1',
     email: invite.email,
     email_confirmed_at: '2026-07-24T00:00:00.000Z',
-    app_metadata: { role: 'employee', empId: 'EMP-1', tenantSlug: 'tenant-a' },
+    app_metadata: { role: 'employee', empId: 'EMP-1', tenantSlug: 'tenant-a', organizationId: 'ORG-A', active: false, account_status: 'invited' },
     user_metadata: { full_name: 'Invite User' }
   };
-  const inviteResult = await global.authCallbackService.dispatchAuthCallback({
+  const inviteResult = await global.authService.handleAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token&type=invite'
   });
-  assert.equal(inviteResult.ok, true, 'invite callback behavior must remain active');
+  assert.equal(inviteResult.ok, true, 'invite callback should begin password creation');
   assert.equal(inviteResult.type, 'invite');
-  assert.equal(linkCalls, 1, 'invite callback still links the employee');
-  assert.equal(inviteUpdates, 1, 'invite callback still records activation');
+  assert.equal(inviteResult.action, 'create_password');
+  assert.equal(linkCalls, 0, 'invite callback must not link an employee before password creation');
+  assert.equal(inviteUpdates, 0, 'invite callback must not activate an employee before password creation');
+
+  const inviteActivated = await global.authInviteService.completeInvitePasswordCreation(strongPassword);
+  assert.equal(inviteActivated.ok, true, 'password creation should activate the invitation');
+  assert.equal(linkCalls, 1, 'activation links the employee only after password creation');
+  assert.equal(inviteUpdates, 1, 'activation records the invite only after password creation');
 
   const legacyInvite = await global.authCallbackService.dispatchAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html#access_token=callback-access-token&refresh_token=callback-refresh-token'
   });
   assert.equal(legacyInvite.ok, true, 'legacy invite callbacks remain discoverable from the governed invite record');
   assert.equal(legacyInvite.type, 'invite');
-  assert.equal(linkCalls, 2, 'legacy invite callback still links the employee');
+  assert.equal(legacyInvite.action, 'create_password');
+  assert.equal(linkCalls, 1, 'legacy invite callback must not link before password creation');
 
   persistenceEnabled = true;
   currentUser = {
@@ -267,17 +282,21 @@ async function main() {
       role: 'employee',
       empId: 'EMP-SERVER',
       tenantSlug: 'tenant-a',
-      organizationId: 'ORG-A'
+      organizationId: 'ORG-A',
+      active: false,
+      account_status: 'invited'
     },
     user_metadata: { full_name: 'Server Invite' }
   };
-  const serverInvite = await global.authCallbackService.dispatchAuthCallback({
+  const serverInvite = await global.authService.handleAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html?flow=invite#access_token=callback-access-token&refresh_token=callback-refresh-token'
   });
-  assert.equal(serverInvite.ok, true, 'production invitation activation should use the tenant-scoped database RPC');
-  assert.equal(serverInvite.invite.inviteId, 'INV-SERVER');
+  assert.equal(serverInvite.ok, true, 'production invitation callback should begin password creation');
+  assert.equal(serverInvite.action, 'create_password');
+  const serverInviteActivated = await global.authService.completeInvitedAccountPassword(strongPassword);
+  assert.equal(serverInviteActivated.ok, true, 'production invitation activation should use the tenant-scoped database RPC');
   assert.equal(activationRpcCalls, 1);
-  assert.equal(linkCalls, 2, 'the browser must not relink persisted employee records');
+  assert.equal(linkCalls, 1, 'the browser must not relink persisted employee records');
   persistenceEnabled = false;
 
   currentUser = {
@@ -287,16 +306,20 @@ async function main() {
     app_metadata: {
       role: 'platform_owner',
       onboarding_method: 'release_operator_invite',
-      onboarding_operation_id: 'OP-1'
+      onboarding_operation_id: 'OP-1',
+      active: false,
+      account_status: 'invited'
     },
     user_metadata: { full_name: 'Platform Owner' }
   };
-  const privilegedInvite = await global.authCallbackService.dispatchAuthCallback({
+  const privilegedInvite = await global.authService.handleAuthCallback({
     url: 'https://arthhrms.example/auth-callback.html?flow=invite#access_token=callback-access-token&refresh_token=callback-refresh-token'
   });
-  assert.equal(privilegedInvite.ok, true, 'release-operator Platform Owner invite should not require an employee record');
-  assert.equal(privilegedInvite.user.role, 'platform_owner');
-  assert.equal(linkCalls, 2, 'privileged onboarding must never link an employee');
+  assert.equal(privilegedInvite.ok, true, 'release-operator Platform Owner invite should begin password creation');
+  const privilegedActivated = await global.authService.completeInvitedAccountPassword(strongPassword);
+  assert.equal(privilegedActivated.ok, true, 'release-operator Platform Owner invite should activate after password creation');
+  assert.equal(privilegedActivated.user.role, 'platform_owner');
+  assert.equal(linkCalls, 1, 'privileged onboarding must never link an employee');
 
   setSessionError = { code: 'otp_expired', message: 'Token has expired' };
   const expired = await global.authCallbackService.dispatchAuthCallback({

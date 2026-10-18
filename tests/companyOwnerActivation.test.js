@@ -59,7 +59,7 @@ async function main() {
     }
   };
 
-  const activated = await global.authInviteService.handleInviteCallback({ session });
+  const activated = await global.authInviteService.handleInviteCallback({ session, passwordCreated: true });
   assert.equal(activated.ok, true);
   assert.equal(activated.user.role, 'super_admin');
   assert.equal(activated.user.tenantId, 'tabsons-india');
@@ -70,7 +70,7 @@ async function main() {
 
   const invalid = structuredClone(session);
   invalid.user.app_metadata.company_owner = false;
-  const rejected = await global.authInviteService.handleInviteCallback({ session: invalid });
+  const rejected = await global.authInviteService.handleInviteCallback({ session: invalid, passwordCreated: true });
   assert.equal(rejected.ok, false);
   assert.match(rejected.error, /metadata is invalid/i);
   assert.equal(activationCalls, 1, 'invalid trusted metadata must fail before the activation RPC');

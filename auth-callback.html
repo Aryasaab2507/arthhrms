@@ -55,7 +55,16 @@ function setStatus(message,state){
   box.className='status'+(state?' '+state:'');
 }
 function showLoginLink(){
-  document.getElementById('fallbackLink').hidden=false;
+  const link=document.getElementById('fallbackLink');
+  link.textContent='Return to Login';
+  link.href='ArthHRMS.html';
+  link.hidden=false;
+}
+function showContinueLink(candidate){
+  const link=document.getElementById('fallbackLink');
+  link.textContent='Continue to ARTHHRMS';
+  link.href=safeRedirect(candidate);
+  link.hidden=false;
 }
 function removeCallbackSecrets(){
   try{
@@ -105,6 +114,28 @@ async function activate(){
           description.textContent='Your password has been changed securely.';
           setStatus('Password updated successfully.','ok');
           redirectAfter('ArthHRMS.html',2000);
+        }
+      });
+      return;
+    }
+    if(result.type==='invite'&&result.action==='create_password'){
+      title.textContent='Create Your Password';
+      description.textContent='Create a strong password to activate your ARTHHRMS account.';
+      setStatus('Invitation verified. Create your password to continue.');
+      recoveryMount.hidden=false;
+      PasswordRecoveryUI.mount({
+        container:recoveryMount,
+        newPasswordLabel:'Create Password',
+        confirmPasswordLabel:'Confirm Password',
+        submitLabel:'Activate Account',
+        submittingLabel:'Activating...',
+        successLabel:'Account Activated',
+        onSubmit:(password)=>authService.completeInvitedAccountPassword(password),
+        onSuccess:(activation)=>{
+          title.textContent='Your Account Is Ready';
+          description.textContent='Your password and secure account activation are complete.';
+          setStatus('Account activated successfully.','ok');
+          showContinueLink(activation.redirectTo||'ArthHRMS.html');
         }
       });
       return;

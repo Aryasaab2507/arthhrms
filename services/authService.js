@@ -266,7 +266,21 @@
 
     function accountIsAllowed(user) {
         if (!user || !user.accountActive) return false;
-        return !['archived', 'disabled', 'inactive', 'suspended', 'terminated'].includes(user.accountStatus);
+        return !['archived', 'disabled', 'inactive', 'invited', 'pending', 'pending_activation', 'pending_password', 'suspended', 'terminated'].includes(user.accountStatus);
+    }
+
+    function passwordRecoveryRequestMessage(error) {
+        const message = String(error?.message || error || '').toLowerCase();
+        if (/rate.?limit|too many|email.*frequency/.test(message)) {
+            return 'Too many recovery requests were made. Wait a few minutes before trying again.';
+        }
+        if (/redirect|allow.?list|not allowed|site url/.test(message)) {
+            return 'Password recovery is not configured for this application address. Contact your administrator.';
+        }
+        if (/network|fetch|timeout|connection/.test(message)) {
+            return 'We could not reach the authentication service. Check your connection and try again.';
+        }
+        return 'Unable to send a recovery email right now. Please try again later.';
     }
 
     function passwordRecoveryRedirectUrl() {
@@ -543,11 +557,11 @@
                     code: 'RECOVERY_REQUEST_ACCEPTED',
                     message: 'If an account exists for this email, a password recovery link has been sent.'
                 };
-            } catch (_error) {
+            } catch (error) {
                 return {
                     ok: false,
                     code: 'RECOVERY_REQUEST_FAILED',
-                    message: 'Unable to send a recovery email right now. Please try again later.'
+                    message: passwordRecoveryRequestMessage(error)
                 };
             }
         },
@@ -593,6 +607,10 @@
                 clearLocalSession();
                 return result;
             }
+            if (result.type === global.authCallbackService.CALLBACK_TYPES?.INVITE && result.action === 'create_password') {
+                clearLocalSession();
+                return result;
+            }
             const validation = await this.validateCurrentSession();
             if (!validation.authenticated) {
                 return {
@@ -614,6 +632,32 @@
                 };
             }
             return global.passwordRecoveryService.completePasswordRecovery(password);
+        },
+        async completeInvitedAccountPassword(password) {
+            if (!global.authInviteService?.completeInvitePasswordCreation) {
+                return {
+                    ok: false,
+                    type: 'invite',
+                    code: 'INVITE_HANDLER_UNAVAILABLE',
+                    error: 'Invitation password setup is unavailable. Refresh the page and try again.'
+                };
+            }
+            const result = await global.authInviteService.completeInvitePasswordCreation(password);
+            if (!result?.ok) return result;
+            const validation = await this.validateCurrentSession({ expectedUserId: result.user?.id });
+            if (!validation.authenticated) {
+                return {
+                    ok: false,
+                    type: 'invite',
+                    code: validation.code || 'INVITE_SESSION_ACTIVATION_FAILED',
+                    error: 'Your account was activated, but the new session could not be verified. Sign in with your new password.'
+                };
+            }
+            return {
+                ...result,
+                user: validation.user,
+                redirectTo: result.redirectTo || this.getRoleRedirect(validation.user.role)
+            };
         },
         startAuthStateTracking() {
             if (!supabaseAuthReady() || authTrackingStarted) return false;

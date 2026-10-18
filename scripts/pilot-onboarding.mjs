@@ -199,7 +199,12 @@ export async function onboardPrivilegedUser(input, dependencies = {}) {
     const appMetadata = {
       role: values.role,
       onboarding_method: 'release_operator_invite',
-      onboarding_operation_id: operationId
+      onboarding_operation_id: operationId,
+      active: false,
+      account_status: 'invited',
+      accountStatus: 'invited',
+      invitation_status: 'sent',
+      invitationStatus: 'sent'
     };
     if (values.role === 'super_admin') {
       Object.assign(appMetadata, {

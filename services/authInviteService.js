@@ -459,6 +459,8 @@
                 let companyOwnerActivation = null;
                 if (onboardingMethod === COMPANY_OWNER_ONBOARDING_METHOD) {
                     companyOwnerActivation = await completePersistedCompanyOwnerActivation();
+                } else if (onboardingMethod === PRIVILEGED_ONBOARDING_METHOD) {
+                    await completePersistedReleaseOperatorActivation();
                 }
                 const mapped = {
                     id: user.id,
@@ -589,6 +591,15 @@
         const result = await client.rpc('arth_complete_company_owner_activation');
         if (result?.error) throw result.error;
         if (!result?.data?.ok) throw new Error('Company Owner activation was not confirmed by the database');
+        return result.data;
+    }
+
+    async function completePersistedReleaseOperatorActivation() {
+        const client = global.supabaseClientService?.getClient?.();
+        if (!client?.rpc) throw new Error('Platform Owner activation transaction is unavailable');
+        const result = await client.rpc('arth_complete_release_operator_invite_activation');
+        if (result?.error) throw result.error;
+        if (!result?.data?.ok) throw new Error('Platform Owner activation was not confirmed by the database');
         return result.data;
     }
 
@@ -763,6 +774,8 @@
         sendCompanyOwnerInvite,
         resendCompanyOwnerInvite,
         revokeCompanyOwnerInvite,
+        beginInvitePasswordCreation,
+        completeInvitePasswordCreation,
         handleInviteCallback,
         hasMatchingInvite: (user) => !!matchingInviteForUser(user),
         recordActivationFromUser,

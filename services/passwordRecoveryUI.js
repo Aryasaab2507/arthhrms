@@ -121,7 +121,7 @@
         form.noValidate = true;
 
         const newPasswordGroup = node('div', 'field');
-        const newPasswordLabel = node('label', '', 'New Password');
+        const newPasswordLabel = node('label', '', options.newPasswordLabel || 'New Password');
         newPasswordLabel.htmlFor = 'recoveryNewPassword';
         const newPassword = node('input', 'input');
         newPassword.id = 'recoveryNewPassword';
@@ -135,7 +135,7 @@
         newPasswordGroup.append(newPasswordLabel, newPassword);
 
         const confirmGroup = node('div', 'field');
-        const confirmLabel = node('label', '', 'Confirm Password');
+        const confirmLabel = node('label', '', options.confirmPasswordLabel || 'Confirm Password');
         confirmLabel.htmlFor = 'recoveryConfirmPassword';
         const confirmPassword = node('input', 'input');
         confirmPassword.id = 'recoveryConfirmPassword';
@@ -178,7 +178,10 @@
         feedback.setAttribute('role', 'status');
         feedback.setAttribute('aria-live', 'polite');
 
-        const submit = node('button', 'btn recovery-submit', 'Update Password');
+        const submitLabel = options.submitLabel || 'Update Password';
+        const submittingLabel = options.submittingLabel || 'Updating...';
+        const successLabel = options.successLabel || 'Password Updated';
+        const submit = node('button', 'btn recovery-submit', submitLabel);
         submit.type = 'submit';
         submit.disabled = true;
 
@@ -224,7 +227,7 @@
             const validation = refresh();
             if (!validation.result.valid || !validation.passwordsMatch || submit.disabled) return;
             submit.disabled = true;
-            submit.textContent = 'Updating...';
+            submit.textContent = submittingLabel;
             feedback.textContent = '';
             feedback.className = 'form-feedback';
             try {
@@ -232,7 +235,7 @@
                 if (!result?.ok) {
                     feedback.textContent = result?.error || 'Password could not be updated. Try again.';
                     feedback.className = 'form-feedback err';
-                    submit.textContent = 'Update Password';
+                    submit.textContent = submitLabel;
                     refresh();
                     options.onError?.(result);
                     return;
@@ -242,14 +245,14 @@
                 newPassword.disabled = true;
                 confirmPassword.disabled = true;
                 submit.disabled = true;
-                submit.textContent = 'Password Updated';
+                submit.textContent = successLabel;
                 feedback.textContent = result.message || 'Password updated successfully.';
                 feedback.className = 'form-feedback ok';
                 options.onSuccess?.(result);
             } catch (_error) {
                 feedback.textContent = 'We could not connect to the authentication service. Check your connection and try again.';
                 feedback.className = 'form-feedback err';
-                submit.textContent = 'Update Password';
+                submit.textContent = submitLabel;
                 refresh();
                 options.onError?.({ code: 'RECOVERY_NETWORK_ERROR' });
             }

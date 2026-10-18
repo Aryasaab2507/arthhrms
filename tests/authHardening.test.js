@@ -90,7 +90,8 @@ async function main() {
       access_token: 'verified-access-token',
       expires_at: Math.floor(Date.now()/1000)+3600,
       user: global.__mockAuthUser
-    }
+    },
+    passwordCreated: true
   });
   assert.equal(activated.ok, true, 'callback should activate account');
   assert.equal(global.DB.getEmployee('EMP002').activationStatus, 'Active', 'employee becomes active after callback');

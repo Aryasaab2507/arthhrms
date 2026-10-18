@@ -223,6 +223,11 @@ Deno.serve(async (req: Request) => {
       tenant_id: callerTenant,
       organizationId: callerOrganization,
       organization_id: callerOrganization,
+      active: false,
+      account_status: "invited",
+      accountStatus: "invited",
+      invitation_status: "sent",
+      invitationStatus: "sent",
     },
     user_metadata: { full_name: name },
   });

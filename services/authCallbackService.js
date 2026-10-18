@@ -166,15 +166,15 @@
                     }
                     return global.passwordRecoveryService.beginRecovery(session);
                 case CALLBACK_TYPES.INVITE: {
-                    if (!global.authInviteService?.handleInviteCallback) {
+                    if (!global.authInviteService?.beginInvitePasswordCreation) {
                         return {
                             ok: false,
                             type,
                             code: 'INVITE_HANDLER_UNAVAILABLE',
-                            error: 'Invite activation is unavailable. Try again later.'
+                            error: 'Invitation password setup is unavailable. Try again later.'
                         };
                     }
-                    const result = await global.authInviteService.handleInviteCallback({ session });
+                    const result = global.authInviteService.beginInvitePasswordCreation({ session });
                     return { ...result, type };
                 }
                 case CALLBACK_TYPES.MAGIC_LINK:

@@ -235,6 +235,11 @@ Deno.serve(async (req: Request) => {
         onboarding_method: "company_owner_invite",
         onboarding_operation_id: idempotencyKey,
         company_owner: true,
+        active: false,
+        account_status: "invited",
+        accountStatus: "invited",
+        invitation_status: "sent",
+        invitationStatus: "sent",
       },
       user_metadata: {
         full_name: name,
